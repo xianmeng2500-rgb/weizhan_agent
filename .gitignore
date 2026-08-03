@@ -1,0 +1,44 @@
+# Dependencies
+admin-frontend/node_modules/
+h5-frontend/node_modules/
+
+# Python
+backend/__pycache__/
+backend/**/__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+.venv/
+venv/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build
+admin-frontend/dist/
+admin-frontend/build/
+h5-frontend/dist/
+h5-frontend/build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# WorkBuddy (project config only, not memory)
+.workbuddy/memory/
+
+# Uploads (may contain large/user files)
+backend/uploads/*
+!backend/uploads/.gitkeep
