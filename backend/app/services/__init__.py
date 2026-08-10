@@ -5,14 +5,37 @@ from datetime import datetime
 from typing import Optional
 from fastapi import HTTPException, UploadFile
 from app.config import settings
+from app.database import SessionLocal
+from app.models.system_config import SystemConfig
 
 
-def _get_oss_bucket():
+def get_storage_config() -> dict[str, str]:
+    """获取存储配置：数据库系统配置优先，环境变量作为回退。"""
+    db = SessionLocal()
+    try:
+        config = db.query(SystemConfig).filter(SystemConfig.id == 1).first()
+        return {
+            "access_key_id": (config.oss_access_key_id if config and config.oss_access_key_id else settings.OSS_ACCESS_KEY_ID),
+            "access_key_secret": (config.oss_access_key_secret if config and config.oss_access_key_secret else settings.OSS_ACCESS_KEY_SECRET),
+            "bucket_name": (config.oss_bucket_name if config and config.oss_bucket_name else settings.OSS_BUCKET_NAME),
+            "endpoint": (config.oss_endpoint if config and config.oss_endpoint else settings.OSS_ENDPOINT),
+            "custom_domain": (config.oss_custom_domain if config and config.oss_custom_domain else settings.OSS_CUSTOM_DOMAIN),
+        }
+    finally:
+        db.close()
+
+
+def oss_is_configured() -> bool:
+    config = get_storage_config()
+    return bool(config["access_key_id"] and config["access_key_secret"] and config["bucket_name"] and config["endpoint"])
+
+
+def _get_oss_bucket(storage_config: dict[str, str]):
     """获取OSS Bucket实例(延迟初始化)"""
     import oss2
 
-    auth = oss2.Auth(settings.OSS_ACCESS_KEY_ID, settings.OSS_ACCESS_KEY_SECRET)
-    return oss2.Bucket(auth, settings.OSS_ENDPOINT, settings.OSS_BUCKET_NAME)
+    auth = oss2.Auth(storage_config["access_key_id"], storage_config["access_key_secret"])
+    return oss2.Bucket(auth, storage_config["endpoint"], storage_config["bucket_name"] )
 
 
 async def upload_image(file: UploadFile) -> str:
@@ -36,17 +59,18 @@ async def upload_image(file: UploadFile) -> str:
     file_key = f"weizhan/{now.strftime('%Y/%m/%d')}/{uuid.uuid4().hex}.{ext}"
 
     # 上传到OSS
-    bucket = _get_oss_bucket()
+    storage_config = get_storage_config()
+    bucket = _get_oss_bucket(storage_config)
     bucket.put_object(file_key, content)
 
     # 返回URL
-    if settings.OSS_CUSTOM_DOMAIN:
-        domain = settings.OSS_CUSTOM_DOMAIN.rstrip('/')
+    if storage_config["custom_domain"]:
+        domain = storage_config["custom_domain"].rstrip('/')
         if not domain.startswith('http://') and not domain.startswith('https://'):
             domain = f"https://{domain}"
         return f"{domain}/{file_key}"
     else:
-        return f"https://{settings.OSS_BUCKET_NAME}.{settings.OSS_ENDPOINT}/{file_key}"
+        return f"https://{storage_config['bucket_name']}.{storage_config['endpoint']}/{file_key}"
 
 
 async def upload_image_local(file: UploadFile, upload_dir: str = None) -> str:

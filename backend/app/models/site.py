@@ -1,5 +1,5 @@
 """微站项目模型"""
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -16,16 +16,25 @@ class Site(Base):
     layout = Column(String(20), default="grid", nullable=False, comment="布局: grid/button")
     kv_image = Column(String(500), nullable=True, comment="KV图URL")
     background_color = Column(String(20), default="", nullable=True, comment="自定义背景色")
+    background_image = Column(String(500), nullable=True, comment="背景图URL")
+    share_image = Column(String(500), nullable=True, comment="微信分享图标")
+    share_title = Column(String(128), nullable=True, comment="微信分享标题")
+    share_subtitle = Column(String(255), nullable=True, comment="微信分享副标题")
+    customer_service_config = Column(Text, nullable=True, comment="客服配置JSON")
+    login_fields_config = Column(Text, nullable=True, comment="登录字段配置JSON")
     need_login = Column(Boolean, default=False, nullable=False, comment="是否需要登录")
+    login_require_password = Column(Boolean, default=True, nullable=False, comment="登录是否需要密码")
+    need_checkin = Column(Boolean, default=False, nullable=False, comment="是否需要签到系统")
     start_time = Column(DateTime, nullable=True, comment="开启时间")
     end_time = Column(DateTime, nullable=True, comment="关闭时间")
     status = Column(String(20), default="draft", nullable=False, comment="状态: draft/online/offline")
     close_message = Column(Text, nullable=True, comment="关闭后提示文案")
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True, comment="创建者")
-    created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="更新时间")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), comment="创建时间")
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), comment="更新时间")
 
     # 关系
     modules = relationship("Module", back_populates="site", cascade="all, delete-orphan", order_by="Module.sort_order")
     accounts = relationship("SiteAccount", back_populates="site", cascade="all, delete-orphan")
     access_logs = relationship("AccessLog", back_populates="site")
+    form_submissions = relationship("FormSubmission", back_populates="site")

@@ -148,8 +148,8 @@ weizhan_agent/
 ### 5.1 ER关系
 
 ```
-users (后台管理员)
-  └─ 管理 ──> sites (微站项目)
+users (后台管理员)  ── 自引用 created_by ──> users (上级管理员)
+  └─ 管理 ──> sites (微站项目)        (sites.created_by = users.id)
                 ├─ 1:N ──> modules (模块)
                 │            ├─ 1:1 ──> module_contents (富文本内容)
                 │            └─ N:M ──> account_module_permissions (权限)
@@ -168,7 +168,9 @@ users (后台管理员)
 | username | VARCHAR(64), UNIQUE | 用户名 |
 | password_hash | VARCHAR(255) | 密码哈希 |
 | nickname | VARCHAR(64) | 昵称 |
-| role | VARCHAR(20) | 角色: admin/editor |
+| role | VARCHAR(20) | 角色: super_admin/admin/sub_admin |
+| is_active | TINYINT(1) | 是否启用(禁用后无法登录) |
+| created_by | INT, FK→users.id | 创建者(上级管理员，自引用) |
 | created_at | DATETIME | 创建时间 |
 | updated_at | DATETIME | 更新时间 |
 
@@ -251,18 +253,41 @@ users (后台管理员)
 | click_date | DATE | 点击日期 |
 | click_time | DATETIME | 点击时间 |
 
-## 6. API设计
+## 6. 权限模型 (后台管理员)
+
+后台管理员(`users` 表)分三级，通过 `role` 字段区分：
+
+| 角色 | 微站可见范围 | 账号管理 | 说明 |
+|------|-------------|---------|------|
+| `super_admin` | 所有微站 | 可管理任意角色账号 | 最高权限，默认初始账号 `admin` 即此角色 |
+| `admin` | 仅自己创建的微站(`created_by=自己`) | 仅可管理自己创建的 `sub_admin` | 中间层级 |
+| `sub_admin` | 仅自己创建的微站 | 无 | 受限账号 |
+
+控制逻辑：
+- **微站隔离**：`sites.created_by` 记录创建者。列表接口对非超级管理员按 `created_by` 过滤；详情/编辑/删除/上下线及所有子资源（模块、账号、统计、报名数据）均调用 `assert_site_access` 校验归属，越权返回 403。
+- **账号管理隔离**：超级管理员可见并管理全部账号；管理员仅可见并管理 `created_by=自己` 且 `role=sub_admin` 的账号，且只能创建 `sub_admin`；子账号无入口。
+- **状态控制**：`is_active=false` 的账号无法登录（登录与 `get_current_admin` 双重拦截）。
+- **防误删**：不能删除/禁用当前登录账号，不能删除超级管理员。
+
+> 注意区分：后台管理员账号(`users`) 与 微站前端登录账号(`site_accounts`) 是两套独立体系。
+
+## 7. API设计
 
 ### 基础路径: `/api/v1`
 
-### 6.1 认证 (后台)
+### 7.1 认证与账号管理 (后台)
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| POST | /auth/login | 管理员登录 |
-| GET | /auth/me | 获取当前用户 |
+| POST | /auth/login | 管理员登录(返回 token + role) |
+| GET | /auth/me | 获取当前用户(含角色/状态) |
 | POST | /auth/logout | 退出登录 |
+| GET | /auth/accounts | 后台账号列表(超级管理员看全部；管理员看自己创建的子账号) |
+| POST | /auth/accounts | 创建后台账号(管理员仅能创建子账号) |
+| GET | /auth/accounts/{id} | 账号详情 |
+| PUT | /auth/accounts/{id} | 编辑账号(改密码/昵称/角色/启用状态) |
+| DELETE | /auth/accounts/{id} | 删除账号 |
 
-### 6.2 微站管理 (后台)
+### 7.2 微站管理 (后台)
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | /sites | 微站列表(分页) |
@@ -272,7 +297,7 @@ users (后台管理员)
 | DELETE | /sites/{id} | 删除微站 |
 | PUT | /sites/{id}/status | 更新微站状态 |
 
-### 6.3 模块管理 (后台)
+### 7.3 模块管理 (后台)
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | /sites/{site_id}/modules | 模块列表 |
@@ -282,7 +307,7 @@ users (后台管理员)
 | DELETE | /sites/{site_id}/modules/{id} | 删除模块 |
 | PUT | /sites/{site_id}/modules/sort | 批量排序 |
 
-### 6.4 账号管理 (后台)
+### 7.4 账号管理 (后台, 微站前端登录账号)
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | /sites/{site_id}/accounts | 账号列表(分页) |
@@ -291,19 +316,19 @@ users (后台管理员)
 | PUT | /sites/{site_id}/accounts/{id} | 更新账号 |
 | PUT | /sites/{site_id}/accounts/{id}/permissions | 设置模块权限 |
 
-### 6.5 文件上传 (后台)
+### 7.5 文件上传 (后台)
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | POST | /upload/image | 上传图片到OSS |
 
-### 6.6 统计 (后台)
+### 7.6 统计 (后台)
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | /sites/{id}/stats/overview | 总览(PV/UV) |
 | GET | /sites/{id}/stats/modules | 模块点击统计 |
 | GET | /sites/{id}/stats/trend | 访问趋势 |
 
-### 6.7 公开接口 (H5前端)
+### 7.7 公开接口 (H5前端)
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | /p/sites/{code} | 获取微站展示信息 |
@@ -313,7 +338,7 @@ users (后台管理员)
 | POST | /p/sites/{code}/access | 上报访问日志 |
 | POST | /p/sites/{code}/click | 上报模块点击 |
 
-## 7. 微站模板设计
+## 8. 微站模板设计
 
 ### template: classic (经典)
 - 背景: 渐变蓝紫色
@@ -330,7 +355,32 @@ users (后台管理员)
 - 九宫格: 金色边框卡片，喜庆图标
 - 适合: 节日活动、促销
 
-## 8. H5访问流程
+## 9. H5 登录页设计
+
+当微站开启「需要登录」(`need_login=true`) 时，移动端访问会先进入登录页 `/s/{code}/login`。登录页视觉与微站主页保持一致，并复用站点的 KV 图与背景配置。
+
+### 数据来源
+登录页在 `onMounted` 调用公开接口 `GET /p/sites/{code}`（无需认证）拉取站点展示信息，用于渲染 KV 与背景：
+- `kv_image` — 顶部 KV 横幅
+- `background_image` / `background_color` — 页面背景
+- `template` — 模板主题（classic / dark / festive）
+- `name` — 站点名称（作为标题）
+
+> 站点信息加载失败时仅提示文案，不阻断登录（登录接口 `POST /p/sites/{code}/login` 本身不校验 online 状态，仍可正常登录）。
+
+### 视觉规范
+- **页面背景**：优先使用 `background_image`（覆盖式 + 顶部 18% 暗化遮罩）；其次 `background_color`；否则回退到与微站主页一致的模板渐变。
+- **KV 横幅**：满宽展示，最大高度 42vh，底部左右圆角 + 阴影；存在 KV 时登录卡片上移 38px 与之叠出层次感。
+- **登录卡片**：半透明白底（`rgba(255,255,255,0.92)`）+ `backdrop-filter: blur(12px)` 玻璃拟态，圆角 20px，阴影。
+  - 无 KV 时：站点首字母 logo（渐变圆角方块）+ 站点名 + 副标题「请登录后继续访问」。
+  - 有 KV 时：精简为站点名 + 副标题。
+- **表单**：无 label 输入框，带 `user-o` / `lock` 左图标，外裹浅灰（`#f4f5f8`）圆角容器。
+- **登录按钮**：渐变填充（`#667eea → #764ba2`）+ 阴影 + 字间距，圆角全宽。
+
+### 登录流程
+提交 `username` / `password` 至 `POST /p/sites/{code}/login`，成功后写入 `localStorage` 的 `h5_token` 与 `h5_nickname`，再 `router.replace` 回到微站主页 `/s/{code}`。
+
+## 10. H5访问流程
 
 ```
 用户扫码/点击链接
@@ -355,16 +405,18 @@ GET /p/sites/{code}  ──→  检查微站状态
        └─ 失败 → 提示错误，重新登录
 ```
 
-## 9. 安全设计
+## 11. 安全设计
 
-- 后台管理员: JWT Token认证，密码bcrypt哈希
+- 后台管理员: JWT Token认证，密码bcrypt哈希，按角色(`super_admin`/`admin`/`sub_admin`)做微站与账号的访问隔离
+- 后台账号禁用(`is_active=false`)后无法登录，登录与接口鉴权双重拦截
+- 微站及子资源均做归属校验(`assert_site_access`)，越权访问返回 403
 - 前端用户: JWT Token认证（按site隔离），密码bcrypt哈希
 - 上传文件: 校验文件类型(jpg/png/gif/webp)和大小(最大10MB)
 - 接口防刷: 基于IP的简单限流
 - SQL注入: SQLAlchemy ORM参数化查询
 - XSS防护: 富文本内容存储前进行HTML净化
 
-## 10. 部署方案
+## 12. 部署方案
 
 ### Nginx配置
 ```

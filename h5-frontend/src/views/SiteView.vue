@@ -1,14 +1,37 @@
 <template>
   <div class="site-page" :class="'tpl-' + site.template" :style="bgStyle">
+    <!-- 背景图：宽度撑满、高度自适应，完整显示不被裁剪 -->
+    <div v-if="site.background_image" class="bg-layer">
+      <img :src="site.background_image" class="bg-image" alt="" />
+    </div>
+
     <!-- KV 区域 -->
     <div class="kv-area" v-if="site.kv_image">
       <img :src="site.kv_image" class="kv-image" mode="widthFix" />
     </div>
 
-    <!-- 九宫格/按钮布局 -->
-    <div class="content-area">
-      <!-- 九宫格 -->
-      <div v-if="site.layout === 'grid'" class="grid-layout">
+    <!-- 自由拖拽布局 -->
+    <div v-if="site.layout === 'free'" class="free-layout">
+      <div
+        v-for="m in modules"
+        :key="m.id"
+        class="free-btn"
+        :class="{ 'has-height': m.height != null }"
+        :style="freeBtnStyle(m)"
+        @click="handleClick(m)"
+      >
+        <div class="free-btn-inner" :class="freeBtnClass(m)">
+          <img v-if="m.icon" :src="m.icon" class="btn-icon" />
+          <div v-else class="btn-icon-placeholder">{{ m.title.charAt(0) }}</div>
+          <span class="btn-text">{{ m.title }}</span>
+          <span v-if="m.show_arrow !== false" class="arrow">›</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 九宫格 -->
+    <div v-else-if="site.layout === 'grid'" class="content-area">
+      <div class="grid-layout">
         <div
           v-for="m in modules"
           :key="m.id"
@@ -20,9 +43,11 @@
           <div class="grid-title">{{ m.title }}</div>
         </div>
       </div>
+    </div>
 
-      <!-- 按钮布局 -->
-      <div v-else class="button-layout">
+    <!-- 按钮布局 -->
+    <div v-else class="content-area">
+      <div class="button-layout">
         <div
           v-for="m in modules"
           :key="m.id"
@@ -30,11 +55,40 @@
           @click="handleClick(m)"
         >
           <img v-if="m.icon" :src="m.icon" class="button-icon" />
+          <div v-else class="button-icon-placeholder">{{ m.title.charAt(0) }}</div>
           <span class="button-text">{{ m.title }}</span>
           <span class="arrow">›</span>
         </div>
       </div>
     </div>
+
+    <button
+      v-if="serviceConfig.enabled"
+      class="service-float"
+      type="button"
+      aria-label="联系客服"
+      @click="showServicePanel = true"
+    >
+      <span class="service-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false"><path d="M4 13v-1a8 8 0 0 1 16 0v1" /><path d="M5 12h2.5v6H5a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1Zm14 0h-2.5v6H19a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1Z" /><path d="M16.5 18c0 1.1-.9 2-2 2H12" /></svg>
+      </span>
+    </button>
+
+    <van-action-sheet v-model:show="showServicePanel" title="活动咨询" round>
+      <div class="service-panel">
+        <p v-if="serviceConfig.description" class="service-description">{{ serviceConfig.description }}</p>
+        <p v-if="serviceConfig.service_hours" class="service-hours">服务时间：{{ serviceConfig.service_hours }}</p>
+        <van-cell-group inset>
+          <van-cell v-if="serviceConfig.phone" title="电话咨询" :label="serviceConfig.phone" is-link @click="callService" />
+          <van-cell v-if="serviceConfig.wechat" title="客服微信" :label="serviceConfig.wechat" is-link @click="copyWechat" />
+          <van-cell v-if="serviceConfig.link" title="在线咨询" label="打开客服链接" is-link @click="openServiceLink" />
+          <van-cell v-if="serviceConfig.qrcode_url" title="客服二维码" label="查看并长按识别" is-link @click="showServiceQr = true" />
+        </van-cell-group>
+        <div v-if="!hasServiceChannel" class="service-empty">暂未配置客服联系方式</div>
+      </div>
+    </van-action-sheet>
+
+    <van-image-preview v-model:show="showServiceQr" :images="serviceConfig.qrcode_url ? [serviceConfig.qrcode_url] : []" closeable />
   </div>
 </template>
 
@@ -50,7 +104,25 @@ const code = route.params.code as string
 
 const site = ref<any>({})
 const modules = ref<any[]>([])
+const showServicePanel = ref(false)
+const showServiceQr = ref(false)
 
+const serviceConfig = computed(() => ({
+  enabled: false,
+  description: '',
+  phone: '',
+  wechat: '',
+  link: '',
+  qrcode_url: '',
+  service_hours: '',
+  ...(site.value.customer_service_config || {}),
+}))
+
+const hasServiceChannel = computed(() => Boolean(
+  serviceConfig.value.phone || serviceConfig.value.wechat || serviceConfig.value.link || serviceConfig.value.qrcode_url,
+))
+
+// 背景色：作为页面底色兜底
 const bgStyle = computed(() => {
   if (site.value.background_color) {
     return { background: site.value.background_color }
@@ -58,9 +130,42 @@ const bgStyle = computed(() => {
   return {}
 })
 
+// 自由布局按钮样式（尺寸/形状，null 时用默认样式）
+function freeBtnStyle(m: any): Record<string, string> {
+  const style: Record<string, string> = {
+    left: (m.position_x ?? 5) + '%',
+    top: (m.position_y ?? 10) + '%',
+  }
+  if (m.width != null) style.width = m.width + '%'
+  if (m.height != null) style.height = m.height + '%'
+  if (m.border_radius != null) style.borderRadius = m.border_radius + 'px'
+  if (m.bg_color) style.background = m.bg_color
+  if (m.font_color) style.color = m.font_color
+  return style
+}
+
+// 自由按钮布局类（图标位置 + 内容对齐）
+function freeBtnClass(m: any): string {
+  const cls: string[] = []
+  cls.push('icon-' + (m.icon_position || 'left'))
+  if (m.content_align) cls.push('align-' + m.content_align)
+  return cls.join(' ')
+}
+
 async function loadSite() {
   try {
     site.value = await api.get(`/p/sites/${code}`)
+    if (site.value.need_login) {
+      try {
+        await api.get(`/p/sites/${code}/session`)
+      } catch (err: any) {
+        if (err.response?.status === 401) {
+          router.replace(`/s/${code}/login`)
+          return
+        }
+        throw err
+      }
+    }
   } catch (err: any) {
     if (err.response?.status === 403) {
       showToast(err.response.data?.detail || '微站不可访问')
@@ -86,12 +191,38 @@ async function loadModules() {
   }
 }
 
+async function copyWechat() {
+  const value = serviceConfig.value.wechat
+  try {
+    await navigator.clipboard.writeText(value)
+    showToast('客服微信已复制')
+  } catch {
+    showToast(`客服微信：${value}`)
+  }
+}
+
+function callService() {
+  window.location.href = `tel:${serviceConfig.value.phone}`
+}
+
+function openServiceLink() {
+  const url = serviceConfig.value.link
+  if (!url) return
+  window.location.href = url
+}
+
 function handleClick(m: any) {
   // 上报点击
   api.post(`/p/sites/${code}/click`, { module_id: m.id }).catch(() => {})
 
   if (m.content_type === 'external_link' && m.external_url) {
     window.location.href = m.external_url
+  } else if (m.content_type === 'registration_form') {
+    router.push(`/s/${code}/form/${m.id}`)
+  } else if (m.content_type === 'schedule') {
+    router.push(`/s/${code}/schedule/${m.id}`)
+  } else if (m.content_type === 'qrcode') {
+    router.push(`/s/${code}/qrcode/${m.id}`)
   } else {
     router.push(`/s/${code}/module/${m.id}`)
   }
@@ -101,17 +232,121 @@ onMounted(loadSite)
 </script>
 
 <style scoped>
-.site-page { min-height: 100vh; overflow-x: hidden; }
+.site-page { min-height: 100vh; overflow-x: hidden; position: relative; }
+
+/* 背景图：宽度撑满、高度自适应，完整显示不被裁剪；下方由模板渐变/背景色兜底 */
+.bg-layer { position: relative; z-index: 0; line-height: 0; }
+.bg-image { width: 100%; display: block; }
 
 /* 模板背景 */
 .tpl-classic { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
 .tpl-dark { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
 .tpl-festive { background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); }
 
-.kv-area { width: 100%; }
+.kv-area { width: 100%; position: relative; z-index: 1; }
 .kv-image { width: 100%; display: block; }
 
-.content-area { padding: 16px; }
+.content-area { padding: 16px; position: relative; z-index: 1; }
+
+/* 自由拖拽布局 */
+.free-layout {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+}
+.free-btn {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  padding: 8px 14px;
+  gap: 6px;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  box-sizing: border-box;
+}
+.free-btn:active { transform: scale(0.96); }
+.free-btn .btn-icon,
+.free-btn .btn-icon-placeholder { flex-shrink: 0; }
+.free-btn .btn-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 内部内容容器 */
+.free-btn-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+.free-btn-inner .btn-icon,
+.free-btn-inner .btn-icon-placeholder { order: 0; flex-shrink: 0; }
+.free-btn-inner .btn-text { order: 1; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.free-btn-inner .arrow { order: 2; flex-shrink: 0; }
+
+/* 图标位置: 水平 */
+.free-btn-inner.icon-left { flex-direction: row; justify-content: flex-start; }
+.free-btn-inner.icon-right { flex-direction: row; }
+.free-btn-inner.icon-right .btn-icon,
+.free-btn-inner.icon-right .btn-icon-placeholder { order: 2; }
+.free-btn-inner.icon-right .btn-text { order: 0; }
+.free-btn-inner.icon-right .arrow { order: 1; }
+
+/* 图标位置: 垂直 */
+.free-btn-inner.icon-top,
+.free-btn-inner.icon-bottom {
+  flex-direction: column;
+  justify-content: center;
+}
+.free-btn-inner.icon-top .btn-icon,
+.free-btn-inner.icon-top .btn-icon-placeholder { order: 0; }
+.free-btn-inner.icon-top .btn-text { order: 1; flex: 0 0 auto; }
+.free-btn-inner.icon-bottom .btn-icon,
+.free-btn-inner.icon-bottom .btn-icon-placeholder { order: 1; }
+.free-btn-inner.icon-bottom .btn-text { order: 0; flex: 0 0 auto; }
+.free-btn-inner.icon-top .arrow,
+.free-btn-inner.icon-bottom .arrow {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* 内容水平对齐 */
+.free-btn-inner.align-left { justify-content: flex-start; }
+.free-btn-inner.align-center { justify-content: center; }
+.free-btn-inner.align-right { justify-content: flex-end; }
+.free-btn-inner.icon-top.align-left,
+.free-btn-inner.icon-bottom.align-left { align-items: flex-start; }
+.free-btn-inner.icon-top.align-center,
+.free-btn-inner.icon-bottom.align-center { align-items: center; }
+.free-btn-inner.icon-top.align-right,
+.free-btn-inner.icon-bottom.align-right { align-items: flex-end; }
+
+/* 固定高度时内容垂直居中 */
+.free-btn.has-height .free-btn-inner { height: 100%; }
+.btn-icon {
+  width: 28px; height: 28px; object-fit: cover; border-radius: 6px; flex-shrink: 0;
+}
+.btn-icon-placeholder {
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #667eea, #764ba2); color: #fff;
+  font-size: 13px; font-weight: bold; flex-shrink: 0;
+}
+.btn-text { font-size: 14px; color: #333; }
+.tpl-dark .btn-text { color: #fff; }
+.tpl-dark .free-btn { background: rgba(255, 255, 255, 0.1); }
+.tpl-festive .free-btn { border: 1px solid #ffd700; }
+.arrow { color: #ccc; font-size: 18px; }
 
 /* 九宫格 */
 .grid-layout {
@@ -148,7 +383,37 @@ onMounted(loadSite)
 .tpl-festive .button-item { background: rgba(255,255,255,0.95); border: 1px solid #ffd700; }
 .button-item:active { transform: scale(0.98); }
 .button-icon { width: 36px; height: 36px; object-fit: cover; border-radius: 8px; }
+.button-icon-placeholder {
+  width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #667eea, #764ba2); color: #fff;
+  font-size: 16px; font-weight: bold;
+}
 .button-text { flex: 1; margin-left: 12px; font-size: 15px; color: #333; }
 .tpl-dark .button-text { color: #fff; }
-.arrow { color: #ccc; font-size: 20px; }
+
+.service-float {
+  position: fixed;
+  right: 18px;
+  bottom: calc(22px + env(safe-area-inset-bottom));
+  z-index: 20;
+  display: flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #5b5bd6;
+}
+.service-float:active { transform: scale(0.9); }
+.service-icon { display: flex; width: 30px; height: 30px; }
+.service-icon svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tpl-dark .service-float { color: #5dCAA5; }
+.tpl-festive .service-float { color: #ffe4a3; }
+.service-panel { padding: 8px 0 24px; }
+.service-description { margin: 8px 24px; color: #323233; font-size: 14px; line-height: 1.6; }
+.service-hours { margin: 8px 24px 14px; color: #969799; font-size: 12px; }
+.service-empty { padding: 28px 0; color: #969799; text-align: center; font-size: 13px; }
 </style>

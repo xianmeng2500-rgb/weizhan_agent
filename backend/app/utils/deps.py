@@ -8,6 +8,14 @@ from app.models import User, SiteAccount
 
 security_scheme = HTTPBearer(auto_error=False)
 
+# 后台管理员角色
+ROLE_SUPER_ADMIN = "super_admin"
+ROLE_ADMIN = "admin"
+ROLE_SUB_ADMIN = "sub_admin"
+
+# 可管理后台账号的角色
+ACCOUNT_MANAGER_ROLES = {ROLE_SUPER_ADMIN, ROLE_ADMIN}
+
 
 def get_current_admin(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
@@ -35,7 +43,50 @@ def get_current_admin(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="用户不存在",
         )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="账号已被禁用",
+        )
     return user
+
+
+def is_super_admin(user: User) -> bool:
+    return user.role == ROLE_SUPER_ADMIN
+
+
+def can_manage_accounts(current: User) -> bool:
+    """当前用户是否能进入后台账号管理"""
+    return current.role in ACCOUNT_MANAGER_ROLES
+
+
+def can_manage_target_role(current: User, target_role: str) -> bool:
+    """判断 current 是否有权管理 target_role 的账号
+
+    - 超级管理员: 可管理所有角色
+    - 管理员: 只能管理子账号(sub_admin)
+    - 子账号: 无权管理任何人
+    """
+    if current.role == ROLE_SUPER_ADMIN:
+        return True
+    if current.role == ROLE_ADMIN:
+        return target_role == ROLE_SUB_ADMIN
+    return False
+
+
+def assert_site_access(site, current: User):
+    """校验当前用户是否有权访问该微站
+
+    - 超级管理员: 可访问所有微站
+    - 管理员/子账号: 仅能访问自己创建的微站(created_by == current.id)
+    """
+    if current.role == ROLE_SUPER_ADMIN:
+        return
+    if site.created_by is None or site.created_by != current.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="无权访问该微站",
+        )
 
 
 def get_optional_frontend_account(

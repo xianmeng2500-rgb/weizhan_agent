@@ -1,6 +1,6 @@
 """登录账号与权限模型"""
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, UniqueConstraint
+from datetime import datetime, timezone
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -18,13 +18,15 @@ class SiteAccount(Base):
     password_hash = Column(String(255), nullable=False, comment="密码哈希")
     nickname = Column(String(64), nullable=True, comment="昵称")
     phone = Column(String(20), nullable=True, comment="手机号")
+    custom_fields = Column(Text, nullable=True, comment="自定义字段JSON")
     is_active = Column(Boolean, default=True, nullable=False, comment="是否启用")
-    created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="更新时间")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), comment="创建时间")
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), comment="更新时间")
 
     # 关系
     site = relationship("Site", back_populates="accounts")
     permissions = relationship("AccountModulePermission", back_populates="account", cascade="all, delete-orphan")
+    form_submissions = relationship("FormSubmission", back_populates="account")
 
 
 class AccountModulePermission(Base):

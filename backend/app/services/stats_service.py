@@ -2,8 +2,9 @@
 from datetime import date, datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import func, distinct
-from app.models import AccessLog, ModuleClickLog, SiteAccount, Module
-from app.schemas.stats import StatsOverview, ModuleStatItem, TrendItem, StatsTrend
+from app.models import AccessLog, ModuleClickLog, SiteAccount, Module, Site
+from app.schemas.stats import StatsOverview, ModuleStatItem, TrendItem, StatsTrend, DashboardOverview
+from app.utils.deps import ROLE_SUPER_ADMIN
 
 
 def get_overview(db: Session, site_id: int) -> StatsOverview:
@@ -78,3 +79,48 @@ def get_trend(db: Session, site_id: int, days: int = 30) -> StatsTrend:
         items.append(TrendItem(date=d, pv=pv, uv=uv))
 
     return StatsTrend(items=items)
+
+
+def get_dashboard_overview(db: Session, current) -> DashboardOverview:
+    """获取工作台首页全局统计（跨所有微站聚合）
+
+    - 超级管理员: 统计所有微站
+    - 管理员/子账号: 仅统计自己创建的微站
+    """
+    site_filter = None
+    if current.role != ROLE_SUPER_ADMIN:
+        site_filter = Site.created_by == current.id
+
+    total_sites_q = db.query(func.count(Site.id))
+    online_sites_q = db.query(func.count(Site.id)).filter(Site.status == "online")
+    if site_filter is not None:
+        total_sites_q = total_sites_q.filter(site_filter)
+        online_sites_q = online_sites_q.filter(site_filter)
+
+    total_sites = total_sites_q.scalar() or 0
+    online_sites = online_sites_q.scalar() or 0
+
+    if site_filter is not None:
+        site_ids = [s.id for s in db.query(Site.id).filter(site_filter).all()]
+        if not site_ids:
+            return DashboardOverview(
+                total_sites=total_sites, online_sites=online_sites,
+                total_pv=0, total_uv=0,
+            )
+        total_pv = (
+            db.query(func.count(AccessLog.id)).filter(AccessLog.site_id.in_(site_ids)).scalar() or 0
+        )
+        total_uv = (
+            db.query(func.count(distinct(AccessLog.ip)))
+            .filter(AccessLog.site_id.in_(site_ids)).scalar() or 0
+        )
+    else:
+        total_pv = db.query(func.count(AccessLog.id)).scalar() or 0
+        total_uv = db.query(func.count(distinct(AccessLog.ip))).scalar() or 0
+
+    return DashboardOverview(
+        total_sites=total_sites,
+        online_sites=online_sites,
+        total_pv=total_pv,
+        total_uv=total_uv,
+    )

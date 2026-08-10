@@ -12,6 +12,14 @@ class StatsOverview(BaseModel):
     module_count: int = 0
 
 
+class DashboardOverview(BaseModel):
+    """工作台首页全局统计"""
+    total_sites: int = 0
+    online_sites: int = 0
+    total_pv: int = 0
+    total_uv: int = 0
+
+
 class ModuleStatItem(BaseModel):
     module_id: int
     title: str

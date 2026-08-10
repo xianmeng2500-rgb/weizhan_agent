@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     # JWT配置
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 1440  # 后台: 24小时
-    JWT_FRONTEND_EXPIRE_MINUTES: int = 10080  # 前端: 7天
+    JWT_FRONTEND_EXPIRE_MINUTES: int = 720  # 前端微站: 12小时
 
     # 阿里云OSS配置
     OSS_ACCESS_KEY_ID: str = ""

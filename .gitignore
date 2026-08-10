@@ -27,10 +27,17 @@ Thumbs.db
 *.swo
 
 # Build
+.vite/
 admin-frontend/dist/
-admin-frontend/build/
+admin-frontend/dist_old_*/
 h5-frontend/dist/
+h5-frontend/dist_old_*/
+admin-frontend/build/
 h5-frontend/build/
+*.ts.timestamp-*.mjs
+
+# Backup files
+*.bak
 
 # Logs
 *.log
