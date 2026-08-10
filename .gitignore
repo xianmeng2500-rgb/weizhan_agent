@@ -7,7 +7,6 @@ backend/__pycache__/
 backend/**/__pycache__/
 *.py[cod]
 *.egg-info/
-dist/
 .venv/
 venv/
 
@@ -28,9 +27,7 @@ Thumbs.db
 
 # Build
 .vite/
-admin-frontend/dist/
 admin-frontend/dist_old_*/
-h5-frontend/dist/
 h5-frontend/dist_old_*/
 admin-frontend/build/
 h5-frontend/build/
