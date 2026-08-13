@@ -21,6 +21,7 @@ class FrontendLoginRequest(BaseModel):
     password: str | None = None  # 无密码模式下可不传
     login_field: str | None = None  # 使用哪个登录字段标识 (如 "username", "phone", "custom_xxx")
     custom_fields: dict[str, str] | None = None  # 自定义字段值
+    login_fields: dict[str, str] | None = None  # 所有配置的登录字段值 {key: value}，用于多字段匹配
 
 
 class UserInfo(BaseModel):

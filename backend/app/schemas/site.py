@@ -18,6 +18,8 @@ class SiteBase(BaseModel):
     share_subtitle: Optional[str] = Field(None, max_length=255)
     customer_service_config: Optional[dict[str, Any]] = None
     login_fields_config: Optional[list[dict[str, Any]]] = None
+    login_form_config: Optional[dict[str, Any]] = None
+    grid_offset_y: Optional[float] = 0.0
     need_login: bool = False
     login_require_password: bool = True
     need_checkin: bool = False
@@ -54,6 +56,8 @@ class SiteUpdate(BaseModel):
     share_subtitle: Optional[str] = Field(None, max_length=255)
     customer_service_config: Optional[dict[str, Any]] = None
     login_fields_config: Optional[list[dict[str, Any]]] = None
+    login_form_config: Optional[dict[str, Any]] = None
+    grid_offset_y: Optional[float] = None
     need_login: Optional[bool] = None
     login_require_password: Optional[bool] = None
     need_checkin: Optional[bool] = None
@@ -80,6 +84,8 @@ class SiteOut(BaseModel):
     share_subtitle: Optional[str] = None
     customer_service_config: Optional[dict[str, Any]] = None
     login_fields_config: Optional[list[dict[str, Any]]] = None
+    login_form_config: Optional[dict[str, Any]] = None
+    grid_offset_y: Optional[float] = None
     need_login: bool
     login_require_password: bool = True
     need_checkin: bool = False

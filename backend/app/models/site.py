@@ -1,6 +1,6 @@
 """微站项目模型"""
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -22,6 +22,8 @@ class Site(Base):
     share_subtitle = Column(String(255), nullable=True, comment="微信分享副标题")
     customer_service_config = Column(Text, nullable=True, comment="客服配置JSON")
     login_fields_config = Column(Text, nullable=True, comment="登录字段配置JSON")
+    login_form_config = Column(Text, nullable=True, comment="登录表单配置JSON(位置等)")
+    grid_offset_y = Column(Float, nullable=True, default=0.0, comment="九宫格布局垂直偏移百分比(0-100)")
     need_login = Column(Boolean, default=False, nullable=False, comment="是否需要登录")
     login_require_password = Column(Boolean, default=True, nullable=False, comment="登录是否需要密码")
     need_checkin = Column(Boolean, default=False, nullable=False, comment="是否需要签到系统")

@@ -2,7 +2,6 @@
   <div class="login-page">
     <div class="login-left">
       <div class="brand">
-        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E" class="brand-icon" />
         <h1>微站管理后台</h1>
         <p>一站式微站搭建与管理平台</p>
       </div>
@@ -100,12 +99,6 @@ async function handleLogin() {
   color: #fff;
   z-index: 1;
   padding: 40px;
-}
-.brand-icon {
-  width: 64px;
-  height: 64px;
-  margin-bottom: 24px;
-  opacity: 0.9;
 }
 .brand h1 {
   font-size: 32px;

@@ -15,8 +15,15 @@ request.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response
       if (status === 401) {
-        // 需要登录 - 跳转登录页
+        // 已在登录页或登录接口返回 401，不跳转，由调用方处理
         const path = window.location.pathname
+        const isLoginPage = path.includes('/login')
+        const isLoginApi = (error.config?.url || '').includes('/login')
+        if (isLoginPage || isLoginApi) {
+          showToast(data?.detail || '登录失败')
+          return Promise.reject(error)
+        }
+        // 需要登录 - 跳转登录页
         const code = path.match(/\/s\/([^/]+)/)?.[1] || ''
         if (code) {
           localStorage.removeItem('h5_token')

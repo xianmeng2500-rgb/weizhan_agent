@@ -1,5 +1,5 @@
 <template>
-  <div class="login-page" :class="'tpl-' + (site.template || 'classic')" :style="pageStyle">
+  <div class="login-page" :class="['tpl-' + (site.template || 'classic'), 'pos-' + loginFormPosition]" :style="pageStyle">
     <!-- KV 区域 -->
     <div class="kv-area" v-if="site.kv_image">
       <img :src="site.kv_image" class="kv-image" />
@@ -8,7 +8,6 @@
     <!-- 登录卡片 -->
     <div class="login-card" :class="{ 'has-kv': !!site.kv_image }">
       <div class="brand" v-if="!site.kv_image">
-        <div class="brand-logo" v-if="!site.kv_image">{{ (site.name || '微站').charAt(0) }}</div>
         <h1 class="brand-title">{{ site.name || '欢迎登录' }}</h1>
         <p class="brand-sub">请登录后继续访问</p>
       </div>
@@ -76,6 +75,7 @@ const site = ref<any>({
   background_image: '',
   background_color: '',
 })
+const loginFormPosition = ref('center')
 
 const pageStyle = computed(() => {
   const s = site.value
@@ -99,6 +99,7 @@ async function loadSite() {
     site.value = res
     requirePassword.value = res.login_require_password !== false
     loginFields.value = res.login_fields_config || [{ key: 'username', display_name: '账号', type: 'text' }]
+    loginFormPosition.value = (res.login_form_config && res.login_form_config.position) || 'center'
     // 初始化输入数组
     loginInputs.length = 0
     loginFields.value.forEach(() => loginInputs.push(''))
@@ -112,10 +113,12 @@ async function loadSite() {
 }
 
 async function handleLogin() {
-  // 检查至少填写了一个登录字段
-  const hasValue = loginInputs.some((v) => v && v.trim())
-  if (!hasValue) {
-    showFailToast('请至少填写一个登录字段')
+  // 所有配置的登录字段都必须填写
+  const allFilled = loginFields.value.every((_: any, idx: number) => {
+    return loginInputs[idx] && loginInputs[idx].trim()
+  })
+  if (!allFilled) {
+    showFailToast('请填写所有登录信息')
     return
   }
   if (requirePassword.value && !form.password) {
@@ -127,38 +130,28 @@ async function handleLogin() {
   try {
     const reqData: any = {}
     if (requirePassword.value) reqData.password = form.password
-    const customFields: Record<string, string> = {}
 
-    // 遍历所有配置的登录字段，收集用户输入
+    // 将所有配置的登录字段值打包为 login_fields 字典发送
+    const loginFieldValues: Record<string, string> = {}
     loginFields.value.forEach((field: any, idx: number) => {
       const val = (loginInputs[idx] || '').trim()
-      if (!val) return
-
-      if (field.key === 'username') {
-        reqData.username = val
-      } else if (field.key === 'phone') {
-        // 如果后端没有 username，用 phone 作为主标识
-        if (!reqData.username) reqData.username = val
-        reqData.login_field = reqData.login_field || 'phone'
-      } else {
-        // 自定义字段
-        if (!reqData.username) reqData.username = val
-        reqData.login_field = reqData.login_field || 'custom'
-        customFields[field.custom_key || field.key] = val
-      }
+      loginFieldValues[field.key] = val
     })
-
-    if (Object.keys(customFields).length) {
-      reqData.custom_fields = customFields
-    }
+    reqData.login_fields = loginFieldValues
+    // 兼容性：保留 username，防止旧后端
+    reqData.username = Object.values(loginFieldValues)[0] || ''
 
     const res: any = await api.post(`/p/sites/${code}/login`, reqData)
     localStorage.setItem('h5_token', res.access_token)
     localStorage.setItem('h5_nickname', res.nickname)
-    showSuccessToast('登录成功')
-    router.replace(`/s/${code}`)
-  } catch {
-    // 错误已在拦截器处理
+    showSuccessToast({ message: '登录成功', duration: 1000 })
+    setTimeout(() => router.replace(`/s/${code}`), 1600)
+  } catch (err: any) {
+    // 登录失败提示：拦截器会处理 401，这里兜底处理其他异常
+    if (err.response?.data?.detail && err.response?.status !== 401) {
+      showFailToast(err.response.data.detail)
+    }
+    form.password = ''
   } finally {
     loading.value = false
   }
@@ -173,9 +166,11 @@ onMounted(loadSite)
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 20px 40px;
+  /* 顶部安全区：内容从刘海/状态栏下方开始，与后台预览保持一致 */
+  padding: env(safe-area-inset-top) 20px 40px;
   position: relative;
   overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 /* 模板背景 */
@@ -210,14 +205,6 @@ onMounted(loadSite)
 
 .brand { text-align: center; margin-bottom: 22px; }
 .brand.compact { margin-bottom: 18px; }
-.brand-logo {
-  width: 64px; height: 64px; margin: 0 auto 12px;
-  border-radius: 18px;
-  display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: #fff; font-size: 28px; font-weight: bold;
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.45);
-}
 .brand-title { font-size: 22px; font-weight: 700; color: #1f2330; letter-spacing: 1px; }
 .brand-sub { margin-top: 6px; font-size: 13px; color: #8a8f9c; }
 
@@ -244,4 +231,10 @@ onMounted(loadSite)
 .login-btn:active { opacity: 0.9; }
 
 .footer-tip { margin-top: 14px; text-align: center; font-size: 12px; color: #b0b4be; }
+
+/* 表单位置 */
+.pos-top { justify-content: flex-start; }
+.pos-top .login-card { margin-top: 12px; }
+.pos-center { justify-content: center; }
+.pos-bottom { justify-content: flex-end; padding-bottom: 24px; }
 </style>

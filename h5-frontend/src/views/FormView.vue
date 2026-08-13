@@ -270,19 +270,19 @@
     </div>
 
     <!-- 选择器弹窗 -->
-    <van-popup v-model:show="showPicker" position="bottom" round>
+    <van-popup v-model:show="showPicker" position="bottom" round teleport="body">
       <van-picker :columns="currentOptions" @confirm="onPickerConfirm" @cancel="showPicker = false" />
     </van-popup>
-    <van-popup v-model:show="showDatePicker" position="bottom" round>
+    <van-popup v-model:show="showDatePicker" position="bottom" round teleport="body">
       <van-date-picker title="选择日期" @confirm="onDateConfirm" @cancel="showDatePicker = false" />
     </van-popup>
-    <van-popup v-model:show="showTimePicker" position="bottom" round>
+    <van-popup v-model:show="showTimePicker" position="bottom" round teleport="body">
       <van-time-picker title="选择时间" @confirm="onTimeConfirm" @cancel="showTimePicker = false" />
     </van-popup>
-    <van-popup v-model:show="showAreaPicker" position="bottom" round>
+    <van-popup v-model:show="showAreaPicker" position="bottom" round teleport="body">
       <van-area title="选择地区" :area-list="areaList" @confirm="onAreaConfirm" @cancel="showAreaPicker = false" />
     </van-popup>
-    <van-popup v-model:show="showTransportPicker" position="bottom" round>
+    <van-popup v-model:show="showTransportPicker" position="bottom" round teleport="body">
       <van-picker title="选择交通方式" :columns="currentTransportOptions"
         @confirm="onTransportPickerConfirm" @cancel="showTransportPicker = false" />
     </van-popup>

@@ -37,6 +37,16 @@ def _login_fields_config(site: Site) -> list[dict]:
         return [{"key": "username", "display_name": "账号", "type": "text"}]
 
 
+def _login_form_config(site: Site) -> dict:
+    """将数据库中的登录表单配置 JSON 安全转换为字典。"""
+    if not site.login_form_config:
+        return {"position": "center"}
+    try:
+        return json.loads(site.login_form_config)
+    except (TypeError, json.JSONDecodeError):
+        return {"position": "center"}
+
+
 def _to_out(site: Site, db: Session) -> SiteOut:
     """转换模型为输出Schema(带统计)"""
     return SiteOut(
@@ -53,6 +63,8 @@ def _to_out(site: Site, db: Session) -> SiteOut:
         share_subtitle=site.share_subtitle,
         customer_service_config=_service_config(site),
         login_fields_config=_login_fields_config(site),
+        login_form_config=_login_form_config(site),
+        grid_offset_y=site.grid_offset_y,
         need_login=site.need_login,
         login_require_password=site.login_require_password,
         need_checkin=site.need_checkin,
@@ -115,6 +127,7 @@ def create_site(
         share_subtitle=req.share_subtitle,
         customer_service_config=json.dumps(req.customer_service_config, ensure_ascii=False) if req.customer_service_config else None,
         login_fields_config=json.dumps(req.login_fields_config, ensure_ascii=False) if req.login_fields_config else None,
+        login_form_config=json.dumps(req.login_form_config, ensure_ascii=False) if req.login_form_config else None,
         need_login=req.need_login,
         login_require_password=req.login_require_password,
         start_time=req.start_time,
@@ -168,6 +181,8 @@ def update_site(
         if field == "customer_service_config":
             value = json.dumps(value, ensure_ascii=False) if value else None
         elif field == "login_fields_config":
+            value = json.dumps(value, ensure_ascii=False) if value else None
+        elif field == "login_form_config":
             value = json.dumps(value, ensure_ascii=False) if value else None
         setattr(site, field, value)
     try:

@@ -1,13 +1,13 @@
 <template>
-  <div class="site-page" :class="'tpl-' + site.template" :style="bgStyle">
-    <!-- 背景图：宽度撑满、高度自适应，完整显示不被裁剪 -->
+  <div class="site-page" :class="'tpl-' + (site.template || 'classic')" :style="pageStyle">
+    <!-- 背景图：铺满页面作为底层装饰（与后台预览一致：absolute + object-fit cover） -->
     <div v-if="site.background_image" class="bg-layer">
       <img :src="site.background_image" class="bg-image" alt="" />
     </div>
 
     <!-- KV 区域 -->
     <div class="kv-area" v-if="site.kv_image">
-      <img :src="site.kv_image" class="kv-image" mode="widthFix" />
+      <img :src="site.kv_image" class="kv-image" />
     </div>
 
     <!-- 自由拖拽布局 -->
@@ -22,15 +22,15 @@
       >
         <div class="free-btn-inner" :class="freeBtnClass(m)">
           <img v-if="m.icon" :src="m.icon" class="btn-icon" />
-          <div v-else class="btn-icon-placeholder">{{ m.title.charAt(0) }}</div>
+          <div v-else class="btn-icon-placeholder">{{ (m.title || '?').charAt(0) }}</div>
           <span class="btn-text">{{ m.title }}</span>
-          <span v-if="m.show_arrow !== false" class="arrow">›</span>
+          <span v-if="m.show_arrow !== false" class="btn-arrow">›</span>
         </div>
       </div>
     </div>
 
     <!-- 九宫格 -->
-    <div v-else-if="site.layout === 'grid'" class="content-area">
+    <div v-else-if="site.layout === 'grid'" class="content-area" :style="{ paddingTop: (site.grid_offset_y || 0) + '%' }">
       <div class="grid-layout">
         <div
           v-for="m in modules"
@@ -39,14 +39,14 @@
           @click="handleClick(m)"
         >
           <img v-if="m.icon" :src="m.icon" class="grid-icon" />
-          <div v-else class="grid-icon-placeholder">{{ m.title.charAt(0) }}</div>
+          <div v-else class="grid-icon-placeholder">{{ (m.title || '?').charAt(0) }}</div>
           <div class="grid-title">{{ m.title }}</div>
         </div>
       </div>
     </div>
 
-    <!-- 按钮布局 -->
-    <div v-else class="content-area">
+    <!-- 按钮列表布局 -->
+    <div v-else class="content-area" :style="{ paddingTop: (site.grid_offset_y || 0) + '%' }">
       <div class="button-layout">
         <div
           v-for="m in modules"
@@ -54,10 +54,10 @@
           class="button-item"
           @click="handleClick(m)"
         >
-          <img v-if="m.icon" :src="m.icon" class="button-icon" />
-          <div v-else class="button-icon-placeholder">{{ m.title.charAt(0) }}</div>
-          <span class="button-text">{{ m.title }}</span>
-          <span class="arrow">›</span>
+          <img v-if="m.icon" :src="m.icon" class="btn-icon" />
+          <div v-else class="btn-icon-placeholder">{{ (m.title || '?').charAt(0) }}</div>
+          <span class="btn-text">{{ m.title }}</span>
+          <span class="btn-arrow">›</span>
         </div>
       </div>
     </div>
@@ -74,7 +74,7 @@
       </span>
     </button>
 
-    <van-action-sheet v-model:show="showServicePanel" title="活动咨询" round>
+    <van-action-sheet v-model:show="showServicePanel" title="活动咨询" round teleport="body">
       <div class="service-panel">
         <p v-if="serviceConfig.description" class="service-description">{{ serviceConfig.description }}</p>
         <p v-if="serviceConfig.service_hours" class="service-hours">服务时间：{{ serviceConfig.service_hours }}</p>
@@ -88,7 +88,7 @@
       </div>
     </van-action-sheet>
 
-    <van-image-preview v-model:show="showServiceQr" :images="serviceConfig.qrcode_url ? [serviceConfig.qrcode_url] : []" closeable />
+    <van-image-preview v-model:show="showServiceQr" :images="serviceConfig.qrcode_url ? [serviceConfig.qrcode_url] : []" closeable teleport="body" />
   </div>
 </template>
 
@@ -122,29 +122,37 @@ const hasServiceChannel = computed(() => Boolean(
   serviceConfig.value.phone || serviceConfig.value.wechat || serviceConfig.value.link || serviceConfig.value.qrcode_url,
 ))
 
-// 背景色：作为页面底色兜底
-const bgStyle = computed(() => {
+// 后台预览参考尺寸（device-screen = 300x585）
+const ADMIN_W = 300
+const ADMIN_H = 585
+
+// 页面背景色（仅当显式设置了 background_color 时覆盖模板渐变，与后台 previewBgStyle 一致）
+const pageStyle = computed(() => {
   if (site.value.background_color) {
     return { background: site.value.background_color }
   }
   return {}
 })
 
-// 自由布局按钮样式（尺寸/形状，null 时用默认样式）
+// 自由布局按钮样式 —— 基于后台预览参考尺寸缩放到实际屏幕
 function freeBtnStyle(m: any): Record<string, string> {
+  const screenW = window.innerWidth || ADMIN_W
+  const screenH = window.innerHeight || ADMIN_H
+  const sx = ADMIN_W / screenW
+  const sy = ADMIN_H / screenH
+
   const style: Record<string, string> = {
-    left: (m.position_x ?? 5) + '%',
-    top: (m.position_y ?? 10) + '%',
+    left: ((m.position_x ?? 5) * sx).toFixed(3) + '%',
+    top: ((m.position_y ?? 10) * sy).toFixed(3) + '%',
   }
-  if (m.width != null) style.width = m.width + '%'
-  if (m.height != null) style.height = m.height + '%'
+  if (m.width != null) style.width = (m.width * sx).toFixed(3) + '%'
+  if (m.height != null) style.height = (m.height * sy).toFixed(3) + '%'
   if (m.border_radius != null) style.borderRadius = m.border_radius + 'px'
   if (m.bg_color) style.background = m.bg_color
   if (m.font_color) style.color = m.font_color
   return style
 }
 
-// 自由按钮布局类（图标位置 + 内容对齐）
 function freeBtnClass(m: any): string {
   const cls: string[] = []
   cls.push('icon-' + (m.icon_position || 'left'))
@@ -174,17 +182,53 @@ async function loadSite() {
     }
     return
   }
-  // 上报访问
   api.post(`/p/sites/${code}/access`, {}).catch(() => {})
-  // 加载模块
   await loadModules()
+  setupWeChatShare()
+}
+
+async function setupWeChatShare() {
+  const wx = (window as any).wx
+  if (!wx) return
+  try {
+    const sign: any = await api.get(`/p/sites/${code}/wechat-signature`, {
+      params: { url: window.location.href.split('#')[0] },
+    })
+    if (!sign.enabled) return
+    wx.config({
+      debug: false,
+      appId: sign.app_id,
+      timestamp: sign.timestamp,
+      nonceStr: sign.nonce_str,
+      signature: sign.signature,
+      jsApiList: ['updateAppMessageShareData', 'updateTimelineShareData'],
+    })
+    const shareData = {
+      title: site.value.share_title || site.value.name || '微站',
+      desc: site.value.share_subtitle || '',
+      link: window.location.href.split('#')[0],
+      imgUrl: site.value.share_image || site.value.kv_image || '',
+    }
+    wx.ready(() => {
+      wx.updateAppMessageShareData(shareData, () => {})
+      wx.updateTimelineShareData({
+        title: shareData.title,
+        link: shareData.link,
+        imgUrl: shareData.imgUrl,
+      }, () => {})
+    })
+    wx.error((res: any) => {
+      console.warn('[wx-share]', res?.errMsg)
+    })
+  } catch {
+    // 签名失败静默处理
+  }
 }
 
 async function loadModules() {
   try {
     modules.value = await api.get(`/p/sites/${code}/modules`)
   } catch (err: any) {
-    // 401 表示需要登录
     if (err.response?.status === 401 && err.response?.data?.detail === '请先登录') {
       router.push(`/s/${code}/login`)
     }
@@ -212,7 +256,6 @@ function openServiceLink() {
 }
 
 function handleClick(m: any) {
-  // 上报点击
   api.post(`/p/sites/${code}/click`, { module_id: m.id }).catch(() => {})
 
   if (m.content_type === 'external_link' && m.external_url) {
@@ -232,30 +275,64 @@ onMounted(loadSite)
 </script>
 
 <style scoped>
-.site-page { min-height: 100vh; overflow-x: hidden; position: relative; }
+/* ====== 页面容器 ====== */
+.site-page {
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  box-sizing: border-box;
+  /* 顶部安全区：内容从刘海/状态栏下方开始，与后台预览保持一致 */
+  padding-top: env(safe-area-inset-top);
+}
 
-/* 背景图：宽度撑满、高度自适应，完整显示不被裁剪；下方由模板渐变/背景色兜底 */
-.bg-layer { position: relative; z-index: 0; line-height: 0; }
-.bg-image { width: 100%; display: block; }
-
-/* 模板背景 */
+/* ====== 模板渐变 ====== */
 .tpl-classic { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-.tpl-dark { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
+.tpl-dark    { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
 .tpl-festive { background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); }
 
-.kv-area { width: 100%; position: relative; z-index: 1; }
-.kv-image { width: 100%; display: block; }
+/* ====== 背景图：铺满屏幕内容区域，不包含刘海/状态栏顶部安全区 ====== */
+.bg-layer {
+  position: fixed;
+  top: env(safe-area-inset-top); left: 0;
+  width: 100vw;
+  height: calc(100vh - env(safe-area-inset-top));
+  z-index: 0;
+  overflow: hidden;
+  line-height: 0;
+}
+.bg-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
 
-.content-area { padding: 16px; position: relative; z-index: 1; }
+/* ====== KV 区域 ====== */
+.kv-area {
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+.kv-image {
+  width: 100%;
+  display: block;
+}
 
-/* 自由拖拽布局 */
+/* ====== 内容区域（九宫格 / 按钮列表） ====== */
+.content-area {
+  padding: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ====== 自由布局 ====== */
 .free-layout {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
   z-index: 2;
+  pointer-events: none;
 }
 .free-btn {
   position: absolute;
@@ -267,18 +344,11 @@ onMounted(loadSite)
   background: rgba(255, 255, 255, 0.95);
   border-radius: 10px;
   cursor: pointer;
-  transition: transform 0.2s;
   box-sizing: border-box;
+  pointer-events: auto;
 }
 .free-btn:active { transform: scale(0.96); }
-.free-btn .btn-icon,
-.free-btn .btn-icon-placeholder { flex-shrink: 0; }
-.free-btn .btn-text {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+
 /* 内部内容容器 */
 .free-btn-inner {
   display: flex;
@@ -289,8 +359,8 @@ onMounted(loadSite)
 }
 .free-btn-inner .btn-icon,
 .free-btn-inner .btn-icon-placeholder { order: 0; flex-shrink: 0; }
-.free-btn-inner .btn-text { order: 1; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.free-btn-inner .arrow { order: 2; flex-shrink: 0; }
+.free-btn-inner .btn-text { order: 1; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.free-btn-inner .btn-arrow { order: 2; flex-shrink: 0; }
 
 /* 图标位置: 水平 */
 .free-btn-inner.icon-left { flex-direction: row; justify-content: flex-start; }
@@ -298,7 +368,7 @@ onMounted(loadSite)
 .free-btn-inner.icon-right .btn-icon,
 .free-btn-inner.icon-right .btn-icon-placeholder { order: 2; }
 .free-btn-inner.icon-right .btn-text { order: 0; }
-.free-btn-inner.icon-right .arrow { order: 1; }
+.free-btn-inner.icon-right .btn-arrow { order: 1; }
 
 /* 图标位置: 垂直 */
 .free-btn-inner.icon-top,
@@ -312,8 +382,8 @@ onMounted(loadSite)
 .free-btn-inner.icon-bottom .btn-icon,
 .free-btn-inner.icon-bottom .btn-icon-placeholder { order: 1; }
 .free-btn-inner.icon-bottom .btn-text { order: 0; flex: 0 0 auto; }
-.free-btn-inner.icon-top .arrow,
-.free-btn-inner.icon-bottom .arrow {
+.free-btn-inner.icon-top .btn-arrow,
+.free-btn-inner.icon-bottom .btn-arrow {
   position: absolute;
   right: 10px;
   top: 50%;
@@ -333,65 +403,115 @@ onMounted(loadSite)
 
 /* 固定高度时内容垂直居中 */
 .free-btn.has-height .free-btn-inner { height: 100%; }
+
+/* ====== 按钮图标（自由布局用） ====== */
 .btn-icon {
-  width: 28px; height: 28px; object-fit: cover; border-radius: 6px; flex-shrink: 0;
+  width: 36px; height: 36px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
 }
 .btn-icon-placeholder {
-  width: 28px; height: 28px; border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #667eea, #764ba2); color: #fff;
-  font-size: 13px; font-weight: bold; flex-shrink: 0;
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  flex-shrink: 0;
 }
-.btn-text { font-size: 14px; color: #333; }
-.tpl-dark .btn-text { color: #fff; }
-.tpl-dark .free-btn { background: rgba(255, 255, 255, 0.1); }
-.tpl-festive .free-btn { border: 1px solid #ffd700; }
-.arrow { color: #ccc; font-size: 18px; }
+.btn-text {
+  font-size: 14px;
+  color: #333;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.btn-arrow {
+  color: #ccc;
+  font-size: 18px;
+  flex-shrink: 0;
+}
 
-/* 九宫格 */
+/* ====== 按钮列表 ====== */
+.button-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.button-item {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.button-item:active { transform: scale(0.98); }
+
+/* ====== 九宫格 ====== */
 .grid-layout {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 .grid-item {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 16px 8px; border-radius: 12px; cursor: pointer;
-  background: rgba(255,255,255,0.95); transition: transform 0.2s;
-}
-.tpl-dark .grid-item { background: rgba(255,255,255,0.1); }
-.tpl-festive .grid-item { background: rgba(255,255,255,0.95); border: 2px solid #ffd700; }
-.grid-item:active { transform: scale(0.96); }
-.grid-icon { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; }
-.grid-icon-placeholder {
-  width: 48px; height: 48px; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #667eea, #764ba2); color: #fff;
-  font-size: 20px; font-weight: bold;
-}
-.grid-title { margin-top: 8px; font-size: 12px; text-align: center; color: #333; }
-.tpl-dark .grid-title { color: #fff; }
-
-/* 按钮布局 */
-.button-layout { display: flex; flex-direction: column; gap: 10px; }
-.button-item {
-  display: flex; align-items: center; padding: 14px 16px;
-  background: rgba(255,255,255,0.95); border-radius: 10px; cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 8px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  cursor: pointer;
   transition: transform 0.2s;
 }
-.tpl-dark .button-item { background: rgba(255,255,255,0.1); }
-.tpl-festive .button-item { background: rgba(255,255,255,0.95); border: 1px solid #ffd700; }
-.button-item:active { transform: scale(0.98); }
-.button-icon { width: 36px; height: 36px; object-fit: cover; border-radius: 8px; }
-.button-icon-placeholder {
-  width: 36px; height: 36px; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #667eea, #764ba2); color: #fff;
-  font-size: 16px; font-weight: bold;
+.grid-item:active { transform: scale(0.96); }
+.grid-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 8px;
 }
-.button-text { flex: 1; margin-left: 12px; font-size: 15px; color: #333; }
-.tpl-dark .button-text { color: #fff; }
+.grid-icon-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  font-size: 20px;
+  font-weight: bold;
+}
+.grid-title {
+  margin-top: 8px;
+  font-size: 12px;
+  text-align: center;
+  color: #333;
+}
 
+/* ====== 暗色模板 ====== */
+.tpl-dark .btn-text { color: #fff; }
+.tpl-dark .grid-title { color: #fff; }
+.tpl-dark .free-btn { background: rgba(255, 255, 255, 0.1); }
+.tpl-dark .grid-item { background: rgba(255, 255, 255, 0.1); }
+.tpl-dark .button-item { background: rgba(255, 255, 255, 0.1); }
+
+/* ====== 节日模板 ====== */
+.tpl-festive .free-btn { border: 1px solid #ffd700; }
+.tpl-festive .grid-item { background: rgba(255, 255, 255, 0.95); border: 2px solid #ffd700; }
+.tpl-festive .button-item { background: rgba(255, 255, 255, 0.95); border: 1px solid #ffd700; }
+
+/* ====== 客服悬浮按钮 ====== */
 .service-float {
   position: fixed;
   right: 18px;

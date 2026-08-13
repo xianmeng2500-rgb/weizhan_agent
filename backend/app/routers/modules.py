@@ -7,6 +7,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, Module, Site
+from app.models.stats import ModuleClickLog
 from app.utils.deps import get_current_admin, assert_site_access
 from app.schemas.module import (
     ModuleCreate, ModuleUpdate, ModuleOut,
@@ -253,6 +254,8 @@ def delete_module(
     if not module:
         raise HTTPException(status_code=404, detail="模块不存在")
     try:
+        # 先删除关联的点击日志
+        db.query(ModuleClickLog).filter(ModuleClickLog.module_id == module_id).delete()
         db.delete(module)
         db.commit()
     except Exception as e:

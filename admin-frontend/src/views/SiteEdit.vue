@@ -308,6 +308,13 @@
                         <div class="hint" style="margin-top: 6px">选择一种或多种登录方式，用户可用任一已配置字段登录。自定义字段需确保唯一性。</div>
                       </div>
                     </el-form-item>
+                    <el-form-item label="表单位置">
+                      <el-radio-group v-model="form.login_form_config.position" @change="markDirty">
+                        <el-radio-button value="top">居上</el-radio-button>
+                        <el-radio-button value="center">居中</el-radio-button>
+                        <el-radio-button value="bottom">居下</el-radio-button>
+                      </el-radio-group>
+                    </el-form-item>
                   </template>
 
                   <el-form-item label="开启时间">
@@ -362,9 +369,28 @@
                   </div>
                 </div>
               </div>
+              <!-- 九宫格/按钮列表模式：按钮垂直位置设置 -->
+              <div v-if="isEdit && (form.layout === 'grid' || form.layout === 'button')" class="grid-offset-config">
+                <div class="grid-offset-title">按钮位置</div>
+                <div class="grid-offset-row">
+                  <el-slider
+                    v-model="form.grid_offset_y"
+                    :min="0"
+                    :max="60"
+                    :step="0.5"
+                    :show-tooltip="false"
+                    style="flex: 1"
+                    @input="markDirty"
+                    @change="patchGridOffset"
+                  />
+                  <span class="grid-offset-value">{{ (form.grid_offset_y || 0).toFixed(1) }}%</span>
+                </div>
+                <div class="hint">调整按钮在页面上的垂直距离，可拖拽预览区手柄微调</div>
+              </div>
               <el-button v-if="isEdit" class="add-module-btn" type="primary" plain @click="addModule">
                 <el-icon><Plus /></el-icon>添加按钮
               </el-button>
+              <br>
               <el-button v-if="isEdit" class="manage-module-btn" plain @click="goModuleManage">
                 前往模块管理维护内容
               </el-button>
@@ -378,116 +404,185 @@
         <div class="preview-wrapper">
           <div class="device-frame" :class="'tpl-' + form.template" :style="previewBgStyle">
             <div class="device-notch"></div>
-            <div class="device-screen">
-              <!-- 背景图：宽度撑满、高度自适应，完整显示不被裁剪（与 H5 一致） -->
-              <div v-if="form.background_image" class="bg-layer">
-                <img :src="form.background_image" class="bg-image" alt="" />
-              </div>
-
-              <!-- 状态栏 -->
-              <div class="status-bar">
-                <span class="status-time">9:41</span>
-                <div class="status-icons">
-                  <span class="signal"></span>
-                  <span class="wifi"></span>
-                  <span class="battery"></span>
-                </div>
-              </div>
-
-              <!-- KV 区域 -->
-              <div class="kv-area" v-if="form.kv_image">
-                <img :src="form.kv_image" class="kv-image" />
-              </div>
-              <div v-else class="kv-placeholder">
-                <span>KV 图区域</span>
-              </div>
-
-              <!-- 自由拖拽布局 -->
-              <div
-                v-if="form.layout === 'free'"
-                class="free-layout"
-                ref="freeLayoutRef"
-                @pointerdown.self="selectedModuleId = null"
-              >
-                <div
-                  v-for="m in modules"
-                  :key="m.id"
-                  class="preview-btn free-btn"
-                  :class="{ dragging: draggingId === m.id, resizing: resizingId === m.id, selected: selectedModuleId === m.id, 'has-height': m.height != null }"
-                  :style="freeBtnStyle(m)"
-                  @pointerdown="startDrag($event, m)"
-                  @click.stop="selectedModuleId = m.id"
-                  @dblclick="selectedModuleId = m.id"
-                >
-                  <div class="free-btn-inner" :class="freeBtnClass(m)">
-                    <img v-if="m.icon" :src="m.icon" class="btn-icon" />
-                    <div v-else class="btn-icon-placeholder">{{ (m.title || '?').charAt(0) }}</div>
-                    <span class="btn-text">{{ m.title }}</span>
-                    <span v-if="m.show_arrow !== false" class="btn-arrow">›</span>
-                  </div>
-
-                  <!-- 选中态缩放手柄 -->
-                  <template v-if="selectedModuleId === m.id">
-                    <span class="resize-handle rh-nw" @pointerdown.stop="startResize($event, m, 'nw')" />
-                    <span class="resize-handle rh-n" @pointerdown.stop="startResize($event, m, 'n')" />
-                    <span class="resize-handle rh-ne" @pointerdown.stop="startResize($event, m, 'ne')" />
-                    <span class="resize-handle rh-e" @pointerdown.stop="startResize($event, m, 'e')" />
-                    <span class="resize-handle rh-se" @pointerdown.stop="startResize($event, m, 'se')" />
-                    <span class="resize-handle rh-s" @pointerdown.stop="startResize($event, m, 's')" />
-                    <span class="resize-handle rh-sw" @pointerdown.stop="startResize($event, m, 'sw')" />
-                    <span class="resize-handle rh-w" @pointerdown.stop="startResize($event, m, 'w')" />
-                  </template>
-                </div>
-              </div>
-
-              <!-- 九宫格布局 -->
-              <div v-else-if="form.layout === 'grid'" class="content-area">
-                <div class="grid-layout">
-                  <div
-                    v-for="m in modules"
-                    :key="m.id"
-                    class="preview-btn grid-item"
-                    :class="{ selected: selectedModuleId === m.id, disabled: !m.is_active }"
-                    @click.stop="selectedModuleId = m.id"
-                  >
-                    <img v-if="m.icon" :src="m.icon" class="grid-icon" />
-                    <div v-else class="grid-icon-placeholder">{{ (m.title || '?').charAt(0) }}</div>
-                    <div class="grid-title">{{ m.title }}</div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 按钮列表布局 -->
-              <div v-else class="content-area">
-                <div class="button-layout">
-                  <div
-                    v-for="m in modules"
-                    :key="m.id"
-                    class="preview-btn button-item"
-                    :class="{ selected: selectedModuleId === m.id, disabled: !m.is_active }"
-                    @click.stop="selectedModuleId = m.id"
-                  >
-                    <img v-if="m.icon" :src="m.icon" class="btn-icon" />
-                    <div v-else class="btn-icon-placeholder">{{ (m.title || '?').charAt(0) }}</div>
-                    <span class="btn-text">{{ m.title }}</span>
-                    <span class="btn-arrow">›</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 空状态提示 -->
-              <div v-if="modules.length === 0 && isEdit" class="empty-tip">
-                <el-icon size="40"><Plus /></el-icon>
-                <div>点击左侧「添加按钮」创建第一个按钮</div>
+            <!-- 状态栏：位于刘海两侧"耳朵区"，与真机一致 -->
+            <div class="status-bar">
+              <span class="status-time">9:41</span>
+              <div class="status-icons">
+                <span class="signal"></span>
+                <span class="wifi"></span>
+                <span class="battery"></span>
               </div>
             </div>
+            <!-- 背景图：铺满整个屏幕（含刘海区域），固定不滚动（与 H5 一致） -->
+            <div v-if="form.background_image" class="bg-layer">
+              <img :src="form.background_image" class="bg-image" alt="" />
+            </div>
+            <!-- 自由拖拽布局：覆盖全屏，固定不随内容滚动（与 H5 fixed 一致） -->
+            <div
+              v-if="previewMode === 'main' && form.layout === 'free'"
+              class="free-layout"
+              ref="freeLayoutRef"
+              @pointerdown.self="selectedModuleId = null"
+            >
+              <div
+                v-for="m in modules"
+                :key="m.id"
+                class="preview-btn free-btn"
+                :class="{ dragging: draggingId === m.id, resizing: resizingId === m.id, selected: selectedModuleId === m.id, 'has-height': m.height != null }"
+                :style="freeBtnStyle(m)"
+                @pointerdown="startDrag($event, m)"
+                @click.stop="selectedModuleId = m.id"
+                @dblclick="selectedModuleId = m.id"
+              >
+                <div class="free-btn-inner" :class="freeBtnClass(m)">
+                  <img v-if="m.icon" :src="m.icon" class="btn-icon" />
+                  <div v-else class="btn-icon-placeholder">{{ (m.title || '?').charAt(0) }}</div>
+                  <span class="btn-text">{{ m.title }}</span>
+                  <span v-if="m.show_arrow !== false" class="btn-arrow">›</span>
+                </div>
+
+                <!-- 选中态缩放手柄 -->
+                <template v-if="selectedModuleId === m.id">
+                  <span class="resize-handle rh-nw" @pointerdown.stop="startResize($event, m, 'nw')" />
+                  <span class="resize-handle rh-n" @pointerdown.stop="startResize($event, m, 'n')" />
+                  <span class="resize-handle rh-ne" @pointerdown.stop="startResize($event, m, 'ne')" />
+                  <span class="resize-handle rh-e" @pointerdown.stop="startResize($event, m, 'e')" />
+                  <span class="resize-handle rh-se" @pointerdown.stop="startResize($event, m, 'se')" />
+                  <span class="resize-handle rh-s" @pointerdown.stop="startResize($event, m, 's')" />
+                  <span class="resize-handle rh-sw" @pointerdown.stop="startResize($event, m, 'sw')" />
+                  <span class="resize-handle rh-w" @pointerdown.stop="startResize($event, m, 'w')" />
+                </template>
+              </div>
+            </div>
+            <div class="device-screen">
+              <!-- ====== 主页预览 ====== -->
+              <template v-if="previewMode === 'main'">
+                <!-- KV 区域 -->
+                <div class="kv-area" v-if="form.kv_image">
+                  <img :src="form.kv_image" class="kv-image" />
+                </div>
+
+                <!-- 九宫格布局 -->
+                <div v-if="form.layout === 'grid'" class="content-area" :style="{ paddingTop: (form.grid_offset_y || 0) + '%' }">
+                  <div
+                    class="grid-drag-handle"
+                    @pointerdown.prevent="startGridDrag"
+                    title="拖拽调整宫格位置"
+                  >⋮⋮</div>
+                  <div class="grid-layout">
+                    <div
+                      v-for="m in modules"
+                      :key="m.id"
+                      class="preview-btn grid-item"
+                      :class="{ selected: selectedModuleId === m.id, disabled: !m.is_active }"
+                      @click.stop="selectedModuleId = m.id"
+                    >
+                      <img v-if="m.icon" :src="m.icon" class="grid-icon" />
+                      <div v-else class="grid-icon-placeholder">{{ (m.title || '?').charAt(0) }}</div>
+                      <div class="grid-title">{{ m.title }}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 按钮列表布局 -->
+                <div v-else-if="form.layout === 'button'" class="content-area" :style="{ paddingTop: (form.grid_offset_y || 0) + '%' }">
+                  <div
+                    class="grid-drag-handle"
+                    @pointerdown.prevent="startGridDrag"
+                    title="拖拽调整按钮列表位置"
+                  >⋮⋮</div>
+                  <div class="button-layout">
+                    <div
+                      v-for="m in modules"
+                      :key="m.id"
+                      class="preview-btn button-item"
+                      :class="{ selected: selectedModuleId === m.id, disabled: !m.is_active }"
+                      @click.stop="selectedModuleId = m.id"
+                    >
+                      <img v-if="m.icon" :src="m.icon" class="btn-icon" />
+                      <div v-else class="btn-icon-placeholder">{{ (m.title || '?').charAt(0) }}</div>
+                      <span class="btn-text">{{ m.title }}</span>
+                      <span class="btn-arrow">›</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 空状态提示 -->
+                <div v-if="modules.length === 0 && isEdit" class="empty-tip">
+                  <el-icon size="40"><Plus /></el-icon>
+                  <div>点击左侧「添加按钮」创建第一个按钮</div>
+                </div>
+              </template>
+
+              <!-- ====== 登录页预览 ====== -->
+              <template v-else>
+                <div class="login-preview" :class="'login-pos-' + loginFormPosition">
+                  <!-- KV 图 -->
+                  <div class="login-preview-kv" v-if="form.kv_image">
+                    <img :src="form.kv_image" class="login-preview-kv-img" />
+                  </div>
+
+                  <!-- 登录卡片 -->
+                  <div class="login-preview-card" :class="{ 'has-kv': !!form.kv_image }">
+                    <!-- 品牌区域：无 KV 时显示 Logo + 标题，有 KV 时紧凑标题 -->
+                    <div class="login-preview-brand" :class="{ compact: !!form.kv_image }">
+                      <div class="login-preview-title">{{ form.name || '欢迎登录' }}</div>
+                      <div class="login-preview-sub">请登录后继续访问</div>
+                    </div>
+
+                    <div class="login-preview-form">
+                      <template v-if="form.login_fields_config && form.login_fields_config.length">
+                        <div
+                          v-for="(field, idx) in form.login_fields_config"
+                          :key="idx"
+                          class="login-preview-field"
+                        >
+                          <el-icon class="field-icon"><Phone v-if="field.key === 'phone'" /><User v-else /></el-icon>
+                          <span class="field-placeholder">请输入{{ field.display_name }}</span>
+                        </div>
+                      </template>
+                      <template v-else>
+                        <div class="login-preview-field">
+                          <el-icon class="field-icon"><User /></el-icon>
+                          <span class="field-placeholder">请输入账号</span>
+                        </div>
+                      </template>
+                      <div v-if="form.login_require_password !== false" class="login-preview-field">
+                        <el-icon class="field-icon"><Lock /></el-icon>
+                        <span class="field-placeholder">请输入密码</span>
+                      </div>
+                      <div class="login-preview-btn">登 录</div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- 预览切换标签（仅开启登录时显示） -->
+          <div v-if="form.need_login" class="preview-tab-bar">
+            <div
+              class="preview-tab"
+              :class="{ active: previewMode === 'main' }"
+              @click="previewMode = 'main'"
+            >主页</div>
+            <div
+              class="preview-tab"
+              :class="{ active: previewMode === 'login' }"
+              @click="previewMode = 'login'"
+            >登录页</div>
           </div>
 
           <!-- 预览提示 -->
           <div class="preview-tips">
-            <span v-if="form.layout === 'free'">拖动按钮调整位置 · 选中后拖动手柄调整大小与形状</span>
-            <span v-else-if="form.layout === 'button'">在「按钮管理」标签拖拽调整顺序</span>
-            <span v-else>点击预览区按钮可在右侧编辑</span>
+            <template v-if="previewMode === 'login'">
+              <span>在左侧「高级设置」中调整登录表单的对齐位置</span>
+            </template>
+            <template v-else>
+              <span v-if="form.layout === 'free'">拖动按钮调整位置 · 选中后拖动手柄调整大小与形状</span>
+              <span v-else-if="form.layout === 'button'">在「按钮管理」标签拖拽调整顺序 · 拖拽预览区手柄调整位置</span>
+              <span v-else>点击预览区按钮可在右侧编辑</span>
+            </template>
           </div>
         </div>
       </div>
@@ -731,7 +826,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
   Plus, Rank, Grid, Tickets, Document, Picture, Brush,
-  MagicStick, Setting, Edit, Share, Service,
+  MagicStick, Setting, Edit, Share, Service, User, Lock, Phone,
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/store/auth'
 import api from '@/api'
@@ -758,6 +853,8 @@ const qrCodeUrl = computed(() => form.code
 const saving = ref(false)
 const isDirty = ref(false)
 const leftTab = ref<'site' | 'modules'>('site')
+const previewMode = ref<'main' | 'login'>('main')
+const loginFormPosition = computed(() => form.login_form_config?.position || 'center')
 
 function switchLeftTab(tab: 'site' | 'modules') {
   leftTab.value = tab
@@ -814,6 +911,8 @@ const form = reactive({
     type: string
     custom_key?: string
   }>,
+  login_form_config: { position: 'center' } as { position?: string },
+  grid_offset_y: 0,
   start_time: '',
   end_time: '',
   close_message: '',
@@ -1074,6 +1173,44 @@ function startDrag(e: PointerEvent, module: any) {
   document.addEventListener('pointerup', onUp)
 }
 
+// --- 九宫格整体拖拽 ---
+const gridDragging = ref(false)
+
+function startGridDrag(e: PointerEvent) {
+  const container = e.currentTarget?.closest('.device-screen') as HTMLElement
+  if (!container) return
+  e.preventDefault()
+
+  const containerRect = container.getBoundingClientRect()
+  const startY = e.clientY
+  const startOffset = form.grid_offset_y || 0
+  gridDragging.value = true
+
+  function onMove(ev: PointerEvent) {
+    const dy = ev.clientY - startY
+    const dyPct = (dy / containerRect.height) * 100
+    form.grid_offset_y = Math.max(0, Math.min(60, Math.round((startOffset + dyPct) * 10) / 10))
+  }
+
+  function onUp() {
+    gridDragging.value = false
+    document.removeEventListener('pointermove', onMove)
+    document.removeEventListener('pointerup', onUp)
+    patchGridOffset()
+  }
+
+  document.addEventListener('pointermove', onMove)
+  document.addEventListener('pointerup', onUp)
+}
+
+async function patchGridOffset() {
+  if (!isEdit.value) return
+  try {
+    const siteId = route.params.id as string
+    await api.put(`/sites/${siteId}`, { grid_offset_y: form.grid_offset_y })
+  } catch { /* 位置变更不弹错误提示 */ }
+}
+
 // --- 左侧图层拖拽排序 ---
 const layerDragIndex = ref<number | null>(null)
 
@@ -1271,8 +1408,8 @@ async function handleSave() {
   try {
     const data: Record<string, any> = {}
     for (const [key, value] of Object.entries(form)) {
-      if (value === '' || value === null || value === undefined) continue
-      data[key] = value
+      if (value === undefined) continue
+      data[key] = value === '' ? null : value
     }
 
     if (isEdit.value) {
@@ -1343,6 +1480,11 @@ onMounted(async () => {
         ...f,
         type: f.type || 'text',
       })),
+      login_form_config: {
+        position: 'center',
+        ...(res.login_form_config || {}),
+      },
+      grid_offset_y: res.grid_offset_y ?? 0,
       start_time: res.start_time || '',
       end_time: res.end_time || '',
       close_message: res.close_message || '',
@@ -1687,6 +1829,39 @@ onMounted(async () => {
   margin-top: 8px;
 }
 
+/* 按钮管理面板：九宫格垂直位置设置 */
+.grid-offset-config {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #f5f7fa;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+}
+.grid-offset-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 4px;
+}
+.grid-offset-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.grid-offset-value {
+  width: 44px;
+  color: #666;
+  font-size: 12px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.grid-offset-config .hint {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #909399;
+}
+
 /* 中间预览 */
 .editor-center {
   flex: 1;
@@ -1712,15 +1887,32 @@ onMounted(async () => {
   border-radius: 34px;
   overflow: hidden;
   position: relative;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* 刘海高度：背景图从刘海下方紧贴开始 */
+  --status-area: 22px;
+  /* 顶部刘海区域渲染为黑色（设备屏幕顶部），模板渐变从刘海下方开始 */
+  background:
+    linear-gradient(to bottom, #1a1a1a 0, #1a1a1a var(--status-area), transparent var(--status-area)),
+    linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   box-shadow:
     0 0 0 2px #2a2a2a,
     0 24px 60px rgba(0,0,0,0.35),
     0 8px 20px rgba(0,0,0,0.18);
 }
-.device-frame.tpl-classic { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-.device-frame.tpl-dark { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
-.device-frame.tpl-festive { background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); }
+.device-frame.tpl-classic {
+  background:
+    linear-gradient(to bottom, #1a1a1a 0, #1a1a1a var(--status-area), transparent var(--status-area)),
+    linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+.device-frame.tpl-dark {
+  background:
+    linear-gradient(to bottom, #1a1a1a 0, #1a1a1a var(--status-area), transparent var(--status-area)),
+    linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+.device-frame.tpl-festive {
+  background:
+    linear-gradient(to bottom, #1a1a1a 0, #1a1a1a var(--status-area), transparent var(--status-area)),
+    linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+}
 
 .device-notch {
   position: absolute;
@@ -1732,7 +1924,7 @@ onMounted(async () => {
   background: #1a1a1a;
   border-bottom-left-radius: 11px;
   border-bottom-right-radius: 11px;
-  z-index: 10;
+  z-index: 20;
 }
 .device-screen {
   width: 100%;
@@ -1740,23 +1932,31 @@ onMounted(async () => {
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
+  z-index: 1;
+  box-sizing: border-box;
 }
 
-/* 背景图：铺满 device-screen 作为装饰背景层，不占文档流高度 */
-.bg-layer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; overflow: hidden; line-height: 0; }
+/* 背景图：铺满整个屏幕内容区域，但不包含刘海/状态栏顶部区域 */
+.bg-layer { position: absolute; top: var(--status-area); left: 0; right: 0; bottom: 0; z-index: 0; overflow: hidden; line-height: 0; }
 .bg-image { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-/* 状态栏 */
+/* 状态栏：位于刘海两侧"耳朵区"，与真机系统状态栏位置一致 */
 .status-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 20px 6px;
-  color: rgba(255,255,255,0.9);
+  padding: 0 16px;
+  color: rgba(255,255,255,0.95);
   font-size: 12px;
   font-weight: 600;
-  position: relative;
-  z-index: 5;
+  z-index: 20;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  pointer-events: none;
 }
 .status-icons {
   display: flex;
@@ -1765,8 +1965,13 @@ onMounted(async () => {
 }
 .signal {
   width: 14px; height: 10px;
-  background: linear-gradient(to top, rgba(255,255,255,0.9) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0.9) 75%, transparent 75%);
-  clip-path: polygon(0 100%, 100% 100%, 100% 0, 0 0);
+  background-image:
+    linear-gradient(to top, rgba(255,255,255,0.9) 3px, transparent 3px),
+    linear-gradient(to top, rgba(255,255,255,0.9) 6px, transparent 6px),
+    linear-gradient(to top, rgba(255,255,255,0.9) 9px, transparent 9px);
+  background-size: 3.5px 100%;
+  background-position: 0 100%, 5px 100%, 10px 100%;
+  background-repeat: no-repeat;
 }
 .wifi {
   width: 12px; height: 10px;
@@ -1800,15 +2005,6 @@ onMounted(async () => {
   width: 100%;
   display: block;
 }
-.kv-placeholder {
-  width: 100%;
-  height: 120px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 13px;
-}
 
 /* 内容区域 */
 .content-area {
@@ -1829,8 +2025,8 @@ onMounted(async () => {
 
 /* 预览按钮通用样式 */
 .preview-btn {
-  background: rgba(255, 255, 255, 0.96);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.15s;
   user-select: none;
@@ -1959,9 +2155,23 @@ onMounted(async () => {
 .button-item {
   display: flex;
   align-items: center;
-  padding: 13px 16px;
+  padding: 14px 16px;
   gap: 10px;
 }
+
+/* 九宫格拖拽手柄 */
+.grid-drag-handle {
+  text-align: center;
+  padding: 4px 0 2px;
+  color: rgba(255,255,255,0.35);
+  font-size: 14px;
+  line-height: 1;
+  cursor: grab;
+  user-select: none;
+  letter-spacing: 2px;
+  margin-bottom: 4px;
+}
+.grid-drag-handle:active { cursor: grabbing; }
 
 /* 九宫格 */
 .grid-layout {
@@ -1974,18 +2184,18 @@ onMounted(async () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 18px 8px;
+  padding: 16px 8px;
 }
 .grid-icon {
   width: 48px;
   height: 48px;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 .grid-icon-placeholder {
   width: 48px;
   height: 48px;
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2004,22 +2214,22 @@ onMounted(async () => {
 
 /* 按钮内元素 */
 .btn-icon {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: 8px;
   flex-shrink: 0;
 }
 .btn-icon-placeholder {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: #fff;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: bold;
   flex-shrink: 0;
 }
@@ -2033,7 +2243,7 @@ onMounted(async () => {
   white-space: nowrap;
 }
 .tpl-dark .btn-text { color: #fff; }
-.tpl-dark .preview-btn { background: rgba(255, 255, 255, 0.12); }
+.tpl-dark .preview-btn { background: rgba(255, 255, 255, 0.1); }
 .tpl-festive .preview-btn { border: 1px solid #ffd700; }
 .btn-arrow {
   color: #ccc;
@@ -2250,5 +2460,137 @@ onMounted(async () => {
   font-size: 12px;
   line-height: 1.6;
   color: #909399;
+}
+
+/* ====== 预览标签切换 ====== */
+.preview-tab-bar {
+  display: flex;
+  margin: 10px auto 0;
+  width: 160px;
+  background: #e8eaed;
+  border-radius: 6px;
+  padding: 2px;
+}
+.preview-tab {
+  flex: 1;
+  text-align: center;
+  padding: 5px 0;
+  font-size: 12px;
+  color: #646a73;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  user-select: none;
+}
+.preview-tab:hover { color: #1f2937; }
+.preview-tab.active {
+  background: #fff;
+  color: #1f2937;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.login-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100%;
+  position: relative;
+  padding: 0 14px;
+}
+
+/* 登录卡片位置 */
+.login-preview.login-pos-top { justify-content: flex-start; }
+.login-preview.login-pos-top .login-preview-card { margin-top: 8px; }
+.login-preview.login-pos-center { justify-content: center; }
+.login-preview.login-pos-bottom { justify-content: flex-end; padding-bottom: 16px; }
+
+/* KV 图 */
+.login-preview-kv {
+  width: calc(100% + 28px);
+  margin-left: -14px;
+  margin-right: -14px;
+  overflow: hidden;
+  border-bottom-left-radius: 18px;
+  border-bottom-right-radius: 18px;
+  flex-shrink: 0;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+.login-preview-kv-img {
+  width: 100%;
+  display: block;
+  object-fit: cover;
+  max-height: 160px;
+}
+
+/* 品牌区域 */
+.login-preview-brand {
+  text-align: center;
+  margin-bottom: 14px;
+}
+.login-preview-brand.compact {
+  margin-bottom: 10px;
+}
+.login-preview-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2330;
+  letter-spacing: 0.5px;
+}
+.login-preview-sub {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #8a8f9c;
+}
+
+/* 登录卡片 */
+.login-preview-card {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  padding: 20px 16px 18px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+.login-preview-card.has-kv {
+  margin-top: -24px;
+  position: relative;
+  z-index: 2;
+}
+
+/* 模拟输入框 */
+.login-preview-field {
+  display: flex;
+  align-items: center;
+  background: #f4f5f8;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  gap: 8px;
+}
+.login-preview-field .field-icon {
+  font-size: 14px;
+  color: #667eea;
+  flex-shrink: 0;
+}
+.login-preview-field .field-placeholder {
+  font-size: 12px;
+  color: #b0b4be;
+}
+
+/* 模拟登录按钮 */
+.login-preview-btn {
+  text-align: center;
+  padding: 10px 0;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  margin-top: 6px;
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
+  cursor: default;
 }
 </style>

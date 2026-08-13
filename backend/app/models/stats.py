@@ -31,3 +31,6 @@ class ModuleClickLog(Base):
     account_id = Column(Integer, nullable=True, comment="账号ID")
     click_date = Column(Date, nullable=False, index=True, comment="点击日期")
     click_time = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), comment="点击时间")
+
+    # 关系
+    module = relationship("Module", back_populates="click_logs")

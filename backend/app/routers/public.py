@@ -77,6 +77,16 @@ def _login_fields_config(site: Site) -> list[dict]:
         return [{"key": "username", "display_name": "账号", "type": "text"}]
 
 
+def _login_form_config(site: Site) -> dict:
+    """将登录表单配置 JSON 安全转换为公开配置。"""
+    if not site.login_form_config:
+        return {"position": "center"}
+    try:
+        return json.loads(site.login_form_config)
+    except (TypeError, json.JSONDecodeError):
+        return {"position": "center"}
+
+
 def _check_site_status(site: Site) -> None:
     """检查微站时间状态"""
     now = _now()
@@ -119,6 +129,8 @@ def get_site_public(
         "share_subtitle": site.share_subtitle or "",
         "customer_service_config": _service_config(site),
         "login_fields_config": _login_fields_config(site),
+        "login_form_config": _login_form_config(site),
+        "grid_offset_y": site.grid_offset_y,
         "need_login": site.need_login,
         "login_require_password": site.login_require_password,
         "need_checkin": site.need_checkin,
@@ -214,64 +226,66 @@ def login_frontend(
         raise HTTPException(status_code=404, detail="微站不存在")
     _check_site_status(site)
 
-    # 解析登录字段配置
+    # 收集提交的登录字段值
+    submitted: dict[str, str] = {}
+    if req.login_fields:
+        submitted = {k: v for k, v in req.login_fields.items() if v and v.strip()}
+    if not submitted:
+        submitted["username"] = req.username  # 兼容旧前端
+
+    # 确定登录字段列表
     login_fields: list[dict] = []
     if site.login_fields_config:
         try:
             login_fields = json.loads(site.login_fields_config)
         except (TypeError, json.JSONDecodeError):
             pass
+    if not login_fields:
+        login_fields = [{"key": "username", "display_name": "账号", "type": "text"}]
 
-    # 确定登录字段: 如果没有配置，默认使用 username
+    # 查询该微站下所有有效账号
+    candidates = db.query(SiteAccount).filter(
+        SiteAccount.site_id == site.id,
+        SiteAccount.is_active == True,
+    ).all()
+
+    # 逐步过滤：每个登录字段都必须匹配同一个账号
     acc = None
-    if login_fields:
-        # 根据配置的登录字段逐一查找
-        for field_conf in login_fields:
-            field_key = field_conf.get("key", "")
-            if field_key == "username":
-                # 使用 username 字段
-                acc = db.query(SiteAccount).filter(
-                    SiteAccount.site_id == site.id,
-                    SiteAccount.username == req.username,
-                ).first()
-                if acc:
-                    break
-            elif field_key == "phone":
-                # 使用 phone 字段
-                acc = db.query(SiteAccount).filter(
-                    SiteAccount.site_id == site.id,
-                    SiteAccount.phone == req.username,
-                ).first()
-                if acc:
-                    break
-            else:
-                # 自定义字段: 使用 custom_key 在 custom_fields JSON 中查找
-                custom_key = field_conf.get("custom_key") or field_key
-                if req.custom_fields and custom_key in req.custom_fields:
-                    target_value = req.custom_fields[custom_key]
-                    all_accounts = db.query(SiteAccount).filter(
-                        SiteAccount.site_id == site.id,
-                    ).all()
-                    for a in all_accounts:
-                        if a.custom_fields:
-                            try:
-                                cf = json.loads(a.custom_fields)
-                                if cf.get(custom_key) == target_value:
-                                    acc = a
-                                    break
-                            except (TypeError, json.JSONDecodeError):
-                                pass
-                    if acc:
-                        break
-    else:
-        # 默认使用 username
-        acc = db.query(SiteAccount).filter(
-            SiteAccount.site_id == site.id,
-            SiteAccount.username == req.username,
-        ).first()
+    for field_conf in login_fields:
+        field_key = field_conf.get("key", "")
+        value = submitted.get(field_key, "").strip()
+        if not value:
+            continue  # 该字段未提交，跳过
 
-    if not acc:
+        next_candidates = []
+        for a in candidates:
+            if field_key == "username":
+                if a.username == value:
+                    next_candidates.append(a)
+            elif field_key == "phone":
+                if a.phone == value:
+                    next_candidates.append(a)
+            else:
+                # 自定义字段：在 custom_fields JSON 中查找
+                custom_key = field_conf.get("custom_key") or field_key
+                if a.custom_fields:
+                    try:
+                        cf = json.loads(a.custom_fields)
+                        if cf.get(custom_key) == value:
+                            next_candidates.append(a)
+                    except (TypeError, json.JSONDecodeError):
+                        pass
+        candidates = next_candidates
+        if not candidates:
+            break
+
+    if len(candidates) == 1:
+        acc = candidates[0]
+    elif not candidates:
         raise HTTPException(status_code=401, detail="账号或密码错误")
+    else:
+        raise HTTPException(status_code=401, detail="账号信息存在多账号匹配，请联系管理员")
+
     # 无密码模式: 站点配置 login_require_password=False 时不校验密码
     if site.login_require_password and not verify_password(req.password, acc.password_hash):
         raise HTTPException(status_code=401, detail="账号或密码错误")
