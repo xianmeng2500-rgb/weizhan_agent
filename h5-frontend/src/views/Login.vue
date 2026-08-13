@@ -57,10 +57,12 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showSuccessToast, showFailToast } from 'vant'
 import api from '@/api'
+import { useWeChatShare } from '@/composables/useWeChatShare'
 
 const route = useRoute()
 const router = useRouter()
 const code = route.params.code as string
+const { setup: setupWeChatShare } = useWeChatShare(code)
 
 const loading = ref(false)
 const loadError = ref(false)
@@ -103,6 +105,7 @@ async function loadSite() {
     // 初始化输入数组
     loginInputs.length = 0
     loginFields.value.forEach(() => loginInputs.push(''))
+    setupWeChatShare(res)
   } catch {
     loadError.value = true
     // 加载失败时使用默认账号登录
