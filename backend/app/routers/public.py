@@ -44,7 +44,9 @@ def _get_wechat_access_token(app_id: str, app_secret: str) -> str:
         payload = json.loads(response.read().decode("utf-8"))
     token = payload.get("access_token")
     if not token:
-        raise HTTPException(status_code=502, detail="获取微信 access_token 失败")
+        errcode = payload.get("errcode", "unknown")
+        errmsg = payload.get("errmsg", "unknown")
+        raise HTTPException(status_code=502, detail=f"获取微信 access_token 失败: errcode={errcode}, errmsg={errmsg}")
     return token
 
 
@@ -53,7 +55,9 @@ def _get_wechat_ticket(access_token: str) -> str:
         payload = json.loads(response.read().decode("utf-8"))
     ticket = payload.get("ticket")
     if not ticket:
-        raise HTTPException(status_code=502, detail="获取微信 JSAPI ticket 失败")
+        errcode = payload.get("errcode", "unknown")
+        errmsg = payload.get("errmsg", "unknown")
+        raise HTTPException(status_code=502, detail=f"获取微信 JSAPI ticket 失败: errcode={errcode}, errmsg={errmsg}")
     return ticket
 
 
