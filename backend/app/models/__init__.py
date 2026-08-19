@@ -11,6 +11,7 @@ from app.models.membership import MembershipPlan, Membership
 from app.models.session_credit import SessionCredit
 from app.models.wallet import WalletTransaction
 from app.models.ai_generation import AIGeneration
+from app.models.site_template import SiteTemplate
 
 __all__ = [
     "User",
@@ -30,4 +31,5 @@ __all__ = [
     "SessionCredit",
     "WalletTransaction",
     "AIGeneration",
+    "SiteTemplate",
 ]

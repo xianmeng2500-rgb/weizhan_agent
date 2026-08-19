@@ -15,6 +15,7 @@ class Site(Base):
     template = Column(String(20), default="default", nullable=False, comment="模板: default/classic/dark/festive")
     layout = Column(String(20), default="grid", nullable=False, comment="布局: grid/button")
     kv_image = Column(String(500), nullable=True, comment="KV图URL")
+    title_config = Column(Text, nullable=True, comment="微站标题配置JSON(文本/字体/颜色/大小/粗细/位置)")
     background_color = Column(String(20), default="", nullable=True, comment="自定义背景色")
     background_image = Column(String(500), nullable=True, comment="背景图URL")
     share_image = Column(String(500), nullable=True, comment="微信分享图标")

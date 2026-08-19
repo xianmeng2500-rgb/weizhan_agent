@@ -57,6 +57,10 @@
               </div>
             </el-sub-menu>
           </el-sub-menu>
+          <el-menu-item v-if="auth.canManageAccounts" index="/templates">
+            <el-icon><Files /></el-icon>
+            <template #title>模板管理</template>
+          </el-menu-item>
           <el-menu-item index="/ai-generate">
             <el-icon><MagicStick /></el-icon>
             <template #title>AI 生图</template>
@@ -158,6 +162,10 @@
             </div>
             <template #dropdown>
               <el-dropdown-menu>
+                <el-dropdown-item command="change-password">
+                  <el-icon><Key /></el-icon>
+                  修改密码
+                </el-dropdown-item>
                 <el-dropdown-item command="logout" divided>
                   <el-icon><SwitchButton /></el-icon>
                   退出登录
@@ -191,23 +199,51 @@
         </router-view>
       </el-main>
     </el-container>
+
+    <!-- 修改密码弹窗 -->
+    <el-dialog v-model="pwdDialogVisible" title="修改密码" width="420px" :close-on-click-modal="false" append-to-body>
+      <el-form :model="pwdForm" label-width="90px">
+        <el-form-item label="原密码" required>
+          <el-input v-model="pwdForm.old_password" type="password" show-password placeholder="请输入当前密码" />
+        </el-form-item>
+        <el-form-item label="新密码" required>
+          <el-input v-model="pwdForm.new_password" type="password" show-password placeholder="至少6位" />
+        </el-form-item>
+        <el-form-item label="确认新密码" required>
+          <el-input v-model="pwdForm.confirm_password" type="password" show-password placeholder="再次输入新密码" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="pwdDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="pwdSaving" @click="submitPassword">确认修改</el-button>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
 import { useSiteStore } from '@/store/site'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
-import { ArrowRight, Fold, Expand, SwitchButton, UserFilled, Checked, List, Grid, CaretLeft, CaretRight, Wallet, CreditCard, MagicStick } from '@element-plus/icons-vue'
+import { ArrowRight, Fold, Expand, SwitchButton, Key, UserFilled, Checked, List, Grid, CaretLeft, CaretRight, Wallet, CreditCard, MagicStick, Files } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const siteStore = useSiteStore()
 const isCollapse = ref(false)
+
+// 修改密码弹窗
+const pwdDialogVisible = ref(false)
+const pwdSaving = ref(false)
+const pwdForm = reactive({
+  old_password: '',
+  new_password: '',
+  confirm_password: '',
+})
 
 // 会员到期提醒（7/3/1天）
 const membershipRemindText = ref('')
@@ -269,10 +305,10 @@ async function loadCheckinProjects(page = 1) {
 }
 
 const siteId = computed(() => {
-  const id = route.params.id
-  if (!id) return null
-  const num = Number(id)
-  return isNaN(num) ? null : num
+  // 仅微站相关路由（/sites/:id/...）才把路径中的数字当作站点ID
+  // 避免 /admin/members/:id、/checkin/:id 等带 :id 的路由误触发 loadSite
+  const m = route.path.match(/^\/sites\/(\d+)/)
+  return m ? Number(m[1]) : null
 })
 
 const isSiteEditPage = computed(() => {
@@ -299,6 +335,7 @@ const activeMenu = computed(() => {
   }
   if (route.path.startsWith('/admin/accounts')) return '/admin/accounts'
   if (route.path.startsWith('/admin/system-config')) return '/admin/system-config'
+  if (route.path.startsWith('/templates')) return '/templates'
   if (route.path.startsWith('/ai-generate')) return '/ai-generate'
   return route.path
 })
@@ -319,10 +356,34 @@ const roleText = computed(() => {
 })
 
 function handleCommand(cmd: string) {
-  if (cmd === 'logout') {
+  if (cmd === 'change-password') {
+    pwdForm.old_password = ''
+    pwdForm.new_password = ''
+    pwdForm.confirm_password = ''
+    pwdDialogVisible.value = true
+  } else if (cmd === 'logout') {
     auth.clear()
     ElMessage.success('已退出登录')
     router.push('/login')
+  }
+}
+
+async function submitPassword() {
+  if (!pwdForm.old_password) { ElMessage.warning('请输入原密码'); return }
+  if (pwdForm.new_password.length < 6) { ElMessage.warning('新密码至少6位'); return }
+  if (pwdForm.new_password !== pwdForm.confirm_password) { ElMessage.warning('两次输入的新密码不一致'); return }
+  pwdSaving.value = true
+  try {
+    await api.post('/auth/change-password', {
+      old_password: pwdForm.old_password,
+      new_password: pwdForm.new_password,
+    })
+    ElMessage.success('密码修改成功，请重新登录')
+    pwdDialogVisible.value = false
+    auth.clear()
+    router.push('/login')
+  } finally {
+    pwdSaving.value = false
   }
 }
 

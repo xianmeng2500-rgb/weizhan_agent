@@ -51,16 +51,27 @@
           </div>
         </el-tab-pane>
       </el-tabs>
+
+      <div class="ai-entry">
+        <el-divider class="ai-divider" />
+        <div class="ai-entry-row">
+          <span class="ai-entry-text">不会画图标？用 AI 生成一张扁平化图标</span>
+          <el-button type="primary" size="small" :icon="MagicStick" @click="aiVisible = true">AI 生成图标</el-button>
+        </div>
+      </div>
     </el-dialog>
+
+    <AiGenerateDialog v-model:visible="aiVisible" use="icon" @select="onAiSelect" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Plus, Picture, UploadFilled } from '@element-plus/icons-vue'
+import { Plus, Picture, UploadFilled, MagicStick } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/store/auth'
 import api from '@/api'
+import AiGenerateDialog from '@/components/AiGenerateDialog.vue'
 
 interface IconItem {
   name: string
@@ -114,6 +125,14 @@ function onUploadSuccess(res: any) {
 
 function onUploadError() {
   ElMessage.error('上传失败，请重试')
+}
+
+// AI 生成图标：生成结果直接应用为当前图标
+const aiVisible = ref(false)
+function onAiSelect(url: string) {
+  emit('update:modelValue', url)
+  visible.value = false
+  ElMessage.success('AI 图标已应用')
 }
 
 function clearIcon() {
@@ -255,5 +274,17 @@ onMounted(() => {
   object-fit: cover;
   border-radius: 8px;
   border: 1px solid var(--el-border-color);
+}
+
+.ai-divider { margin: 8px 0; }
+.ai-entry-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ai-entry-text {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
 }
 </style>

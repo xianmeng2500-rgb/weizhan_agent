@@ -54,6 +54,10 @@ def read_ai_config(
         "balance": owner.wallet_balance,
         "balance_yuan": f"{owner.wallet_balance / 100:.2f}",
         "is_free": current.role == "super_admin",  # 超级管理员 AI 生图免扣费
+        "uses": [
+            {"key": k, "label": v["label"], "size": v["size"], "desc": v["desc"]}
+            for k, v in ai_service.AI_USES.items()
+        ],
     }
 
 
@@ -61,6 +65,7 @@ def read_ai_config(
 async def generate_images(
     prompt: str = Form(..., min_length=1, max_length=2000),
     negative_prompt: str = Form("", max_length=2000),
+    use: str = Form(""),
     size: str = Form("750*300"),
     n: int = Form(1, ge=1, le=4),
     reference_image: UploadFile | None = File(None),
@@ -84,7 +89,7 @@ async def generate_images(
         ref_url = await asyncio.to_thread(_validate_reference, ext, content)
 
     urls, model = await asyncio.to_thread(
-        ai_service.generate_images, prompt, negative_prompt, size, n, ref_url
+        ai_service.generate_images, prompt, negative_prompt, size, n, ref_url, use
     )
 
     # 生成成功：按实际张数扣费并记录历史（同一事务提交）
@@ -92,6 +97,9 @@ async def generate_images(
         billing_service.charge_ai_generate(db, current, len(urls), remark=f"AI生图{len(urls)}张")
     except billing_service.InsufficientBalanceError as e:
         raise HTTPException(status_code=403, detail=_insufficient_detail(e))
+
+    # 按用途生成时，历史记录里的尺寸用用途预设尺寸
+    record_size = ai_service.AI_USES[use]["size"] if use in ai_service.AI_USES else size
 
     records: list[AIGeneration] = []
     for url in urls:
@@ -103,7 +111,7 @@ async def generate_images(
             result_url=url,
             provider="dashscope",
             model_name=model,
-            size=size,
+            size=record_size,
         )
         db.add(rec)
         records.append(rec)

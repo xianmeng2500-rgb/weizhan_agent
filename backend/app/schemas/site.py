@@ -11,6 +11,7 @@ class SiteBase(BaseModel):
     template: str = Field("default", description="模板: default/classic/dark/festive")
     layout: str = Field("grid", description="布局: grid/button")
     kv_image: Optional[str] = None
+    title_config: Optional[dict[str, Any]] = None
     background_color: Optional[str] = None
     background_image: Optional[str] = None
     share_image: Optional[str] = None
@@ -40,7 +41,7 @@ class SiteBase(BaseModel):
 
 
 class SiteCreate(SiteBase):
-    pass
+    template_id: Optional[int] = Field(None, description="微站模板ID，传入时套用模板外观和预置模块")
 
 
 class SiteUpdate(BaseModel):
@@ -49,6 +50,7 @@ class SiteUpdate(BaseModel):
     template: Optional[str] = None
     layout: Optional[str] = None
     kv_image: Optional[str] = None
+    title_config: Optional[dict[str, Any]] = None
     background_color: Optional[str] = None
     background_image: Optional[str] = None
     share_image: Optional[str] = None
@@ -77,6 +79,7 @@ class SiteOut(BaseModel):
     template: str
     layout: str
     kv_image: Optional[str] = None
+    title_config: Optional[dict[str, Any]] = None
     background_color: Optional[str] = None
     background_image: Optional[str] = None
     share_image: Optional[str] = None

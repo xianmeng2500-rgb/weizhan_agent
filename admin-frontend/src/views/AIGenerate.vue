@@ -20,7 +20,7 @@
               v-model="form.prompt"
               type="textarea"
               :rows="4"
-              placeholder="例如：极简风格的科技感背景，蓝紫色渐变光效，适合活动宣传海报"
+              :placeholder="promptPlaceholder"
               maxlength="2000"
               show-word-limit
             />
@@ -36,14 +36,19 @@
             />
           </el-form-item>
 
+          <el-form-item label="用途（决定图片尺寸与风格约束）">
+            <el-radio-group v-model="form.use" class="use-radio-group">
+              <el-radio v-for="u in uses" :key="u.key" :value="u.key" class="use-radio">
+                <div class="use-radio-content">
+                  <span class="use-radio-name">{{ u.label }}</span>
+                  <el-tag size="small" effect="plain">{{ u.size.replace('*', '×') }}</el-tag>
+                </div>
+                <div class="use-radio-desc">{{ u.desc }}</div>
+              </el-radio>
+            </el-radio-group>
+          </el-form-item>
+
           <div class="form-grid">
-            <el-form-item label="尺寸">
-              <el-select v-model="form.size" style="width: 100%">
-                <el-option label="图标 128×128" value="128*128" />
-                <el-option label="KV 750×300" value="750*300" />
-                <el-option label="竖版 720×1280" value="720*1280" />
-              </el-select>
-            </el-form-item>
             <el-form-item label="生成数量">
               <el-radio-group v-model="form.n" :disabled="!!refFile">
                 <el-radio-button :value="1">1</el-radio-button>
@@ -85,7 +90,8 @@
             :disabled="!form.prompt.trim() || !aiConfig?.configured || insufficientBalance"
             @click="generate"
           >
-            {{ generating ? '生成中（约需 10-60 秒）' : '立即生成' }}
+            <template v-if="generating">生成中，已用时 <span class="elapsed-num">{{ elapsedSeconds }}</span> 秒…</template>
+            <template v-else>立即生成</template>
           </el-button>
           <div v-if="insufficientBalance" class="fee-warn">
             余额不足，无法生成。请联系管理员充值后使用（按张扣费 ¥{{ aiConfig?.price_per_image_yuan }}/张）。
@@ -99,7 +105,7 @@
           <div class="panel-title result-title">
             生成结果
             <span v-if="generatedCount" class="result-count">
-              本次 {{ generatedCount }} 张<template v-if="elapsedSeconds"> · 用时 {{ elapsedSeconds }}s</template>
+              本次 {{ generatedCount }} 张 · 用时 {{ elapsedSeconds }}s
             </span>
           </div>
         </template>
@@ -179,7 +185,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus, Loading } from '@element-plus/icons-vue'
 import api from '@/api'
@@ -196,6 +202,13 @@ interface GenerationRecord {
   created_at: string
 }
 
+interface AiUseInfo {
+  key: string
+  label: string
+  size: string
+  desc: string
+}
+
 interface AiConfigInfo {
   configured: boolean
   provider: string
@@ -206,7 +219,16 @@ interface AiConfigInfo {
   balance: number
   balance_yuan: string
   is_free: boolean
+  uses: AiUseInfo[]
 }
+
+// 兜底用途列表：config 拉取失败时仍可用
+const FALLBACK_USES: AiUseInfo[] = [
+  { key: 'icon', label: '模块图标', size: '128*128', desc: '128×128 正方形，用于九宫格/按钮模块图标' },
+  { key: 'kv', label: 'KV 横幅', size: '750*340', desc: '750×340 宽幅横幅，用于微站顶部 KV 图' },
+  { key: 'share', label: '微信分享图', size: '500*500', desc: '500×500 正方形，用于微信分享卡片' },
+  { key: 'background', label: '页面背景', size: '750*1334', desc: '750×1334 竖版，用于微站页面全屏背景' },
+]
 
 const loading = ref(false)
 const generating = ref(false)
@@ -216,6 +238,7 @@ const aiConfig = ref<AiConfigInfo | null>(null)
 const elapsedSeconds = ref(0)
 let timer: ReturnType<typeof setInterval> | null = null
 function startTimer() {
+  stopTimer() // 防止重复点击导致 interval 叠加
   elapsedSeconds.value = 0
   timer = setInterval(() => {
     elapsedSeconds.value += 1
@@ -227,14 +250,30 @@ function stopTimer() {
     timer = null
   }
 }
+onUnmounted(stopTimer)
 
 const form = reactive({
   prompt: '',
   negative_prompt: '',
-  size: '750*300',
+  use: 'kv',
   n: 1,
 })
 const refFile = ref<File | null>(null)
+
+// 用途列表与当前用途说明：优先用后端 config 下发的用途定义
+const uses = computed<AiUseInfo[]>(() => aiConfig.value?.uses?.length ? aiConfig.value.uses : FALLBACK_USES)
+const currentUseDesc = computed(() => uses.value.find((u) => u.key === form.use)?.desc || '')
+
+// 提示词占位符按用途变化，引导用户往对应场景描述
+const promptPlaceholder = computed(() => {
+  const map: Record<string, string> = {
+    icon: '例如：蓝色圆角图标，扁平风格，科技感',
+    kv: '例如：科技蓝渐变背景，现代感，适合活动横幅',
+    share: '例如：喜庆节日主题，红金配色，适合分享卡片',
+    background: '例如：淡雅渐变星空背景，安静柔和',
+  }
+  return map[form.use] || '描述你想生成的画面'
+})
 
 // 本次费用（元）与余额是否足够：图生图固定 1 张
 const costYuan = computed(() => {
@@ -271,6 +310,7 @@ async function loadAiConfig() {
       balance: 0,
       balance_yuan: '0.00',
       is_free: false,
+      uses: [],
     }
   }
 }
@@ -291,14 +331,15 @@ async function generate() {
     const fd = new FormData()
     fd.append('prompt', form.prompt.trim())
     fd.append('negative_prompt', form.negative_prompt.trim())
-    fd.append('size', form.size)
+    fd.append('use', form.use)
     fd.append('n', String(form.n))
     if (refFile.value) fd.append('reference_image', refFile.value)
 
     const res: any = await api.post('/ai/generate', fd, { timeout: 180000 })
     results.value = res.items || []
+    stopTimer() // 先停表，保证提示与结果区展示的用时一致
     if (results.value.length) {
-      ElMessage.success(`生成成功，共 ${results.value.length} 张，用时 ${elapsedSeconds}s`)
+      ElMessage.success({ message: `生成成功，共 ${results.value.length} 张，用时 ${elapsedSeconds.value}s`, zIndex: 3000 })
     }
     historyPage.value = 1
     await loadHistory()
@@ -378,8 +419,14 @@ onMounted(() => {
 .panel-title { font-size: 15px; font-weight: 600; color: #303133; display: flex; align-items: center; gap: 8px; }
 .form-panel :deep(.el-form-item__label) { font-size: 13px; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+.use-radio-group { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.use-radio { height: auto; margin-right: 0; padding: 8px 12px; border: 1px solid #ebeef5; border-radius: 6px; width: 100%; }
+.use-radio :deep(.el-radio__label) { white-space: normal; }
+.use-radio-content { display: flex; align-items: center; gap: 8px; }
+.use-radio-name { font-size: 13px; font-weight: 500; color: #303133; }
+.use-radio-desc { font-size: 12px; color: #909399; margin-top: 2px; line-height: 1.5; }
 .field-hint { font-size: 12px; color: #909399; line-height: 1.5; margin-top: 4px; }
-.generate-btn { width: 100%; margin-top: 4px; }
+.generate-btn { width: 100%; margin-top: 4px; white-space: normal; height: auto; line-height: 1.5; }
 .fee-bar { display: flex; align-items: center; justify-content: center; padding: 8px 0 4px; font-size: 13px; color: #606266; background: #f5f7fa; border-radius: 4px; }
 .fee-bar b { color: #f56c6c; font-weight: 600; }
 .fee-warn { margin-top: 8px; font-size: 12px; line-height: 1.6; color: #f56c6c; background: #fef0f0; border: 1px solid #fde2e2; border-radius: 4px; padding: 6px 10px; }
@@ -392,6 +439,8 @@ onMounted(() => {
 .result-actions { display: flex; justify-content: center; gap: 4px; padding: 6px 0; }
 .generating-tip { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 60px 0; color: #909399; }
 .elapsed-num { font-variant-numeric: tabular-nums; min-width: 2.2em; display: inline-block; text-align: right; font-weight: 600; color: #409eff; animation: elapsed-pulse 1s ease-in-out infinite; }
+/* 按钮内（primary 蓝底）的秒数：白字加粗，对比明显 */
+.generate-btn .elapsed-num { color: #fff; }
 @keyframes elapsed-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.7; transform: scale(1.15); }

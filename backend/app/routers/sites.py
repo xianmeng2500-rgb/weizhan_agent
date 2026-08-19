@@ -4,7 +4,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User, Site
+from app.models import User, Site, SiteTemplate, Module
 from app.utils.deps import get_current_admin, assert_site_access, ROLE_SUPER_ADMIN
 from app.services.billing_service import assert_active_membership, consume_credit_for_site_online
 from app.schemas.site import (
@@ -16,6 +16,27 @@ from app.schemas.module import ModuleOut
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/sites", tags=["微站管理"])
+
+# 模板外观字段: 创建微站时若未显式提供则继承模板值
+# 映射为 site字段 -> (模板字段, 站点默认值)
+_TEMPLATE_APPEARANCE_FIELDS = {
+    "template": ("template_key", "default"),
+    "layout": ("layout", "grid"),
+    "kv_image": ("kv_image", None),
+    "background_color": ("background_color", None),
+    "background_image": ("background_image", None),
+    "share_image": ("share_image", None),
+    "share_title": ("share_title", None),
+    "share_subtitle": ("share_subtitle", None),
+}
+
+# 模块可复制字段（用于从模板 modules_config 创建预置模块）
+_MODULE_FIELDS = (
+    "title", "icon", "sort_order", "content_type", "external_url", "rich_content",
+    "form_config", "schedule_config", "qrcode_config", "is_active",
+    "position_x", "position_y", "width", "height", "border_radius",
+    "bg_color", "font_color", "icon_position", "content_align", "show_arrow",
+)
 
 
 def _service_config(site: Site) -> dict:
@@ -48,6 +69,16 @@ def _login_form_config(site: Site) -> dict:
         return {"position": "center"}
 
 
+def _title_config(site: Site) -> dict | None:
+    """将数据库中的微站标题配置 JSON 安全转换为字典。"""
+    if not site.title_config:
+        return None
+    try:
+        return json.loads(site.title_config)
+    except (TypeError, json.JSONDecodeError):
+        return None
+
+
 def _to_out(site: Site, db: Session) -> SiteOut:
     """转换模型为输出Schema(带统计)"""
     return SiteOut(
@@ -57,6 +88,7 @@ def _to_out(site: Site, db: Session) -> SiteOut:
         template=site.template,
         layout=site.layout,
         kv_image=site.kv_image,
+        title_config=_title_config(site),
         background_color=site.background_color,
         background_image=site.background_image,
         share_image=site.share_image,
@@ -111,23 +143,51 @@ def create_site(
     db: Session = Depends(get_db),
     current: User = Depends(get_current_admin),
 ):
-    """创建微站"""
+    """创建微站(支持传入 template_id 套用模板)"""
     # 商业化: 校验会员状态（sub_admin 继承父账号）
     assert_active_membership(db, current)
     # 检查code唯一性
     if db.query(Site).filter(Site.code == req.code).first():
         raise HTTPException(status_code=400, detail="微站唯一码已存在")
+
+    # 套用模板: 未显式提供的外观字段继承模板值
+    req_data = req.model_dump(exclude_unset=True)
+    tpl = None
+    if req.template_id:
+        tpl = db.query(SiteTemplate).filter(
+            SiteTemplate.id == req.template_id, SiteTemplate.status == "active"
+        ).first()
+        if not tpl:
+            raise HTTPException(status_code=404, detail="模板不存在或未启用")
+
+    def _appearance(field: str, tpl_field: str, default):
+        """优先使用请求显式提供的值，否则回退模板值，最后取默认值"""
+        if field in req_data and req_data[field] not in (None, ""):
+            return req_data[field]
+        if tpl:
+            tpl_value = getattr(tpl, tpl_field)
+            if tpl_value not in (None, ""):
+                return tpl_value
+        return default
+
+    site_kwargs = {
+        field: _appearance(field, tpl_field, default)
+        for field, (tpl_field, default) in _TEMPLATE_APPEARANCE_FIELDS.items()
+    }
+
+    # 标题装饰配置: 请求显式提供优先，否则继承模板（模板中为 JSON 文本，需解析）
+    title_cfg = req.title_config
+    if not title_cfg and tpl and tpl.title_config:
+        try:
+            title_cfg = json.loads(tpl.title_config)
+        except (TypeError, json.JSONDecodeError):
+            title_cfg = None
+
     site = Site(
         name=req.name,
         code=req.code,
-        template=req.template,
-        layout=req.layout,
-        kv_image=req.kv_image,
-        background_color=req.background_color,
-        background_image=req.background_image,
-        share_image=req.share_image,
-        share_title=req.share_title,
-        share_subtitle=req.share_subtitle,
+        **site_kwargs,
+        title_config=json.dumps(title_cfg, ensure_ascii=False) if title_cfg else None,
         customer_service_config=json.dumps(req.customer_service_config, ensure_ascii=False) if req.customer_service_config else None,
         login_fields_config=json.dumps(req.login_fields_config, ensure_ascii=False) if req.login_fields_config else None,
         login_form_config=json.dumps(req.login_form_config, ensure_ascii=False) if req.login_form_config else None,
@@ -140,6 +200,20 @@ def create_site(
     )
     try:
         db.add(site)
+        db.flush()
+        # 从模板创建预置模块
+        if tpl and tpl.modules_config:
+            try:
+                presets = json.loads(tpl.modules_config)
+                for item in presets:
+                    if not isinstance(item, dict) or not item.get("title"):
+                        continue
+                    db.add(Module(
+                        site_id=site.id,
+                        **{k: item[k] for k in _MODULE_FIELDS if k in item},
+                    ))
+            except (TypeError, json.JSONDecodeError):
+                logger.warning(f"模板 {tpl.id} 的 modules_config 解析失败，跳过预置模块")
         db.commit()
         db.refresh(site)
     except Exception as e:
@@ -183,11 +257,9 @@ def update_site(
         if db.query(Site).filter(Site.code == req.code).first():
             raise HTTPException(status_code=400, detail="微站唯一码已存在")
     for field, value in req.model_dump(exclude_unset=True).items():
-        if field == "customer_service_config":
+        if field in ("customer_service_config", "login_form_config", "title_config"):
             value = json.dumps(value, ensure_ascii=False) if value else None
         elif field == "login_fields_config":
-            value = json.dumps(value, ensure_ascii=False) if value else None
-        elif field == "login_form_config":
             value = json.dumps(value, ensure_ascii=False) if value else None
         setattr(site, field, value)
     try:

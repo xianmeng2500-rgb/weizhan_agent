@@ -15,6 +15,7 @@ from app.utils.deps import (
 from app.schemas.auth import (
     LoginRequest, TokenResponse, UserInfo,
     AdminUserCreate, AdminUserUpdate, AdminUserOut,
+    ChangePasswordRequest,
 )
 
 router = APIRouter(prefix="/auth", tags=["认证"])
@@ -46,6 +47,22 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
 def me(current: User = Depends(get_current_admin)):
     """获取当前管理员信息"""
     return UserInfo.model_validate(current)
+
+
+@router.post("/change-password")
+def change_password(
+    req: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    current: User = Depends(get_current_admin),
+):
+    """当前登录账号修改自己的密码"""
+    if not verify_password(req.old_password, current.password_hash):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="原密码不正确")
+    if req.old_password == req.new_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="新密码不能与原密码相同")
+    current.password_hash = hash_password(req.new_password)
+    db.commit()
+    return {"message": "密码修改成功"}
 
 
 @router.post("/logout")

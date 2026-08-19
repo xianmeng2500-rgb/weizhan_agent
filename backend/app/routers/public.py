@@ -71,6 +71,16 @@ def _service_config(site: Site) -> dict:
         return {}
 
 
+def _title_config(site: Site) -> dict | None:
+    """将数据库中的微站标题配置 JSON 安全转换为字典。"""
+    if not site.title_config:
+        return None
+    try:
+        return json.loads(site.title_config)
+    except (TypeError, json.JSONDecodeError):
+        return None
+
+
 def _login_fields_config(site: Site) -> list[dict]:
     """将登录字段配置 JSON 安全转换为公开配置。"""
     if not site.login_fields_config:
@@ -126,6 +136,7 @@ def get_site_public(
         "template": site.template,
         "layout": site.layout,
         "kv_image": site.kv_image,
+        "title_config": _title_config(site),
         "background_color": site.background_color,
         "background_image": site.background_image,
         "share_image": site.share_image or site.kv_image,

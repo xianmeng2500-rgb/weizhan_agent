@@ -138,16 +138,16 @@ function resetSearch() {
   loadData()
 }
 
-// 商业化: 创建微站前校验会员状态
+// 商业化: 创建微站前校验会员状态（先选择模板再创建）
 async function goCreate() {
   if (auth.isSuperAdmin) {
-    router.push('/sites/create')
+    router.push('/sites/select-template')
     return
   }
   try {
     const wallet = await getWalletMe()
     if (wallet.membership?.status === 'active') {
-      router.push('/sites/create')
+      router.push('/sites/select-template')
       return
     }
     ElMessageBox.confirm(
@@ -157,7 +157,7 @@ async function goCreate() {
     ).then(() => router.push('/billing')).catch(() => {})
   } catch {
     // 校验失败不阻塞
-    router.push('/sites/create')
+    router.push('/sites/select-template')
   }
 }
 

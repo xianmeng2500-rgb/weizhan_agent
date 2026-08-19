@@ -10,6 +10,11 @@
       <img :src="site.kv_image" class="kv-image" />
     </div>
 
+    <!-- 微站标题 -->
+    <div v-if="titleConfig.enabled" class="site-title" :style="titleStyle">
+      {{ titleConfig.text || site.name }}
+    </div>
+
     <!-- 自由拖拽布局 -->
     <div v-if="site.layout === 'free'" class="free-layout">
       <div
@@ -134,6 +139,43 @@ const pageStyle = computed(() => {
     return { background: site.value.background_color }
   }
   return {}
+})
+
+// --- 微站标题（页面装饰：绝对定位、层级最高，坐标按后台预览基准 300×585 等比缩放） ---
+const TITLE_FONT_STACKS: Record<string, string> = {
+  sans: "'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif",
+  song: "'Songti SC', 'SimSun', serif",
+  kai: "'Kaiti SC', 'STKaiti', 'KaiTi', serif",
+  fangsong: "'Fangsong SC', 'STFangsong', 'FangSong', serif",
+}
+const titleConfig = computed(() => ({
+  enabled: false,
+  text: '',
+  font: 'sans',
+  color: '#333333',
+  size: 20,
+  bold: true,
+  position_x: 5,
+  position_y: 5,
+  max_width: 80,
+  ...(site.value.title_config || {}),
+}))
+const titleStyle = computed(() => {
+  const t = titleConfig.value
+  const screenW = window.innerWidth || ADMIN_W
+  const screenH = window.innerHeight || ADMIN_H
+  const sx = ADMIN_W / screenW
+  const sy = ADMIN_H / screenH
+  const fontScale = screenW / ADMIN_W
+  return {
+    left: ((t.position_x ?? 5) * sx).toFixed(3) + '%',
+    top: ((t.position_y ?? 5) * sy).toFixed(3) + '%',
+    maxWidth: ((t.max_width ?? 80) * sx).toFixed(3) + '%',
+    fontFamily: TITLE_FONT_STACKS[t.font] || TITLE_FONT_STACKS.sans,
+    color: t.color || '#333333',
+    fontSize: Math.round((t.size || 20) * fontScale) + 'px',
+    fontWeight: t.bold ? '700' : '400',
+  }
 })
 
 // 自由布局按钮样式 —— 基于后台预览参考尺寸缩放到实际屏幕
@@ -285,6 +327,14 @@ onMounted(loadSite)
 .kv-image {
   width: 100%;
   display: block;
+}
+/* 微站标题（页面装饰：fixed 定位、层级最高、不拦截点击） */
+.site-title {
+  position: fixed;
+  line-height: 1.4;
+  word-break: break-all;
+  z-index: 999; /* 高于自由按钮(2)、客服浮窗(20)等所有图层 */
+  pointer-events: none;
 }
 
 /* ====== 内容区域（九宫格 / 按钮列表） ====== */

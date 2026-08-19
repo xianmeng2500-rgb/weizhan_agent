@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微站系统 · 用户使用手册</title>
+<style>
+:root{
+  --primary:#4F46E5; --primary-dark:#3730A3; --primary-light:#EEF2FF;
+  --teal:#0F766E; --teal-light:#F0FDFA;
+  --amber:#B45309; --amber-light:#FFFBEB;
+  --red:#B91C1C; --red-light:#FEF2F2;
+  --bg:#F8FAFC; --card:#FFFFFF; --border:#E2E8F0;
+  --text:#0F172A; --text-2:#475569; --text-3:#94A3B8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.75;font-size:15px;}
+.wrap{max-width:1100px;margin:0 auto;padding:0 24px;}
+
+/* header */
+header.top{background:linear-gradient(135deg,#4338CA 0%,#6D28D9 55%,#9333EA 100%);color:#fff;padding:56px 0 72px;position:relative;overflow:hidden;}
+header.top::after{content:"";position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;background:rgba(255,255,255,.08);}
+header.top .wrap{position:relative;z-index:1;}
+.badge{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:999px;padding:4px 14px;font-size:13px;margin-bottom:18px;letter-spacing:.5px;}
+header.top h1{font-size:40px;font-weight:600;letter-spacing:1px;margin-bottom:12px;}
+header.top p.desc{font-size:17px;color:rgba(255,255,255,.88);max-width:720px;line-height:1.8;}
+.meta{display:flex;gap:24px;margin-top:28px;flex-wrap:wrap;}
+.meta span{font-size:13px;color:rgba(255,255,255,.78);}
+.meta span b{color:#fff;font-weight:500;}
+
+/* sticky toc */
+nav.toc{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);}
+nav.toc .wrap{display:flex;align-items:center;gap:4px;overflow-x:auto;padding-top:0;padding-bottom:0;white-space:nowrap;}
+nav.toc a{display:inline-block;padding:14px 12px;font-size:14px;color:var(--text-2);text-decoration:none;border-bottom:2px solid transparent;transition:.15s;}
+nav.toc a:hover{color:var(--primary);}
+nav.toc a.on{color:var(--primary);border-bottom-color:var(--primary);font-weight:500;}
+nav.toc .logo{font-weight:600;color:var(--primary);font-size:15px;margin-right:12px;letter-spacing:.3px;}
+
+/* sections */
+main{padding:56px 0 80px;}
+section{margin-bottom:64px;scroll-margin-top:56px;}
+h2.sec{font-size:26px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+h2.sec .num{width:38px;height:38px;border-radius:10px;background:var(--primary);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+h3{font-size:19px;font-weight:600;margin:32px 0 14px;color:var(--primary-dark);}
+h4{font-size:16px;font-weight:600;margin:22px 0 10px;}
+p{margin-bottom:12px;color:var(--text-2);}
+p b, li b{color:var(--text);font-weight:500;}
+ul,ol{margin:0 0 14px 1.4em;color:var(--text-2);}
+li{margin-bottom:6px;}
+.sec-tip{font-size:13px;color:var(--text-3);margin-bottom:20px;}
+
+/* cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px 28px;margin-bottom:16px;}
+.card h4{margin-top:0;}
+.callout{border-radius:10px;padding:14px 18px;margin:16px 0;font-size:14px;}
+.callout.tip{background:var(--teal-light);border-left:4px solid var(--teal);color:#134E4A;}
+.callout.warn{background:var(--amber-light);border-left:4px solid var(--amber);color:#78350F;}
+.callout.alert{background:var(--red-light);border-left:4px solid var(--red);color:#7F1D1D;}
+.callout.info{background:var(--primary-light);border-left:4px solid var(--primary);color:#3730A3;}
+.callout b{font-weight:600;}
+
+/* grid */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;}
+.feat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 22px;}
+.feat h5{font-size:15px;font-weight:600;margin-bottom:8px;color:var(--text);}
+.feat h5 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:2px;}
+.feat p{font-size:13.5px;color:var(--text-2);margin:0;}
+
+/* steps */
+.steps{counter-reset:step;margin:18px 0;}
+.step{position:relative;padding:0 0 26px 56px;border-left:2px solid var(--border);margin-left:19px;}
+.step:last-child{border-left-color:transparent;padding-bottom:0;}
+.step::before{counter-increment:step;content:counter(step);position:absolute;left:-21px;top:0;width:40px;height:40px;border-radius:50%;background:var(--primary);color:#fff;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 6px var(--bg);}
+.step h5{font-size:16px;font-weight:600;margin-bottom:6px;}
+.step p,.step li{font-size:14px;}
+
+/* tables */
+.table-box{overflow-x:auto;margin:14px 0 20px;border:1px solid var(--border);border-radius:12px;background:var(--card);}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:560px;}
+th{background:#F1F5F9;color:var(--text);font-weight:600;text-align:left;padding:12px 16px;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:11px 16px;border-bottom:1px solid #F1F5F9;color:var(--text-2);vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+td code{background:#F1F5F9;padding:1px 7px;border-radius:5px;font-size:12.5px;color:#334155;}
+
+/* pills */
+.pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap;}
+.pill.p{background:var(--primary-light);color:var(--primary-dark);}
+.pill.t{background:var(--teal-light);color:var(--teal);}
+.pill.a{background:var(--amber-light);color:var(--amber);}
+.pill.r{background:var(--red-light);color:var(--red);}
+.pill.g{background:#F0FDF4;color:#15803D;}
+
+/* kbd / code */
+kbd{background:#F1F5F9;border:1px solid var(--border);border-bottom-width:2px;border-radius:6px;padding:2px 8px;font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#334155;}
+code.inline{background:#F1F5F9;padding:1px 7px;border-radius:5px;font-size:13px;color:#334155;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+
+/* faq */
+details{border:1px solid var(--border);border-radius:12px;background:var(--card);margin-bottom:10px;overflow:hidden;}
+details summary{cursor:pointer;padding:16px 22px;font-weight:600;font-size:15px;list-style:none;display:flex;align-items:center;gap:10px;}
+details summary::-webkit-details-marker{display:none;}
+details summary::before{content:"＋";color:var(--primary);font-weight:600;font-size:16px;transition:.2s;}
+details[open] summary::before{content:"－";}
+details .body{padding:0 22px 18px;color:var(--text-2);font-size:14px;}
+
+/* footer */
+footer{border-top:1px solid var(--border);padding:28px 0 48px;color:var(--text-3);font-size:13px;text-align:center;}
+
+/* video section */
+.video-script{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px 28px;margin-bottom:16px;}
+.video-script h4{margin-top:0;color:var(--primary-dark);}
+.shot-table td:nth-child(2){white-space:nowrap;}
+.vs-meta{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;}
+.vs-meta span{font-size:12.5px;background:#F1F5F9;padding:4px 12px;border-radius:999px;color:var(--text-2);}
+
+/* print */
+@media print{
+  nav.toc{display:none;}
+  body{background:#fff;}
+  header.top{padding:30px 0;}
+  .card,.feat,.video-script{box-shadow:none;border:1px solid #ddd;page-break-inside:avoid;}
+}
+@media (max-width:720px){
+  header.top h1{font-size:28px;}
+  .grid2,.grid3{grid-template-columns:1fr;}
+  main{padding:32px 0 60px;}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <span class="badge">微站系统 · USER MANUAL</span>
+    <h1>用户使用手册</h1>
+    <p class="desc">面向移动端的轻量级内容展示平台。无需开发，登录后台即可创建微站，配置九宫格 / 按钮布局、富文本内容、报名表单、日程安排与签到核销，一键上线对外访问。</p>
+    <div class="meta">
+      <span><b>版本</b>&nbsp; v1.0</span>
+      <span><b>适用对象</b>&nbsp; 商家运营者 / 平台管理员</span>
+      <span><b>配套</b>&nbsp; 后台管理端 + H5 微站端</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrap">
+    <span class="logo">目录</span>
+    <a href="#s1">01 产品简介</a>
+    <a href="#s2">02 快速上手</a>
+    <a href="#s3">03 后台功能详解</a>
+    <a href="#s4">04 H5 访客使用</a>
+    <a href="#s5">05 常见问题</a>
+    <a href="#s6">06 视频脚本大纲</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<!-- ==================== 01 ==================== -->
+<section id="s1">
+  <h2 class="sec"><span class="num">01</span>产品简介</h2>
+  <p class="sec-tip">先花 1 分钟了解系统全貌，再进入操作。</p>
+
+  <h3>1.1 这是什么</h3>
+  <p>微站系统是一套 <b>无需编程的移动端内容展示平台</b>。运营者登录后台，像搭积木一样创建微站：选模板、配模块、导入账号、设置签到，一键上线后用户通过 <b>手机扫码 / 链接</b> 即可访问。常用于企业活动、产品发布、展会签到、会议报名等场景。</p>
+
+  <h3>1.2 三个入口</h3>
+  <div class="grid3">
+    <div class="feat">
+      <h5><span class="dot" style="background:#4F46E5;"></span>后台管理端</h5>
+      <p>PC 浏览器访问 <code class="inline">/admin/</code>，运营者在此创建微站、配置内容、管理账号、查看数据。</p>
+    </div>
+    <div class="feat">
+      <h5><span class="dot" style="background:#0F766E;"></span>H5 微站端</h5>
+      <p>手机访问 <code class="inline">/s/{微站code}</code>，终端用户在此浏览内容、登录、报名、签到。</p>
+    </div>
+    <div class="feat">
+      <h5><span class="dot" style="background:#B45309;"></span>移动核销端</h5>
+      <p>手机访问 <code class="inline">/m/</code>，现场工作人员用后台账号登录，扫码核销签到、人工补签。</p>
+    </div>
+  </div>
+
+  <h3>1.3 核心能力一览</h3>
+  <div class="grid3">
+    <div class="feat"><h5><span class="dot" style="background:#4F46E5;"></span>多微站并行</h5><p>一个账号可创建多个微站，每个独立链接、独立管理。</p></div>
+    <div class="feat"><h5><span class="dot" style="background:#0F766E;"></span>模板体系</h5><p>内置多套风格模板，管理员可自建模板预设外观与按钮，建站一键套用。</p></div>
+    <div class="feat"><h5><span class="dot" style="background:#B45309;"></span>富文本 &amp; 外链</h5><p>图文混排编辑器，图片上传云端；模块也可直接跳转外部链接。</p></div>
+    <div class="feat"><h5><span class="dot" style="background:#9333EA;"></span>报名表单</h5><p>可视化配置报名表单，数据后台沉淀，支持去重与备注。</p></div>
+    <div class="feat"><h5><span class="dot" style="background:#0F766E;"></span>签到核销</h5><p>多场次签到，PC 摄像头 / 手机扫码核销，支持补签与撤销。</p></div>
+    <div class="feat"><h5><span class="dot" style="background:#4F46E5;"></span>账号与权限</h5><p>微站登录账号批量导入，模块级权限按账号分配。</p></div>
+    <div class="feat"><h5><span class="dot" style="background:#B45309;"></span>数据统计</h5><p>PV / UV、模块点击量、访问趋势，实时掌握运营效果。</p></div>
+    <div class="feat"><h5><span class="dot" style="background:#9333EA;"></span>AI 生图</h5><p>编辑微站时内置 AI 生图，KV 图、背景、分享图、模块图标一键生成。</p></div>
+    <div class="feat"><h5><span class="dot" style="background:#0F766E;"></span>时间控制</h5><p>微站整体与每个模块都可设置开启 / 关闭时间，自动生效。</p></div>
+  </div>
+
+  <h3>1.4 角色与权限</h3>
+  <div class="table-box"><table>
+    <tr><th>角色</th><th>可见范围</th><th>账号管理</th><th>典型使用</th></tr>
+    <tr><td><span class="pill r">super_admin 超级管理员</span></td><td>所有微站</td><td>管理全部后台账号、会员充值 / 退款、套餐配置</td><td>平台方 / 总负责人</td></tr>
+    <tr><td><span class="pill p">admin 管理员</span></td><td>自己创建的微站</td><td>创建 / 管理自己的子账号；管理模板</td><td>商家运营者</td></tr>
+    <tr><td><span class="pill g">sub_admin 子账号</span></td><td>自己创建的微站</td><td>无账号管理权限</td><td>运营团队协作者</td></tr>
+  </table></div>
+
+  <div class="callout info"><b>提示：</b>后台管理员账号（<code class="inline">users</code>）与微站登录账号（<code class="inline">site_accounts</code>）是两套独立体系。后台账号用于登录管理后台；微站登录账号用于 H5 端访客登录（如「需要登录」的微站）。</div>
+
+  <h3>1.5 商业化规则</h3>
+  <div class="grid3">
+    <div class="feat"><h5><span class="dot" style="background:#4F46E5;"></span>预充值钱包</h5><p>由超管为用户账户充值余额，用户用余额自助购买会员与上线额度。</p></div>
+    <div class="feat"><h5><span class="dot" style="background:#0F766E;"></span>会员 499 元 / 年</h5><p>开通后可创建 / 管理任意数量微站；到期后微站转为只读，续费恢复。</p></div>
+    <div class="feat"><h5><span class="dot" style="background:#B45309;"></span>上线额度 299 元 / 次</h5><p>微站每上线一次消耗 1 个额度；下线不退，再次上线重新扣减。</p></div>
+  </div>
+  <div class="callout warn"><b>注意：</b>没有可用额度时微站无法上线；额度购买后 1 年内有效，过期作废。子账号继承父账号的会员状态与额度。</div>
+</section>
+
+<!-- ==================== 02 ==================== -->
+<section id="s2">
+  <h2 class="sec"><span class="num">02</span>快速上手：3 分钟上线一个微站</h2>
+  <p class="sec-tip">以下为商家运营者的标准操作路径，共 5 步。</p>
+
+  <div class="steps">
+    <div class="step">
+      <h5>登录后台</h5>
+      <p>打开浏览器访问后台地址（如 <code class="inline">https://您的域名/admin/</code>），使用后台管理员账号登录。首次使用请向平台方索取账号，或使用超管分配的管理员账号。</p>
+    </div>
+    <div class="step">
+      <h5>选择模板并创建</h5>
+      <p>左侧菜单「微站管理 → 微站列表」→ 点击「创建微站」，进入<b>模板选择页</b>：</p>
+      <ul>
+        <li><b>套用模板</b>：从启用模板中选一张卡片，一键带入模板的外观与预置按钮模块，稍作修改即可；</li>
+        <li><b>空白创建</b>：不需要模板时，直接进入编辑器从零搭建。</li>
+      </ul>
+      <p>进入创建页后填写：</p>
+      <ul>
+        <li><b>微站名称</b>：对外展示的站点名称，如「2026 产品发布会」；</li>
+        <li><b>微站编码</b>：唯一访问标识，将出现在访问链接中，建议用英文 / 数字；</li>
+        <li><b>KV 图与背景</b>：套用模板时自动带入；也可上传或点「AI 生图」描述一句自动生成。</li>
+      </ul>
+    </div>
+    <div class="step">
+      <h5>配置模块</h5>
+      <p>在微站编辑页进入「模块」标签，点击「添加模块」逐个配置。每个模块可选择类型：</p>
+      <ul>
+        <li><b>富文本</b>：图文混排内容页，适合公告、详情、产品介绍；</li>
+        <li><b>外部链接</b>：点击后跳转到指定网址；</li>
+        <li><b>报名表单</b>：配置报名字段，用户填写后数据进入「报名数据」；</li>
+        <li><b>日程安排</b>：以时间线展示日程，支持批量导入；</li>
+        <li><b>我的二维码</b>：为登录用户生成专属签到二维码。</li>
+      </ul>
+      <p>模块可设置「开启 / 关闭时间」与「启用状态」，并可在「视觉编辑」中调整位置、颜色、圆角等样式。</p>
+    </div>
+    <div class="step">
+      <h5>导入账号（可选）</h5>
+      <p>若微站需要登录访问（如定向邀请的活动），在「账号」标签下批量导入账号密码；并对每个账号勾选可访问的模块，实现 <b>模块级权限</b>。</p>
+    </div>
+    <div class="step">
+      <h5>上线</h5>
+      <p>回到微站列表，点击「上线」按钮。上线会消耗 1 个 <b>上线额度</b>（无额度时请先在「会员中心」购买）。上线后用户即可通过 <code class="inline">/s/{微站code}</code> 访问。</p>
+    </div>
+  </div>
+
+  <div class="callout tip"><b>验证：</b>上线后用手机打开微站链接，确认 KV 图、模块、登录、报名与签到流程均正常，再对外正式分发。</div>
+</section>
+
+<!-- ==================== 03 ==================== -->
+<section id="s3">
+  <h2 class="sec"><span class="num">03</span>后台功能详解</h2>
+  <p class="sec-tip">按左侧菜单顺序介绍每个功能模块。标注 <span class="pill r">超管</span> 的菜单仅超级管理员可见。</p>
+
+  <h3>3.1 工作台</h3>
+  <div class="card">
+    <p>登录后默认进入工作台，集中展示：</p>
+    <ul>
+      <li><b>微站运营数据</b>：微站总数、在线数量、累计访问量等；</li>
+      <li><b>我的账户状态</b>：钱包余额、会员有效期、剩余上线额度（不足时提供购买入口）；</li>
+      <li><b>到期提醒</b>：会员到期前 7 / 3 / 1 天顶部横幅提醒，到期后自动转只读。</li>
+    </ul>
+    <div class="callout info"><b>权限差异：</b>超级管理员在工作台看到 <b>全局</b> 数据（含收入统计：总充值、总消费、活跃会员数等）；管理员 / 子账号仅看到自己创建的微站数据。</div>
+  </div>
+
+  <h3>3.2 微站管理</h3>
+  <div class="card">
+    <h4>微站列表</h4>
+    <ul>
+      <li>展示全部微站，含状态（草稿 / 在线 / 下线）、访问链接、创建时间；</li>
+      <li>支持「上线」「下线」「编辑」「删除」操作；<b>下线不退额度</b>，再次上线需重新消耗 1 个额度；</li>
+      <li>删除微站会级联删除其模块、账号、内容与统计数据，请谨慎操作。</li>
+    </ul>
+    <h4>创建 / 编辑微站</h4>
+    <ul>
+      <li><b>创建流程</b>：点击「创建微站」先进入<b>模板选择页</b>，套用模板或空白创建，再进入编辑器填写信息；</li>
+      <li><b>基础信息</b>：名称、编码、KV 图、背景色 / 背景图（KV 图与背景图均可一键「AI 生图」）；模板与布局随所选模板自动带入，也可在编辑器内调整；</li>
+      <li><b>访问控制</b>：是否需要登录、登录是否需要密码、整体开启 / 关闭时间、关闭提示文案；</li>
+      <li><b>签到开关</b>：开启后可在「签到管理」为该微站配置签到场次；</li>
+      <li><b>分享配置</b>：微信分享标题、副标题与分享图标（图标可用「AI 生图」一键生成）；</li>
+      <li><b>客服配置</b>：设置客服入口（如二维码 / 客服链接）。</li>
+    </ul>
+  </div>
+
+  <h4>模块类型详解</h4>
+  <div class="grid2">
+    <div class="feat">
+      <h5><span class="dot" style="background:#4F46E5;"></span>富文本</h5>
+      <p>基于 wangEditor 的图文混排编辑器，支持多图上传（自动存储到 OSS）、段落样式、插入链接等。适合公告、活动详情、产品介绍等长内容。</p>
+    </div>
+    <div class="feat">
+      <h5><span class="dot" style="background:#0F766E;"></span>外部链接</h5>
+      <p>点击模块后直接跳转至外部 URL。常用于外链小程序、第三方报名系统、视频页等。</p>
+    </div>
+    <div class="feat">
+      <h5><span class="dot" style="background:#9333EA;"></span>报名表单</h5>
+      <p>可视化配置表单字段（姓名、手机号、自定义字段等），用户在 H5 端填写提交，数据沉淀在「报名数据」页，支持查看 / 备注管理。</p>
+    </div>
+    <div class="feat">
+      <h5><span class="dot" style="background:#B45309;"></span>日程安排</h5>
+      <p>以日期时间线展示日程条目（时间 / 主题 / 人员），支持下载模板、批量导入 CSV 快速录入。</p>
+    </div>
+    <div class="feat">
+      <h5><span class="dot" style="background:#0F766E;"></span>我的二维码</h5>
+      <p>为已登录用户生成专属签到二维码，现场核销员扫码即可完成签到。配合微站「签到管理」使用。</p>
+    </div>
+  </div>
+
+  <h4>视觉编辑</h4>
+  <div class="card">
+    <ul>
+      <li>支持<b>自由布局</b>：在主页画布上拖拽模块位置（水平 / 垂直偏移）；</li>
+      <li>模块级样式：按钮宽度 / 高度 / 圆角、背景色、文字颜色、图标位置、内容对齐、是否显示箭头；</li>
+      <li>模块图标：在「图标选择」弹窗底部可一键「AI 生图」，为九宫格 / 按钮模块生成专属图标；</li>
+      <li>九宫格布局支持垂直偏移微调（<code class="inline">grid_offset_y</code>），适配不同 KV 图高度。</li>
+    </ul>
+  </div>
+
+  <h3>3.3 模板管理 <span class="pill p">管理员及以上</span></h3>
+  <div class="card">
+    <p>模板是一整套「微站外观 + 预置按钮模块」的组合，用于快速批量建站。管理员（含超管）在左侧菜单「模板管理」中维护，所有用户创建微站时均可套用。</p>
+    <h4>模板列表</h4>
+    <ul>
+      <li>卡片网格展示全部模板，支持按名称关键字、启用状态筛选；</li>
+      <li>支持<b>新建 / 编辑 / 启用 / 停用 / 删除</b>；系统内置模板带「系统」标签，<b>不可删除</b>；</li>
+      <li>停用后该模板不再出现在创建微站的选择列表中，已创建的微站不受影响。</li>
+    </ul>
+    <h4>模板编辑器（可视化）</h4>
+    <ul>
+      <li><b>外观设置</b>：模板名称、描述、KV 图（可 AI 生成）、背景图 / 背景色（可 AI 生成）、模板风格（默认 / 经典蓝紫 / 暗夜科技 / 节日红金）、布局（九宫格 / 按钮 / 自由拖拽）、微信分享配置；</li>
+      <li><b>页面元素</b>：配置页面标题装饰（字体 / 颜色 / 大小 / 位置），管理预置按钮模块（增删、拖拽排序、启停用）；</li>
+      <li><b>按钮模块</b>：每个按钮可设标题、图标（可 AI 生成）、内容类型（富文本 / 外链 / 报名表单 / 日程 / 二维码）与按钮样式；</li>
+      <li><b>预览图</b>：上传模板封面图，不传时创建微站的选择页展示风格占位背景。</li>
+    </ul>
+    <div class="callout tip"><b>与微站的关系：</b>套用模板创建微站时，系统会<b>复制</b>模板的外观配置并自动创建预置按钮模块，之后微站与模板<b>各自独立</b>——修改 / 删除模板不会影响已创建的微站。</div>
+  </div>
+
+  <h3>3.4 账号管理（微站登录账号）</h3>
+  <div class="card">
+    <ul>
+      <li>进入微站编辑页的「账号」标签，可<b>单个添加</b>或<b>批量导入</b>登录账号（账号 / 密码 / 昵称 / 手机号）；</li>
+      <li>对每个账号勾选<b>可访问的模块</b>，实现模块级权限控制；</li>
+      <li>支持启用 / 禁用、重置密码、删除；同一微站内账号名不可重复。</li>
+    </ul>
+    <div class="callout tip"><b>场景：</b>内部培训微站只对报名学员开放——导入学员账号，仅勾选培训资料模块，即可实现「专属内容」。</div>
+  </div>
+
+  <h3>3.5 签到管理</h3>
+  <div class="card">
+    <h4>项目与场次</h4>
+    <ul>
+      <li>「签到管理」展示已开启签到的微站项目；进入后可为每个微站配置<b>多个签到场次</b>（如上午场 / 下午场、Day1 / Day2）；</li>
+      <li>每个场次可设置名称、签到时间窗、启用状态与排序；</li>
+      <li>场次创建 / 编辑 / 删除 <b>不消耗上线额度</b>（额度仅在上线时扣减）。</li>
+    </ul>
+    <h4>核销签到（PC 后台）</h4>
+    <ul>
+      <li>打开对应场次，使用<b>摄像头 / 扫码盒子</b>扫描用户 H5 端的签到二维码完成核销；</li>
+      <li>同一用户同一场次仅可签到一次，重复扫码会提示「已签到」。</li>
+    </ul>
+    <h4>移动端核销</h4>
+    <ul>
+      <li>现场工作人员手机访问 <code class="inline">/m/</code>，用<b>后台管理员账号</b>登录；</li>
+      <li>选择微站 → 选择场次 → 扫码签到；支持<b>输入签到码</b>（摄像头不可用时的兜底方式）；</li>
+      <li>支持<b>人工补签</b>：按姓名 / 手机号 / 账号搜索 → 确认（选填补签原因）；补签需 admin 及以上角色；</li>
+      <li>实时查看本场次签到名单（姓名、脱敏手机号、签到方式与时间），下拉刷新。</li>
+    </ul>
+    <div class="callout warn"><b>HTTPS 要求：</b>手机摄像头扫码依赖浏览器摄像头权限，生产环境须在 HTTPS 域名下使用（微信内打开同样受限）。</div>
+    <h4>记录管理</h4>
+    <ul>
+      <li>支持对错误记录<b>撤销</b>签到（填写原因）；</li>
+      <li>支持<b>导出</b>签到明细，用于会后核对与留存。</li>
+    </ul>
+  </div>
+
+  <h3>3.6 报名数据</h3>
+  <div class="card">
+    <ul>
+      <li>汇总该微站所有「报名表单」模块的提交记录；</li>
+      <li>展示提交者姓名、手机号、提交内容与提交时间；</li>
+      <li>支持添加管理员备注，用于跟进处理状态；</li>
+      <li>同一微站同一模块同一登录账号 <b>仅保留一条有效记录</b>，重复提交自动去重。</li>
+    </ul>
+  </div>
+
+  <h3>3.7 AI 生图（内置微站编辑器）</h3>
+  <div class="card">
+    <p>AI 生图已集成到微站编辑器中：在需要图片的位置就地生成，无需切换页面、无需设计基础。共覆盖 4 类场景：</p>
+    <div class="table-box"><table>
+      <tr><th>入口</th><th>位置</th><th>生成尺寸</th><th>适用场景</th></tr>
+      <tr><td>KV 图</td><td>「页面外观」面板 KV 上传区</td><td>750 × 340</td><td>顶部横幅</td></tr>
+      <tr><td>背景图</td><td>「页面外观」面板背景设置</td><td>750 × 1334</td><td>页面全屏背景</td></tr>
+      <tr><td>分享图</td><td>「微信分享」面板</td><td>500 × 500</td><td>微信分享卡片缩略图</td></tr>
+      <tr><td>模块图标</td><td>模块「图标选择」弹窗底部</td><td>128 × 128</td><td>九宫格 / 按钮模块图标</td></tr>
+    </table></div>
+    <h4>使用步骤</h4>
+    <ol>
+      <li>进入微站编辑页，在对应图片区域点击「AI 生图」按钮（紫色魔法棒图标）；</li>
+      <li>在弹出的对话框输入<b>画面描述</b>，如「蓝色渐变科技风海报」；可选上传<b>参考图</b>做风格化（图生图）；</li>
+      <li>点击「立即生成」，约 10-60 秒出图（按张计费，余额不足时无法生成）；</li>
+      <li>在结果列表选一张满意的，点击「使用此图」自动回填到编辑器，可反复生成多张对比挑选；</li>
+      <li>点击页面底部「保存」按钮，H5 端立即生效。</li>
+    </ol>
+    <ul>
+      <li>支持<b>文生图</b>（描述画面生成）与<b>图生图</b>（参考图风格化）两种方式；</li>
+      <li>按生成张数计费（默认 <b>0.1 元 / 张</b>），从钱包余额扣除，生成失败的图片不扣费；超级管理员免扣费；</li>
+      <li>生成结果自动保存到「AI 生图」独立页面，可随时查看历史、下载复用或删除；</li>
+      <li>AI 服务商与模型由超管在「管理员配置」中统一设置（默认通义万相，支持多种文生图模型）。</li>
+    </ul>
+  </div>
+
+  <h3>3.8 会员中心</h3>
+  <div class="card">
+    <ul>
+      <li><b>钱包余额</b>：查看当前余额；余额不足时联系超管充值；</li>
+      <li><b>购买会员</b>：使用余额购买「年费会员」（默认 499 元 / 365 天），续费在现有到期时间上自动延长；</li>
+      <li><b>购买上线额度</b>：按场购买（默认 299 元 / 场，支持批量购买数量），额度 1 年内有效；</li>
+      <li><b>交易流水</b>：充值 / 消费 / 退款记录一目了然，可追溯。</li>
+    </ul>
+    <div class="callout warn"><b>余额不足</b>时购买会被拦截并提示「余额不足，请联系管理员充值」。</div>
+  </div>
+
+  <h3>3.9 后台账号管理 <span class="pill r">超管 / 管理员</span></h3>
+  <div class="card">
+    <ul>
+      <li>超级管理员可创建 / 编辑 / 禁用 / 删除任意角色账号（含管理员、子账号）；</li>
+      <li>管理员仅可创建与管理自己的子账号（不能管理超管与其他管理员）；</li>
+      <li>被禁用的账号无法登录后台；不能删除当前登录账号与超级管理员。</li>
+    </ul>
+  </div>
+
+  <h3>3.10 会员管理 <span class="pill r">超管</span></h3>
+  <div class="card">
+    <ul>
+      <li><b>会员列表</b>：查看所有用户的会员状态、到期时间、钱包余额、剩余额度；</li>
+      <li><b>钱包充值</b>：确认收到客户款项后为用户充值（金额 + 备注必填）；</li>
+      <li><b>退款</b>：对购买流水执行退款，自动撤销对应权益并退回余额（已使用的场次额度不退）；</li>
+      <li><b>套餐配置</b>：编辑套餐名称 / 价格 / 时长 / 描述，可启停套餐（停用后用户不可购买）；</li>
+      <li><b>流水查询</b>：全量交易流水，支持按用户 / 类型 / 时间筛选。</li>
+    </ul>
+    <div class="callout info"><b>调价促销：</b>套餐价格可由超管随时调整（如限时折扣价），用户购买时以当前生效价格为准。</div>
+  </div>
+
+  <h3>3.11 管理员配置 <span class="pill r">超管</span></h3>
+  <div class="card">
+    <ul>
+      <li><b>H5 域名</b>：对外域名配置，用于生成微站访问链接与二维码；</li>
+      <li><b>微信分享</b>：配置 AppID / AppSecret 后启用微信内分享（含分享标题、图标）；</li>
+      <li><b>OSS 存储</b>：阿里云 OSS 配置（AccessKey / Bucket / Endpoint / 自定义域名），未配置时降级为本地存储；</li>
+      <li><b>AI 服务</b>：配置 AI 生图服务商、API Key 与模型（默认通义万相，支持文生图 / 图生图）；</li>
+      <li><b>图标库</b>：管理本地图标库，供模块选择使用。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ==================== 04 ==================== -->
+<section id="s4">
+  <h2 class="sec"><span class="num">04</span>H5 访客使用说明</h2>
+  <p class="sec-tip">面向终端用户（手机访问微站的人），可作为对外宣传材料的一部分。</p>
+
+  <h3>4.1 访问与状态</h3>
+  <div class="card">
+    <ul>
+      <li>用户通过<b>扫码或链接</b>访问 <code class="inline">/s/{微站code}</code>；</li>
+      <li>未到开启时间显示「敬请期待」；已关闭显示运营者配置的关闭文案；</li>
+      <li>页面自动适配手机，视觉风格（模板 / KV / 背景）由运营者配置。</li>
+    </ul>
+  </div>
+
+  <h3>4.2 登录</h3>
+  <div class="card">
+    <ul>
+      <li>微站开启「需要登录」时，访问会先进入登录页（视觉与微站主页保持一致）；</li>
+      <li>使用运营者分配的<b>账号密码</b>登录（是否需密码由运营者配置）；</li>
+      <li>登录后仅展示<b>被授权的模块</b>；登录态保存在本机，下次访问自动进入。</li>
+    </ul>
+  </div>
+
+  <h3>4.3 浏览与互动</h3>
+  <div class="grid3">
+    <div class="feat"><h5><span class="dot" style="background:#4F46E5;"></span>内容浏览</h5><p>点击模块查看富文本详情，或跳转外部链接。</p></div>
+    <div class="feat"><h5><span class="dot" style="background:#9333EA;"></span>提交报名</h5><p>填写报名表单提交，姓名 / 手机号等字段由运营者配置。</p></div>
+    <div class="feat"><h5><span class="dot" style="background:#B45309;"></span>查看日程</h5><p>按时间线查看活动日程安排。</p></div>
+    <div class="feat"><h5><span class="dot" style="background:#0F766E;"></span>签到二维码</h5><p>「我的二维码」模块展示专属二维码，供现场核销员扫码签到。</p></div>
+    <div class="feat"><h5><span class="dot" style="background:#0F766E;"></span>客服咨询</h5><p>通过客服配置入口联系运营者。</p></div>
+  </div>
+
+  <div class="callout tip"><b>签到提示：</b>请保持二维码清晰完整，签到成功后建议截图留档。</div>
+</section>
+
+<!-- ==================== 05 ==================== -->
+<section id="s5">
+  <h2 class="sec"><span class="num">05</span>常见问题</h2>
+  <p class="sec-tip">FAQ — 覆盖上线、会员、额度、账号、签到等高频问题。</p>
+
+  <details>
+    <summary>为什么「上线」按钮点不了，提示额度不足？</summary>
+    <div class="body">微站上线会消耗 1 个「上线额度」（默认 299 元 / 场）。请在「会员中心 → 购买上线额度」用钱包余额购买。额度购买后 1 年内有效，过期作废。</div>
+  </details>
+  <details>
+    <summary>微站下线后，额度会退回来吗？</summary>
+    <div class="body">不会。下线不退额度；再次上线需要重新消耗 1 个额度。请确认活动不再需要后再下线。</div>
+  </details>
+  <details>
+    <summary>会员到期后会发生什么？</summary>
+    <div class="body">到期后所有微站自动变为<b>只读</b>：H5 端仍可正常访问，但后台无法创建 / 编辑微站。在「会员中心」续费后立即恢复。</div>
+  </details>
+  <details>
+    <summary>余额不足怎么充值？</summary>
+    <div class="body">当前版本由平台方（超级管理员）统一充值，不接入外部支付。请线下联系平台方完成转账，由超管在「会员管理」中充值到账。</div>
+  </details>
+  <details>
+    <summary>子账号能买会员、用额度吗？</summary>
+    <div class="body">子账号（sub_admin）<b>完全继承父账号</b>的会员状态与上线额度，不单独扣费。子账号上线微站时扣减父账号的额度。</div>
+  </details>
+  <details>
+    <summary>后台管理员账号和微站登录账号有什么区别？</summary>
+    <div class="body">两套独立体系。后台账号（左侧「账号管理」）用于登录管理后台；微站登录账号（微站编辑页「账号」标签）用于 H5 端访客登录。</div>
+  </details>
+  <details>
+    <summary>想给访客设权限，只让部分人看到某些模块？</summary>
+    <div class="body">在微站编辑页「账号」标签下，对每个账号勾选可访问的模块即可。未勾选的模块该账号在 H5 端不可见。此功能要求微站开启「需要登录」。</div>
+  </details>
+  <details>
+    <summary>现场签到怎么用手机核销？</summary>
+    <div class="body">工作人员手机访问 <code class="inline">/m/</code>，用后台管理员账号登录 → 选择微站 → 选择场次 → 扫描用户 H5 端「我的二维码」。也支持手动输入签到码与人工补签。注意需在 HTTPS 环境下使用摄像头。</div>
+  </details>
+  <details>
+    <summary>同一用户重复报名 / 重复签到怎么办？</summary>
+    <div class="body">报名表单对「同一微站 + 同一模块 + 同一登录账号」自动去重；签到时同一用户同一场次仅可签到一次，重复扫码提示「已签到」。误操作可通过后台撤销签到（需填写原因）。</div>
+  </details>
+  <details>
+    <summary>AI 生图怎么收费？</summary>
+    <div class="body">AI 生图按生成张数计费（默认 0.1 元 / 张），从钱包余额扣除；余额不足时无法生成。生成失败的图片不扣费。生成的历史图片可在「AI 生图」页面随时下载复用，不重复收费。超级管理员免扣费。</div>
+  </details>
+  <details>
+    <summary>模板删除后，已经用该模板创建的微站会受影响吗？</summary>
+    <div class="body">不会。套用模板创建微站时，系统会把模板的外观配置与预置按钮<b>复制</b>到微站中，之后两者完全独立。删除或修改模板不会影响任何已创建的微站；模板停用后也不再出现在建站选择列表。</div>
+  </details>
+  <details>
+    <summary>图片上传有什么限制？</summary>
+    <div class="body">支持 jpg / png / gif / webp 格式，单张最大 10MB。图片默认上传至阿里云 OSS；若未配置 OSS，自动降级为本地存储。</div>
+  </details>
+  <details>
+    <summary>忘记后台密码怎么办？</summary>
+    <div class="body">联系超级管理员在「后台账号管理」中重置密码。被禁用的账号无法登录。</div>
+  </details>
+</section>
+
+<!-- ==================== 06 ==================== -->
+<section id="s6">
+  <h2 class="sec"><span class="num">06</span>视频宣传脚本大纲</h2>
+  <p class="sec-tip">为后续视频宣传准备的拍摄脚本大纲，分「宣传片」与「操作教程片」两版，可直接在此基础上细化为分镜脚本。</p>
+
+  <div class="video-script">
+    <h4>6.1 产品宣传片（约 60 秒）</h4>
+    <div class="vs-meta">
+      <span>时长 60s</span><span>面向 潜在客户</span><span>形式 口播 + 实拍录屏混剪</span><span>目标 引流获客</span>
+    </div>
+    <div class="table-box"><table class="shot-table">
+      <tr><th style="width:70px;">时间</th><th style="width:120px;">画面</th><th>脚本 / 内容</th></tr>
+      <tr><td>0-8s</td><td>痛点开场</td><td>黑白镜头：活动就要开始了，H5 页面还没做好？找开发排期、改稿、等上线……「搭建一个移动端展示页，真的要这么麻烦吗？」</td></tr>
+      <tr><td>8-22s</td><td>产品亮相</td><td>进入后台界面，「微站系统——无需开发，3 分钟搭一个活动微站」。快剪：选模板 → 一键套用 → AI 生成 KV → 完成。</td></tr>
+      <tr><td>22-38s</td><td>核心能力</td><td>分屏展示三大场景：① 内容展示（富文本 / 外链 / 日程）；② 报名收集（表单 + 数据导出）；③ 现场签到（手机扫码核销 + 补签）。</td></tr>
+      <tr><td>38-50s</td><td>独特优势</td><td>「模板一键套用快速建站、模块级权限、实时数据统计，编辑页内置 AI 一键生图——KV 图、背景、分享图、模块图标全都能画，还支持开启 / 关闭时间自动控制」。录屏对应功能。</td></tr>
+      <tr><td>50-60s</td><td>行动号召</td><td>展示手机 H5 实际效果，「下一个活动，就用微站系统」。结尾放访问入口 / 联系方式二维码。</td></tr>
+    </table></div>
+    <div class="callout tip"><b>拍摄建议：</b>全片用真机录屏 + 手机实拍穿插；节奏快、字幕大；开场 3 秒内出现产品名。</div>
+  </div>
+
+  <div class="video-script">
+    <h4>6.2 操作教程片（约 4 分钟）</h4>
+    <div class="vs-meta">
+      <span>时长 4min</span><span>面向 已购商家</span><span>形式 全程录屏教学</span><span>目标 上手转化</span>
+    </div>
+    <div class="table-box"><table class="shot-table">
+      <tr><th style="width:70px;">时间</th><th style="width:120px;">章节</th><th>内容</th></tr>
+      <tr><td>0-20s</td><td>开场</td><td>一句话引入：「如何用微站系统，从零搭建并上线一个活动微站」。展示最终效果截图作预告。</td></tr>
+      <tr><td>20s-1min10s</td><td>选模板并创建</td><td>登录后台 → 创建微站：先进入模板选择页，套用一个模板（外观与按钮自动带入）；再演示「AI 生图」生成 KV 图与背景图，全程无需准备设计素材。</td></tr>
+      <tr><td>1min10s-2min30s</td><td>配置模块</td><td>逐个演示模块类型：富文本（图文编辑 / 图片上传）、外部链接、报名表单（字段配置）、日程（CSV 导入）、我的二维码；演示视觉编辑调整样式。</td></tr>
+      <tr><td>2min30s-3min20s</td><td>账号与签到</td><td>演示批量导入登录账号、勾选模块权限；开启签到 → 配置场次 → 手机 <code class="inline">/m/</code> 扫码核销 + 补签流程。</td></tr>
+      <tr><td>3min20s-3min50s</td><td>上线</td><td>演示会员中心查看余额 / 购买额度 → 微站上线 → 手机访问 H5 全流程体验（登录、浏览、报名、二维码）。</td></tr>
+      <tr><td>3min50s-4min</td><td>收尾</td><td>总结五步：选模板建站 → 配模块 → 导账号 → 开签到 → 上线；提示数据统计入口；附客服 / 联系方式。</td></tr>
+    </table></div>
+    <div class="callout warn"><b>拍摄建议：</b>录屏分辨率 1080p 以上，光标高亮；每一步停留 2-3 秒让观众看清操作位置；关键按钮加放大圈注；保持环境安静、配音语速平缓。</div>
+  </div>
+
+  <div class="card" style="background:var(--primary-light);border-color:#C7D2FE;">
+    <h4 style="color:var(--primary-dark);margin-top:0;">视频落地建议</h4>
+    <ol>
+      <li><b>先拍宣传片</b>：60 秒短视频投放获客，发布平台适配竖版（9:16）与横版（16:9）两个裁剪版本；</li>
+      <li><b>教程片分章节发布</b>：将 4 分钟教程拆成 4-5 条 60 秒短视频，便于在短视频平台逐条分发，也便于客户按需查找；</li>
+      <li><b>素材复用</b>：本手册的页面截图、功能清单、FAQ 可直接作为视频封面、简介文案与评论区置顶说明；</li>
+      <li><b>口播稿</b>：宣传片口播稿可在本大纲基础上逐句撰写，控制在每句 10-15 字以内，便于后期配音。</li>
+    </ol>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">微站系统 · 用户使用手册 v1.2 · 更新于 2026-08-19 · 如有疑问请联系平台运营</div>
+</footer>
+
+<script>
+(function(){
+  var links=document.querySelectorAll('nav.toc a');
+  var sections=document.querySelectorAll('section');
+  function onScroll(){
+    var y=window.scrollY+80,cur=links[0];
+    sections.forEach(function(s,i){
+      if(s.offsetTop<=y)cur=links[i];
+    });
+    links.forEach(function(a){a.classList.remove('on')});
+    if(cur)cur.classList.add('on');
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});
+  onScroll();
+})();
+</script>
+</body>
+</html>

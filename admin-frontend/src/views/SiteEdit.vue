@@ -51,7 +51,7 @@
               role="tab"
               :aria-selected="leftTab === 'modules'"
               @click="switchLeftTab('modules')"
-            >按钮管理 ({{ modules.length }})</button>
+            >页面和按钮管理 ({{ modules.length }})</button>
           </div>
 
           <div v-show="leftTab === 'site'" class="left-tab-panel">
@@ -112,7 +112,10 @@
                         <span class="upload-tip">建议 750×340 或等比横幅</span>
                       </div>
                     </el-upload>
-                    <el-button v-if="form.kv_image" text size="small" @click="form.kv_image = ''; markDirty()" style="margin-top: 8px">移除 KV 图</el-button>
+                    <div class="upload-actions">
+                      <el-button size="small" type="primary" plain :icon="MagicStick" @click="openAiDialog('kv')">AI 生成 KV 图</el-button>
+                      <el-button v-if="form.kv_image" text size="small" @click="form.kv_image = ''; markDirty()">移除 KV 图</el-button>
+                    </div>
                   </div>
 
                   <el-divider class="sub-divider" />
@@ -138,7 +141,10 @@
                             <span>上传背景图</span>
                           </div>
                         </el-upload>
-                        <el-button v-if="form.background_image" text size="small" @click="form.background_image = ''; markDirty()" style="margin-top: 8px">移除背景图</el-button>
+                        <div class="upload-actions">
+                          <el-button size="small" type="primary" plain :icon="MagicStick" @click="openAiDialog('background')">AI 生成背景</el-button>
+                          <el-button v-if="form.background_image" text size="small" @click="form.background_image = ''; markDirty()">移除背景图</el-button>
+                        </div>
                       </el-form-item>
                       <el-form-item label="背景色">
                         <div class="color-row">
@@ -190,7 +196,10 @@
                           <span>上传分享图标</span>
                         </div>
                       </el-upload>
-                      <el-button v-if="form.share_image" text size="small" @click="form.share_image = ''; markDirty()" style="margin-top: 8px">移除图标</el-button>
+                      <div class="upload-actions">
+                        <el-button size="small" type="primary" plain :icon="MagicStick" @click="openAiDialog('share')">AI 生成分享图</el-button>
+                        <el-button v-if="form.share_image" text size="small" @click="form.share_image = ''; markDirty()">移除图标</el-button>
+                      </div>
                     </el-form-item>
                     <el-form-item label="分享标题">
                       <el-input v-model="form.share_title" maxlength="128" show-word-limit placeholder="默认使用微站名称" @input="markDirty" />
@@ -367,8 +376,29 @@
 
           <div v-show="leftTab === 'modules'" class="left-tab-panel">
             <div class="left-scroll">
-              <div v-if="!isEdit" class="empty-hint">请先保存微站基本信息，再管理按钮</div>
+              <div v-if="!isEdit" class="empty-hint">请先保存微站基本信息，再管理页面和按钮</div>
               <div v-else class="module-list">
+                <!-- 页面标题（页面装饰元素，层级最高，可在预览区拖拽定位） -->
+                <div
+                  class="module-item title-item"
+                  :class="{ active: selectedModuleId === TITLE_DECO_ID }"
+                  @click="selectedModuleId = TITLE_DECO_ID"
+                >
+                  <span class="layer-drag-handle" style="visibility: hidden"><Rank /></span>
+                  <div class="module-icon title-icon">
+                    <el-icon :size="18"><EditPen /></el-icon>
+                  </div>
+                  <div class="module-info">
+                    <div class="module-title">页面标题</div>
+                    <div class="module-meta">
+                      <el-tag size="small" type="warning">页面装饰</el-tag>
+                      <span v-if="!form.title_config.enabled" class="disabled-tag">已隐藏</span>
+                    </div>
+                  </div>
+                  <div class="module-actions">
+                    <el-switch v-model="form.title_config.enabled" size="small" @change="markDirty" @click.stop />
+                  </div>
+                </div>
                 <div
                   v-for="(m, idx) in modules"
                   :key="m.id"
@@ -436,7 +466,7 @@
       <!-- 中间手机预览 -->
       <div class="editor-center">
         <div class="preview-wrapper">
-          <div class="device-frame" :class="'tpl-' + form.template" :style="previewBgStyle">
+          <div ref="deviceFrameRef" class="device-frame" :class="'tpl-' + form.template" :style="previewBgStyle">
             <div class="device-notch"></div>
             <!-- 状态栏：位于刘海两侧"耳朵区"，与真机一致 -->
             <div class="status-bar">
@@ -487,6 +517,17 @@
                   <span class="resize-handle rh-w" @pointerdown.stop="startResize($event, m, 'w')" />
                 </template>
               </div>
+            </div>
+            <!-- 页面标题装饰：绝对定位、层级最高、可拖拽（与自由按钮一致） -->
+            <div
+              v-if="previewMode === 'main' && form.title_config.enabled"
+              class="site-title-deco"
+              :class="{ selected: selectedModuleId === TITLE_DECO_ID }"
+              :style="previewTitleStyle"
+              @pointerdown="startTitleDrag"
+              @click.stop="selectedModuleId = TITLE_DECO_ID"
+            >
+              {{ previewTitleText }}
             </div>
             <div class="device-screen">
               <!-- ====== 主页预览 ====== -->
@@ -604,7 +645,7 @@
             </template>
             <template v-else>
               <span v-if="form.layout === 'free'">拖动按钮调整位置 · 选中后拖动手柄调整大小与形状</span>
-              <span v-else-if="form.layout === 'button'">在「按钮管理」标签拖拽调整顺序 · 拖拽预览区手柄调整位置</span>
+              <span v-else-if="form.layout === 'button'">在「页面和按钮管理」标签拖拽调整顺序 · 拖拽预览区手柄调整位置</span>
               <span v-else>点击预览区按钮可在右侧编辑</span>
             </template>
           </div>
@@ -816,10 +857,178 @@
           </div>
         </template>
 
+        <!-- 页面标题（页面装饰）属性面板 -->
+        <template v-else-if="isEdit && selectedModuleId === TITLE_DECO_ID">
+          <div class="inspector-head">
+            <span class="inspector-title">页面标题属性</span>
+          </div>
+          <div class="inspector-body">
+            <div class="field-block">
+              <label class="field-label">启用</label>
+              <el-switch v-model="form.title_config.enabled" @change="markDirty" />
+              <span class="field-hint" style="margin-left: 8px">作为页面装饰显示在最高层级</span>
+            </div>
+
+            <template v-if="form.title_config.enabled">
+              <div class="field-block">
+                <label class="field-label">标题文本</label>
+                <el-input
+                  v-model="form.title_config.text"
+                  size="small"
+                  :placeholder="form.name || '默认显示微站名称'"
+                  maxlength="60"
+                  @input="markDirty"
+                />
+              </div>
+
+              <div class="field-block">
+                <label class="field-label">字体</label>
+                <el-select v-model="form.title_config.font" size="small" @change="markDirty">
+                  <el-option label="黑体" value="sans" />
+                  <el-option label="宋体" value="song" />
+                  <el-option label="楷体" value="kai" />
+                  <el-option label="仿宋" value="fangsong" />
+                </el-select>
+              </div>
+
+              <div class="field-block">
+                <label class="field-label">颜色</label>
+                <div class="color-row">
+                  <el-color-picker v-model="form.title_config.color" @change="markDirty" />
+                </div>
+              </div>
+
+              <div class="field-block">
+                <label class="field-label">
+                  大小
+                  <span class="field-unit">px</span>
+                </label>
+                <div class="size-row">
+                  <el-slider
+                    v-model="form.title_config.size"
+                    :min="12"
+                    :max="48"
+                    :step="1"
+                    size="small"
+                    class="size-slider"
+                    @input="markDirty"
+                  />
+                  <el-input-number
+                    v-model="form.title_config.size"
+                    :min="12"
+                    :max="48"
+                    :step="1"
+                    size="small"
+                    controls-position="right"
+                    class="size-number"
+                    @change="markDirty"
+                  />
+                </div>
+              </div>
+
+              <div class="field-block">
+                <label class="field-label">粗细</label>
+                <el-radio-group v-model="form.title_config.bold" size="small" @change="markDirty">
+                  <el-radio-button :value="false">常规</el-radio-button>
+                  <el-radio-button :value="true">加粗</el-radio-button>
+                </el-radio-group>
+              </div>
+
+              <div class="inspector-divider">位置与尺寸</div>
+
+              <div class="field-block">
+                <label class="field-label">
+                  水平位置
+                  <span class="field-unit">占画布 %</span>
+                </label>
+                <div class="size-row">
+                  <el-slider
+                    v-model="form.title_config.position_x"
+                    :min="0"
+                    :max="100"
+                    :step="0.5"
+                    size="small"
+                    class="size-slider"
+                    @input="markDirty"
+                  />
+                  <el-input-number
+                    v-model="form.title_config.position_x"
+                    :min="0"
+                    :max="100"
+                    :step="0.5"
+                    size="small"
+                    controls-position="right"
+                    class="size-number"
+                    @change="markDirty"
+                  />
+                </div>
+              </div>
+
+              <div class="field-block">
+                <label class="field-label">
+                  垂直位置
+                  <span class="field-unit">占画布 %</span>
+                </label>
+                <div class="size-row">
+                  <el-slider
+                    v-model="form.title_config.position_y"
+                    :min="0"
+                    :max="100"
+                    :step="0.5"
+                    size="small"
+                    class="size-slider"
+                    @input="markDirty"
+                  />
+                  <el-input-number
+                    v-model="form.title_config.position_y"
+                    :min="0"
+                    :max="100"
+                    :step="0.5"
+                    size="small"
+                    controls-position="right"
+                    class="size-number"
+                    @change="markDirty"
+                  />
+                </div>
+                <div class="field-hint">也可以直接在预览区拖拽标题调整位置</div>
+              </div>
+
+              <div class="field-block">
+                <label class="field-label">
+                  最大宽度
+                  <span class="field-unit">占画布 %</span>
+                </label>
+                <div class="size-row">
+                  <el-slider
+                    v-model="form.title_config.max_width"
+                    :min="20"
+                    :max="100"
+                    :step="1"
+                    size="small"
+                    class="size-slider"
+                    @input="markDirty"
+                  />
+                  <el-input-number
+                    v-model="form.title_config.max_width"
+                    :min="20"
+                    :max="100"
+                    :step="1"
+                    size="small"
+                    controls-position="right"
+                    class="size-number"
+                    @change="markDirty"
+                  />
+                </div>
+                <div class="field-hint">文本超出最大宽度后自动换行</div>
+              </div>
+            </template>
+          </div>
+        </template>
+
         <div v-else class="inspector-empty">
           <el-icon size="40"><Edit /></el-icon>
-          <div class="ie-title">{{ isEdit ? '未选择按钮' : '微站预览' }}</div>
-          <div class="ie-desc" v-if="isEdit">点击左侧列表或中间预览区的按钮，在此编辑标题、图标、内容类型与启用状态。</div>
+          <div class="ie-title">{{ isEdit ? '未选择元素' : '微站预览' }}</div>
+          <div class="ie-desc" v-if="isEdit">点击左侧列表或中间预览区的页面标题、按钮，在此编辑属性。</div>
           <div class="ie-desc" v-else>保存微站基本信息后，即可在中间预览区添加并编辑按钮。</div>
         </div>
       </div>
@@ -833,6 +1042,12 @@
       </div>
       <template #footer><el-button type="primary" @click="showQrDialog = false">关闭</el-button></template>
     </el-dialog>
+
+    <AiGenerateDialog
+      v-model:visible="aiDialog.visible"
+      :use="aiDialog.use"
+      @select="onAiImageSelect"
+    />
   </div>
 </template>
 
@@ -842,11 +1057,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
   Plus, Rank, Grid, Tickets, Document, Brush,
-  Setting, Edit, Share, Service, User, Lock, Phone,
+  Setting, Edit, Share, Service, User, Lock, Phone, MagicStick, EditPen,
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/store/auth'
 import api from '@/api'
 import IconPicker from '@/components/IconPicker.vue'
+import AiGenerateDialog from '@/components/AiGenerateDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -906,6 +1122,17 @@ const form = reactive({
   template: 'default',
   layout: 'grid',
   kv_image: '',
+  title_config: {
+    enabled: false,
+    text: '',
+    font: 'sans',
+    color: '#333333',
+    size: 20,
+    bold: true,
+    position_x: 5,
+    position_y: 5,
+    max_width: 80,
+  },
   background_color: '#ffffff',
   background_image: '',
   share_image: '',
@@ -953,8 +1180,32 @@ const previewBgStyle = computed(() => {
   return {}
 })
 
+// --- 微站标题（页面装饰元素：绝对定位、层级最高，与 H5 保持一致的字体栈） ---
+const TITLE_DECO_ID = 0 // 页面标题在选中态中的虚拟 ID（模块 ID 均为正数，不会冲突）
+const TITLE_FONT_STACKS: Record<string, string> = {
+  sans: "'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif",
+  song: "'Songti SC', 'SimSun', serif",
+  kai: "'Kaiti SC', 'STKaiti', 'KaiTi', serif",
+  fangsong: "'Fangsong SC', 'STFangsong', 'FangSong', serif",
+}
+const previewTitleText = computed(() => form.title_config.text || form.name || '微站标题')
+const previewTitleStyle = computed(() => {
+  const t = form.title_config
+  return {
+    position: 'absolute',
+    left: (t.position_x ?? 5) + '%',
+    top: (t.position_y ?? 5) + '%',
+    maxWidth: (t.max_width ?? 80) + '%',
+    fontFamily: TITLE_FONT_STACKS[t.font] || TITLE_FONT_STACKS.sans,
+    color: t.color || '#333333',
+    fontSize: (t.size || 20) + 'px',
+    fontWeight: t.bold ? '700' : '400',
+  }
+})
+
 // --- 拖拽（自由模式） ---
 const freeLayoutRef = ref<HTMLElement>()
+const deviceFrameRef = ref<HTMLElement>()
 const draggingId = ref<number | null>(null)
 const resizingId = ref<number | null>(null)
 
@@ -1191,6 +1442,46 @@ function startDrag(e: PointerEvent, module: any) {
   document.addEventListener('pointerup', onUp)
 }
 
+// 页面标题装饰拖拽（以 device-frame 为坐标容器，百分比存储）
+function startTitleDrag(e: PointerEvent) {
+  if (!deviceFrameRef.value) return
+  e.preventDefault()
+
+  const container = deviceFrameRef.value
+  const containerRect = container.getBoundingClientRect()
+  const el = e.currentTarget as HTMLElement
+  const elRect = el.getBoundingClientRect()
+
+  const offsetX = e.clientX - elRect.left
+  const offsetY = e.clientY - elRect.top
+
+  el.setPointerCapture(e.pointerId)
+
+  function onMove(ev: PointerEvent) {
+    const x = ev.clientX - containerRect.left - offsetX
+    const y = ev.clientY - containerRect.top - offsetY
+
+    const wPct = (elRect.width / containerRect.width) * 100
+    const hPct = (elRect.height / containerRect.height) * 100
+
+    const xPct = Math.max(0, Math.min(100 - wPct, (x / containerRect.width) * 100))
+    const yPct = Math.max(0, Math.min(100 - hPct, (y / containerRect.height) * 100))
+
+    form.title_config.position_x = Math.round(xPct * 10) / 10
+    form.title_config.position_y = Math.round(yPct * 10) / 10
+  }
+
+  function onUp(ev: PointerEvent) {
+    el.releasePointerCapture(ev.pointerId)
+    document.removeEventListener('pointermove', onMove)
+    document.removeEventListener('pointerup', onUp)
+    markDirty()
+  }
+
+  document.addEventListener('pointermove', onMove)
+  document.addEventListener('pointerup', onUp)
+}
+
 // --- 按钮位置偏移保存 ---
 async function patchGridOffset() {
   if (!isEdit.value) return
@@ -1230,6 +1521,21 @@ function onLayoutChange() {
     })
   }
   markDirty()
+}
+
+// --- AI 生图弹窗（KV/背景/分享图一键生成回填） ---
+const aiDialog = reactive({ visible: false, use: 'kv' as string })
+function openAiDialog(use: string) {
+  aiDialog.use = use
+  aiDialog.visible = true
+}
+function onAiImageSelect(url: string) {
+  const labelMap: Record<string, string> = { kv: 'KV 图', background: '背景图', share: '分享图' }
+  if (aiDialog.use === 'kv') form.kv_image = url
+  else if (aiDialog.use === 'background') form.background_image = url
+  else if (aiDialog.use === 'share') form.share_image = url
+  markDirty()
+  ElMessage.success(`AI${labelMap[aiDialog.use] || '图片'}已应用，记得点击页面底部「保存」按钮生效`)
 }
 
 // --- 上传回调 ---
@@ -1462,6 +1768,9 @@ async function handleSave() {
       ElMessage.success('保存成功')
       isDirty.value = false
     } else {
+      // 从模板创建: 携带模板ID，后端自动创建预置模块
+      const templateId = Number(route.query.template_id)
+      if (templateId) data.template_id = templateId
       const res: any = await api.post('/sites', data)
       ElMessage.success('创建成功')
       router.replace(`/sites/${res.id}/edit`)
@@ -1486,6 +1795,18 @@ onMounted(async () => {
       template: res.template || 'default',
       layout: res.layout || 'grid',
       kv_image: res.kv_image || '',
+      title_config: {
+        enabled: false,
+        text: '',
+        font: 'sans',
+        color: '#333333',
+        size: 20,
+        bold: true,
+        position_x: 5,
+        position_y: 5,
+        max_width: 80,
+        ...(res.title_config || {}),
+      },
       background_color: res.background_color || '',
       background_image: res.background_image || '',
       share_image: res.share_image || '',
@@ -1518,6 +1839,38 @@ onMounted(async () => {
       close_message: res.close_message || '',
     })
     await loadModules()
+  } else {
+    // 创建模式: 从模板预填外观配置（预置模块由后端在保存时按 template_id 自动创建）
+    const templateId = Number(route.query.template_id)
+    if (templateId) {
+      try {
+        const tpl: any = await api.get(`/templates/${templateId}`)
+        Object.assign(form, {
+          template: tpl.template_key || 'default',
+          layout: tpl.layout || 'grid',
+          kv_image: tpl.kv_image || '',
+          title_config: {
+            enabled: false,
+            text: '',
+            font: 'sans',
+            color: '#333333',
+            size: 20,
+            bold: true,
+            position_x: 5,
+            position_y: 5,
+            max_width: 80,
+            ...(tpl.title_config || {}),
+          },
+          background_color: tpl.background_color || '',
+          background_image: tpl.background_image || '',
+          share_image: tpl.share_image || '',
+          share_title: tpl.share_title || '',
+          share_subtitle: tpl.share_subtitle || '',
+        })
+      } catch {
+        // 模板加载失败则按空白创建
+      }
+    }
   }
 })
 
@@ -1740,6 +2093,12 @@ defineExpose({
 }
 
 /* 上传组件 */
+.upload-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
 .upload-preview {
   position: relative;
   width: 100%;
@@ -1873,6 +2232,10 @@ defineExpose({
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+/* 页面标题列表项图标 */
+.title-item .module-icon.title-icon {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
 }
 .module-info {
   flex: 1;
@@ -2092,6 +2455,18 @@ defineExpose({
 .kv-image {
   width: 100%;
   display: block;
+}
+/* 页面标题装饰：绝对定位、层级最高、可拖拽 */
+.site-title-deco {
+  line-height: 1.4;
+  word-break: break-all;
+  cursor: move;
+  user-select: none;
+  z-index: 999; /* 高于自由按钮(2)、客服浮窗(20)等所有图层 */
+}
+.site-title-deco.selected {
+  outline: 2px dashed #409eff;
+  outline-offset: 3px;
 }
 
 /* 内容区域 */

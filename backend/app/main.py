@@ -16,6 +16,7 @@ from app.utils.security import hash_password
 from app.routers import auth, sites, modules, accounts, upload, stats, public, form_submissions, system_config, checkin
 from app.routers import billing, admin_billing
 from app.routers import ai_generate
+from app.routers import templates
 from app.services import billing_service
 from app.utils.rate_limit import RateLimitMiddleware
 
@@ -76,18 +77,18 @@ async def lifespan(app: FastAPI):
                 db.add(SystemConfig(id=1))
                 db.commit()
 
-            # 创建默认管理员
-            admin = db.query(User).filter(User.username == "admin").first()
+            # 创建默认管理员（账号密码可在 .env 中配置 ADMIN_USERNAME / ADMIN_PASSWORD）
+            admin = db.query(User).filter(User.username == settings.ADMIN_USERNAME).first()
             if not admin:
                 admin = User(
-                    username="admin",
-                    password_hash=hash_password("admin123"),
+                    username=settings.ADMIN_USERNAME,
+                    password_hash=hash_password(settings.ADMIN_PASSWORD),
                     nickname="超级管理员",
                     role="super_admin",
                 )
                 db.add(admin)
                 db.commit()
-                logger.info("[INFO] 默认管理员已创建: admin / admin123")
+                logger.info(f"[INFO] 默认管理员已创建: {settings.ADMIN_USERNAME} / {settings.ADMIN_PASSWORD}")
 
             # 初始化默认计费套餐
             _init_default_plans(db)
@@ -150,6 +151,7 @@ app.include_router(checkin.router, prefix=api_prefix)
 app.include_router(billing.router, prefix=api_prefix)
 app.include_router(admin_billing.router, prefix=api_prefix)
 app.include_router(ai_generate.router, prefix=api_prefix)
+app.include_router(templates.router, prefix=api_prefix)
 # 公开接口不在/api/v1下, 直接挂在/p
 app.include_router(public.router)
 app.include_router(form_submissions.public_router)

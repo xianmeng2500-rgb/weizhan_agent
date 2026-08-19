@@ -23,7 +23,7 @@
         </el-form>
         <div class="login-tip">
           <el-icon><InfoFilled /></el-icon>
-          <span>默认账号: admin / admin123</span>
+          <span>如需帮助请联系:18391087372</span>
         </div>
       </div>
     </div>
@@ -55,13 +55,15 @@ async function handleLogin() {
   if (!valid) return
   loading.value = true
   try {
-    const res: any = await api.post('/auth/login', form)
+    // skipErrorToast: 登录失败的提示由本页显式处理（避免依赖全局拦截器）
+    const res: any = await api.post('/auth/login', form, { skipErrorToast: true } as any)
     auth.setAuth(res.access_token, res.nickname, res.role)
     await auth.fetchMe()
     ElMessage.success('登录成功')
     router.push('/dashboard')
-  } catch {
-    // 错误已在拦截器处理
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail
+    ElMessage.error({ message: detail || '登录失败，请检查账号密码', zIndex: 3000 })
   } finally {
     loading.value = false
   }

@@ -36,6 +36,34 @@ I2I_MAX_EDGE = 5000
 # 图生图输出总像素约束（错误提示: between 589824 (768*768) and 1638400 (1280*1280)）
 I2I_MIN_PIXELS = 589824
 
+# AI 生图用途：绑定微站系统真实图片使用场景，尺寸与约束词均为该用途定制
+AI_USES: dict[str, dict[str, str]] = {
+    "icon": {
+        "label": "模块图标",
+        "size": "128*128",
+        "desc": "128×128 正方形，用于九宫格/按钮模块图标",
+        "prompt_suffix": "，扁平化设计，纯色或渐变简洁背景，主体居中，无文字，无LOGO",
+    },
+    "kv": {
+        "label": "KV 横幅",
+        "size": "750*340",
+        "desc": "750×340 宽幅横幅，用于微站顶部 KV 图",
+        "prompt_suffix": "，宽幅横幅构图，左右留白，视觉重心居中，简洁大气，无文字，无LOGO",
+    },
+    "share": {
+        "label": "微信分享图",
+        "size": "500*500",
+        "desc": "500×500 正方形，用于微信分享卡片",
+        "prompt_suffix": "，正方形构图，主题突出，简洁清晰，无文字，无LOGO",
+    },
+    "background": {
+        "label": "页面背景",
+        "size": "750*1334",
+        "desc": "750×1334 竖版，用于微站页面全屏背景",
+        "prompt_suffix": "，竖版构图，大面积留白，低饱和渐变色调，适合作为页面全屏背景，无文字，无LOGO",
+    },
+}
+
 
 def get_ai_config() -> dict[str, str]:
     """获取 AI 配置：数据库系统配置优先，环境变量作为回退。"""
@@ -229,15 +257,18 @@ def generate_images(
     size: str = "1024*1024",
     n: int = 1,
     reference_image_url: Optional[str] = None,
+    use: Optional[str] = None,
 ) -> tuple[list[str], str]:
     """调用通义万相生成图片。
 
     Args:
         prompt: 提示词
         negative_prompt: 负面提示词
-        size: 生成尺寸，如 1024*1024
+        size: 生成尺寸，如 1024*1024；提供 use 时以用途预设尺寸为准
         n: 生成数量(1-4)，图生图固定为 1
         reference_image_url: 参考图 URL（可选），传入则走图生图
+        use: 微站用途（icon/kv/share/background），提供时按用途预设尺寸，
+            并在 prompt 尾部附加场景化约束词
 
     Returns:
         (持久化后的结果 URL 列表, 使用的模型名)
@@ -245,6 +276,14 @@ def generate_images(
     cfg = get_ai_config()
     if not cfg["api_key"]:
         raise HTTPException(status_code=400, detail="AI 生图未配置 API Key，请先在「管理员配置」中填写")
+
+    # 按用途解析目标尺寸并附加场景化约束词（提高出图可用率）
+    if use:
+        if use not in AI_USES:
+            raise HTTPException(status_code=400, detail=f"不支持的用途: {use}")
+        use_info = AI_USES[use]
+        size = use_info["size"]
+        prompt = f"{prompt.strip()}{use_info['prompt_suffix']}"
 
     # 解析目标尺寸；低于模型下限的按比例放大请求，生成后再缩回目标尺寸
     is_i2i = bool(reference_image_url)
