@@ -150,10 +150,7 @@ async function handleLogin() {
     showSuccessToast({ message: '登录成功', duration: 1000 })
     setTimeout(() => router.replace(`/s/${code}`), 1600)
   } catch (err: any) {
-    // 登录失败提示：拦截器会处理 401，这里兜底处理其他异常
-    if (err.response?.data?.detail && err.response?.status !== 401) {
-      showFailToast(err.response.data.detail)
-    }
+    showFailToast(err.response?.data?.detail || '登录失败')
     form.password = ''
   } finally {
     loading.value = false

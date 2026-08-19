@@ -245,6 +245,7 @@ def create_session(
     db.add(session)
     db.commit()
     db.refresh(session)
+    # 商业化(v1.2): 创建场次不再扣减额度，扣减时机改为「微站上线」(见 sites.py /status)
     return {
         "id": session.id,
         "name": session.name,

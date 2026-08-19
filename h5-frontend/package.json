@@ -11,6 +11,7 @@
   "dependencies": {
     "@vant/area-data": "^2.1.0",
     "axios": "^1.6.8",
+    "jsqr": "^1.4.0",
     "pinia": "^2.1.7",
     "qrcode": "^1.5.4",
     "vant": "^4.9.0",

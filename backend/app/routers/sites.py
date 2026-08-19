@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, Site
 from app.utils.deps import get_current_admin, assert_site_access, ROLE_SUPER_ADMIN
+from app.services.billing_service import assert_active_membership, consume_credit_for_site_online
 from app.schemas.site import (
     SiteCreate, SiteUpdate, SiteStatusUpdate,
     SiteOut, PaginatedSites,
@@ -111,6 +112,8 @@ def create_site(
     current: User = Depends(get_current_admin),
 ):
     """创建微站"""
+    # 商业化: 校验会员状态（sub_admin 继承父账号）
+    assert_active_membership(db, current)
     # 检查code唯一性
     if db.query(Site).filter(Site.code == req.code).first():
         raise HTTPException(status_code=400, detail="微站唯一码已存在")
@@ -172,6 +175,8 @@ def update_site(
     if not site:
         raise HTTPException(status_code=404, detail="微站不存在")
     assert_site_access(site, current)
+    # 商业化: 校验会员状态（过期后微站只读）
+    assert_active_membership(db, current)
     if req.code and req.code != site.code:
         if site.status == "online":
             raise HTTPException(status_code=400, detail="微站已上线，访问码不可修改")
@@ -230,6 +235,15 @@ def update_status(
     assert_site_access(site, current)
     if req.status not in ("draft", "online", "offline"):
         raise HTTPException(status_code=400, detail="无效状态")
+    # 商业化(v1.2): 每次上线扣减1个场次额度（super_admin 免费）；下线不退额度
+    if req.status == "online" and site.status != "online" and current.role != ROLE_SUPER_ADMIN:
+        try:
+            consume_credit_for_site_online(db, current, site.id)
+        except ValueError:
+            raise HTTPException(
+                status_code=403,
+                detail="CREDIT_INSUFFICIENT:场次额度不足，无法上线。请前往会员中心购买（299元/次）",
+            )
     site.status = req.status
     try:
         db.commit()

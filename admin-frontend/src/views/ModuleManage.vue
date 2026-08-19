@@ -66,10 +66,8 @@
           <el-input v-model="editing.title" placeholder="模块标题" />
         </el-form-item>
         <el-form-item label="图标">
-          <el-upload action="/api/v1/upload/image" :headers="uploadHeaders" :show-file-list="false" :on-success="onIconSuccess" accept="image/*">
-            <img v-if="editing.icon" :src="editing.icon" style="width:60px; height:60px; object-fit:cover; border-radius:8px" />
-            <el-button v-else size="small">上传图标</el-button>
-          </el-upload>
+          <IconPicker :model-value="editing.icon" @update:model-value="(v: string) => (editing.icon = v)" />
+          <div class="form-tip">可从图标库选择或上传自定义图标，建议 128×128 正方形</div>
         </el-form-item>
         <el-form-item label="排序">
           <el-input-number v-model="editing.sort_order" :min="0" />
@@ -217,7 +215,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, shallowRef, onBeforeUnmount } from 'vue'
+import { ref, reactive, shallowRef, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { EditPen, Grid, Plus, Calendar, PictureFilled } from '@element-plus/icons-vue'
@@ -226,6 +224,7 @@ import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import FormDesigner from '@/components/FormDesigner'
 import ScheduleEditor from '@/components/ScheduleEditor'
 import QRCodeEditor from '@/components/QRCodeEditor'
+import IconPicker from '@/components/IconPicker.vue'
 import api from '@/api'
 import dayjs from 'dayjs'
 
@@ -244,8 +243,6 @@ const qrcodeEditorVisible = ref(false)
 const scheduleEditorRef = ref()
 const qrcodeEditorRef = ref()
 const needCheckin = ref(false)
-
-const uploadHeaders = computed(() => ({ Authorization: `Bearer ${auth.token}` }))
 
 // wangEditor
 const editorRef = shallowRef()
@@ -330,10 +327,6 @@ function openEdit(row: any) {
     qrcode_config: row.qrcode_config || { hint: '', display_fields: [] },
   })
   dialogVisible.value = true
-}
-
-function onIconSuccess(res: any) {
-  if (res.url) editing.icon = res.url
 }
 
 function handleContentTypeChange(contentType: string | number | boolean | undefined) {
@@ -453,6 +446,7 @@ loadData()
 
 <style scoped>
 .card-header { display: flex; justify-content: space-between; align-items: center; }
+.form-tip { font-size: 12px; color: #909399; line-height: 1.5; width: 100%; }
 .card-title {
   display: flex;
   align-items: center;

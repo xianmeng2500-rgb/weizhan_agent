@@ -303,6 +303,7 @@ async function loadSessions() {
   }
 }
 
+// 商业化(v1.2): 创建场次不消耗额度（额度在微站上线时扣减，见 SiteList 上线操作）
 function openSessionDialog(row?: any) {
   sessionDialog.visible = true
   sessionDialog.isEdit = !!row

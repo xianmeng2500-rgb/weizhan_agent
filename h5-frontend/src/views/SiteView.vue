@@ -1,5 +1,5 @@
 <template>
-  <div class="site-page" :class="'tpl-' + (site.template || 'classic')" :style="pageStyle">
+  <div class="site-page" :class="'tpl-' + (site.template || 'default')" :style="pageStyle">
     <!-- 背景图：铺满页面作为底层装饰（与后台预览一致：absolute + object-fit cover） -->
     <div v-if="site.background_image" class="bg-layer">
       <img :src="site.background_image" class="bg-image" alt="" />
@@ -181,6 +181,8 @@ async function loadSite() {
       showToast(err.response.data?.detail || '微站不可访问')
     } else if (err.response?.status === 404) {
       showToast('微站不存在')
+    } else {
+      showToast(err.response?.data?.detail || '加载失败')
     }
     return
   }
@@ -195,6 +197,8 @@ async function loadModules() {
   } catch (err: any) {
     if (err.response?.status === 401 && err.response?.data?.detail === '请先登录') {
       router.push(`/s/${code}/login`)
+    } else {
+      showToast(err.response?.data?.detail || '模块加载失败')
     }
   }
 }
@@ -250,9 +254,10 @@ onMounted(loadSite)
 }
 
 /* ====== 模板渐变 ====== */
-.tpl-classic { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-.tpl-dark    { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
-.tpl-festive { background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); }
+.tpl-default { background: #ffffff; }
+.tpl-classic { background: linear-gradient(135deg, #c5cef5 0%, #c8bde0 100%); }
+.tpl-dark    { background: linear-gradient(135deg, #4a4a68 0%, #3e3e5a 100%); }
+.tpl-festive { background: linear-gradient(135deg, #e8c5c5 0%, #e0b8b8 100%); }
 
 /* ====== 背景图：铺满屏幕内容区域，不包含刘海/状态栏顶部安全区 ====== */
 .bg-layer {
@@ -472,8 +477,8 @@ onMounted(loadSite)
 
 /* ====== 节日模板 ====== */
 .tpl-festive .free-btn { border: 1px solid #ffd700; }
-.tpl-festive .grid-item { background: rgba(255, 255, 255, 0.95); border: 2px solid #ffd700; }
-.tpl-festive .button-item { background: rgba(255, 255, 255, 0.95); border: 1px solid #ffd700; }
+.tpl-festive .grid-item { border: 1px solid #ffd700; }
+.tpl-festive .button-item { border: 1px solid #ffd700; }
 
 /* ====== 客服悬浮按钮 ====== */
 .service-float {
@@ -495,7 +500,7 @@ onMounted(loadSite)
 .service-icon { display: flex; width: 30px; height: 30px; }
 .service-icon svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .tpl-dark .service-float { color: #5dCAA5; }
-.tpl-festive .service-float { color: #ffe4a3; }
+.tpl-festive .service-float { color: #c0392b; }
 .service-panel { padding: 8px 0 24px; }
 .service-description { margin: 8px 24px; color: #323233; font-size: 14px; line-height: 1.6; }
 .service-hours { margin: 8px 24px 14px; color: #969799; font-size: 12px; }

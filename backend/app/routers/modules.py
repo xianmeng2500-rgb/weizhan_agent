@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models import User, Module, Site
 from app.models.stats import ModuleClickLog
 from app.utils.deps import get_current_admin, assert_site_access
+from app.services.billing_service import assert_active_membership
 from app.schemas.module import (
     ModuleCreate, ModuleUpdate, ModuleOut,
     ModuleSortRequest, ModulePositionRequest,
@@ -19,11 +20,14 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/sites/{site_id}/modules", tags=["模块管理"])
 
 
-def _get_site_or_404(db: Session, site_id: int, current: User) -> Site:
+def _get_site_or_404(db: Session, site_id: int, current: User, require_membership: bool = False) -> Site:
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
         raise HTTPException(status_code=404, detail="微站不存在")
     assert_site_access(site, current)
+    # 商业化: 写操作校验会员状态（过期后微站只读）
+    if require_membership:
+        assert_active_membership(db, current)
     return site
 
 
@@ -47,7 +51,7 @@ def create_module(
     current: User = Depends(get_current_admin),
 ):
     """创建模块"""
-    _get_site_or_404(db, site_id, current)
+    _get_site_or_404(db, site_id, current, require_membership=True)
     module = Module(site_id=site_id, **req.model_dump())
     try:
         db.add(module)
@@ -68,7 +72,7 @@ def sort_modules(
     current: User = Depends(get_current_admin),
 ):
     """批量排序模块"""
-    _get_site_or_404(db, site_id, current)
+    _get_site_or_404(db, site_id, current, require_membership=True)
     try:
         for item in req.items:
             module = db.query(Module).filter(Module.id == item.module_id, Module.site_id == site_id).first()
@@ -90,7 +94,7 @@ def update_positions(
     current: User = Depends(get_current_admin),
 ):
     """批量更新模块位置(自由拖拽布局)"""
-    _get_site_or_404(db, site_id, current)
+    _get_site_or_404(db, site_id, current, require_membership=True)
     try:
         for item in req.items:
             module = db.query(Module).filter(Module.id == item.module_id, Module.site_id == site_id).first()
@@ -135,7 +139,7 @@ def import_schedule_csv(
     current: User = Depends(get_current_admin),
 ):
     """从 CSV 导入日程安排数据"""
-    _get_site_or_404(db, site_id, current)
+    _get_site_or_404(db, site_id, current, require_membership=True)
     module = db.query(Module).filter(Module.id == module_id, Module.site_id == site_id).first()
     if not module:
         raise HTTPException(status_code=404, detail="模块不存在")
@@ -225,7 +229,7 @@ def update_module(
     current: User = Depends(get_current_admin),
 ):
     """更新模块"""
-    _get_site_or_404(db, site_id, current)
+    _get_site_or_404(db, site_id, current, require_membership=True)
     module = db.query(Module).filter(Module.id == module_id, Module.site_id == site_id).first()
     if not module:
         raise HTTPException(status_code=404, detail="模块不存在")
@@ -249,7 +253,7 @@ def delete_module(
     current: User = Depends(get_current_admin),
 ):
     """删除模块"""
-    _get_site_or_404(db, site_id, current)
+    _get_site_or_404(db, site_id, current, require_membership=True)
     module = db.query(Module).filter(Module.id == module_id, Module.site_id == site_id).first()
     if not module:
         raise HTTPException(status_code=404, detail="模块不存在")

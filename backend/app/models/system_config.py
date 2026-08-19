@@ -22,5 +22,8 @@ class SystemConfig(Base):
     oss_custom_domain = Column(String(500), nullable=True, comment="OSS 自定义域名")
 
     local_icon_library = Column(Text, nullable=True, comment="本地图标库 JSON")
+    ai_provider = Column(String(50), default="dashscope", nullable=False, comment="AI 服务商")
+    ai_api_key = Column(String(255), nullable=True, comment="AI API Key（通义万相/DashScope）")
+    ai_image_model = Column(String(100), default="wanx2.1-t2i-turbo", nullable=False, comment="AI 生图模型")
     updated_by = Column(Integer, nullable=True, comment="最后修改人")
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

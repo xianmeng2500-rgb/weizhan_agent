@@ -28,7 +28,7 @@
             <el-icon><Monitor /></el-icon>
             微站列表
           </span>
-          <el-button type="primary" :icon="Plus" @click="$router.push('/sites/create')">创建微站</el-button>
+          <el-button type="primary" :icon="Plus" @click="goCreate">创建微站</el-button>
         </div>
       </template>
 
@@ -92,9 +92,15 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Monitor } from '@element-plus/icons-vue'
+import { useAuthStore } from '@/store/auth'
+import { getWalletMe } from '@/api/billing'
 import api from '@/api'
+
+const router = useRouter()
+const auth = useAuthStore()
 
 const list = ref([])
 const loading = ref(false)
@@ -132,10 +138,49 @@ function resetSearch() {
   loadData()
 }
 
+// 商业化: 创建微站前校验会员状态
+async function goCreate() {
+  if (auth.isSuperAdmin) {
+    router.push('/sites/create')
+    return
+  }
+  try {
+    const wallet = await getWalletMe()
+    if (wallet.membership?.status === 'active') {
+      router.push('/sites/create')
+      return
+    }
+    ElMessageBox.confirm(
+      wallet.membership?.status === 'expired' ? '您的会员已过期，续费后可创建微站' : '尚未开通会员，购买会员后可创建微站',
+      '提示',
+      { confirmButtonText: '前往会员中心', cancelButtonText: '取消', type: 'warning' }
+    ).then(() => router.push('/billing')).catch(() => {})
+  } catch {
+    // 校验失败不阻塞
+    router.push('/sites/create')
+  }
+}
+
+// 商业化(v1.2): 上线前校验场次额度，不足引导去会员中心；下线不退额度
 async function toggleStatus(row: any) {
   const newStatus = row.status === 'online' ? 'offline' : 'online'
+  if (newStatus === 'online' && !auth.isSuperAdmin) {
+    try {
+      const wallet = await getWalletMe()
+      if (!wallet.session_credits || wallet.session_credits <= 0) {
+        ElMessageBox.confirm(
+          '场次额度不足，微站每上线一次需消耗 1 个额度（299 元/次）。可前往会员中心购买。',
+          '无法上线',
+          { confirmButtonText: '前往会员中心', cancelButtonText: '取消', type: 'warning' }
+        ).then(() => router.push('/billing')).catch(() => {})
+        return
+      }
+    } catch {
+      // 校验失败不阻塞，交给后端兜底
+    }
+  }
   await api.put(`/sites/${row.id}/status`, { status: newStatus })
-  ElMessage.success(newStatus === 'online' ? '已上线' : '已下线')
+  ElMessage.success(newStatus === 'online' ? '已上线（已消耗 1 个场次额度）' : '已下线')
   loadData()
 }
 

@@ -15,6 +15,9 @@ class SystemConfigUpdate(BaseModel):
     oss_endpoint: Optional[str] = Field(None, max_length=500)
     oss_custom_domain: Optional[str] = Field(None, max_length=500)
     local_icon_library: Optional[list[dict[str, Any]]] = None
+    ai_provider: Optional[str] = Field(None, max_length=50)
+    ai_api_key: Optional[str] = Field(None, max_length=255)
+    ai_image_model: Optional[str] = Field(None, max_length=100)
 
     @field_validator("h5_domain", "oss_custom_domain")
     @classmethod
@@ -33,3 +36,6 @@ class SystemConfigOut(BaseModel):
     oss_endpoint: str = ""
     oss_custom_domain: str = ""
     local_icon_library: list[dict[str, Any]] = []
+    ai_provider: str = "dashscope"
+    ai_api_key_configured: bool = False
+    ai_image_model: str = "wanx2.1-t2i-turbo"

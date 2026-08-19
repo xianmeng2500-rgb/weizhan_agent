@@ -496,8 +496,8 @@ async function onSubmit() {
     })
     showSuccessToast('提交成功')
     successVisible.value = true
-  } catch {
-    // 请求层已展示服务端错误提示
+  } catch (err: any) {
+    showToast(err.response?.data?.detail || '提交失败')
   } finally {
     submitting.value = false
   }
@@ -550,6 +550,8 @@ async function loadModule() {
         isSubmitted.value = true
       }
     }
+  } catch (err: any) {
+    showToast(err.response?.data?.detail || '表单加载失败')
   } finally {
     loading.value = false
   }

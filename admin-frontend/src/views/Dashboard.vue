@@ -15,8 +15,35 @@
       </el-col>
     </el-row>
 
+    <!-- 商业化: 会员信息卡片（超管不展示） -->
+    <el-card v-if="!auth.isSuperAdmin && wallet" shadow="hover" class="billing-card">
+      <div class="billing-body">
+        <div class="billing-item">
+          <div class="billing-value">{{ walletBalanceText }}</div>
+          <div class="billing-label">钱包余额</div>
+        </div>
+        <div class="billing-divider"></div>
+        <div class="billing-item">
+          <div class="billing-value">
+            <el-tag v-if="wallet.membership?.status === 'active'" type="success" effect="plain">会员生效中</el-tag>
+            <el-tag v-else-if="wallet.membership?.status === 'expired'" type="danger" effect="plain">会员已过期</el-tag>
+            <el-tag v-else type="info" effect="plain">未开通会员</el-tag>
+          </div>
+          <div class="billing-label">
+            会员状态{{ wallet.membership?.end_at ? ` · ${fmtDate(wallet.membership.end_at)} 到期` : '' }}
+          </div>
+        </div>
+        <div class="billing-divider"></div>
+        <div class="billing-item">
+          <div class="billing-value">{{ wallet.session_credits ?? 0 }}<span class="billing-unit"> 次</span></div>
+          <div class="billing-label">剩余上线额度</div>
+        </div>
+        <el-button type="primary" plain @click="$router.push('/billing')">前往会员中心</el-button>
+      </div>
+    </el-card>
+
     <!-- 快捷操作 + 欢迎区 -->
-    <el-row :gutter="16" style="margin-top: 16px;">
+    <el-row :gutter="16" :style="{ marginTop: '16px' }">
       <el-col :xs="24" :md="16">
         <el-card shadow="hover">
           <template #header>
@@ -85,8 +112,16 @@ import { ref, computed, onMounted } from 'vue'
 import api from '@/api'
 import { useAuthStore } from '@/store/auth'
 import { Plus, Monitor, UserFilled, Setting, Promotion, User } from '@element-plus/icons-vue'
+import { getWalletMe, fmtYuan } from '@/api/billing'
 
 const auth = useAuthStore()
+
+// 商业化: 会员信息
+const wallet = ref<any>(null)
+const walletBalanceText = computed(() => (wallet.value ? fmtYuan(wallet.value.balance) : '0.00'))
+function fmtDate(v: string) {
+  return v ? String(v).slice(0, 10) : ''
+}
 
 const stats = ref({
   total_sites: 0,
@@ -120,6 +155,13 @@ onMounted(async () => {
     stats.value.total_uv = res.total_uv ?? 0
   } catch (e) {
     console.error('加载工作台统计失败', e)
+  }
+  if (!auth.isSuperAdmin) {
+    try {
+      wallet.value = await getWalletMe()
+    } catch {
+      wallet.value = null
+    }
   }
 })
 </script>
@@ -261,5 +303,44 @@ onMounted(async () => {
   font-size: 18px;
   font-weight: 600;
   color: #303133;
+}
+
+/* 会员信息卡片 */
+.billing-card {
+  margin-top: 16px;
+}
+.billing-body {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.billing-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.billing-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #303133;
+  line-height: 1.2;
+}
+.billing-unit {
+  font-size: 13px;
+  font-weight: 400;
+  color: #909399;
+}
+.billing-label {
+  font-size: 13px;
+  color: #909399;
+}
+.billing-divider {
+  width: 1px;
+  height: 36px;
+  background: #ebeef5;
+}
+.billing-body .el-button {
+  margin-left: auto;
 }
 </style>

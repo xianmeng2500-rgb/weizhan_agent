@@ -8,7 +8,7 @@ from app.schemas.module import ModuleOut
 class SiteBase(BaseModel):
     name: str = Field(..., max_length=128, description="微站名称")
     code: str = Field(..., max_length=64, description="唯一码")
-    template: str = Field("classic", description="模板")
+    template: str = Field("default", description="模板: default/classic/dark/festive")
     layout: str = Field("grid", description="布局: grid/button")
     kv_image: Optional[str] = None
     background_color: Optional[str] = None

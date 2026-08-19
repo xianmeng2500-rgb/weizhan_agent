@@ -1,5 +1,4 @@
 import axios from 'axios'
-import { showToast } from 'vant'
 
 const request = axios.create({ baseURL: '', timeout: 30000 })
 
@@ -20,7 +19,6 @@ request.interceptors.response.use(
         const isLoginPage = path.includes('/login')
         const isLoginApi = (error.config?.url || '').includes('/login')
         if (isLoginPage || isLoginApi) {
-          showToast(data?.detail || '登录失败')
           return Promise.reject(error)
         }
         // 需要登录 - 跳转登录页
@@ -32,9 +30,6 @@ request.interceptors.response.use(
           return Promise.reject(error)
         }
       }
-      showToast(data?.detail || '请求失败')
-    } else {
-      showToast('网络错误')
     }
     return Promise.reject(error)
   }

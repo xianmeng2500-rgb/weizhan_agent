@@ -4,6 +4,7 @@
     <div class="editor-topbar">
       <div class="topbar-left">
         <span class="topbar-title">{{ isEdit ? '可视化编辑' : '创建微站' }}</span>
+        <el-tag v-if="isEdit" :type="statusTagType" size="small" effect="plain" class="dirty-tag">{{ statusText }}</el-tag>
         <el-tag v-if="isDirty" type="warning" size="small" effect="plain" class="dirty-tag">未保存</el-tag>
         <el-tag v-else-if="isEdit" type="success" size="small" effect="plain" class="dirty-tag">已保存</el-tag>
       </div>
@@ -23,7 +24,6 @@
       </div>
 
       <div class="topbar-right">
-        <el-button v-if="isEdit" size="small" :href="previewUrl" target="_blank" tag="a">预览</el-button>
         <el-button size="small" @click="$router.back()">返回</el-button>
         <el-button type="primary" size="small" :loading="saving" @click="handleSave">
           保存{{ isDirty ? ' *' : '' }}
@@ -56,278 +56,312 @@
 
           <div v-show="leftTab === 'site'" class="left-tab-panel">
             <div class="left-scroll">
-              <!-- 基本信息 -->
-              <div class="config-card">
-                <div class="card-title"><el-icon><Document /></el-icon>基本信息</div>
-                <el-form label-width="76px" size="small">
-                  <el-form-item label="微站名称" required>
-                    <el-input v-model="form.name" placeholder="请输入名称" @input="markDirty" />
-                  </el-form-item>
-                  <el-form-item label="访问码" required>
-                    <el-input v-model="form.code" placeholder="英文+数字" :disabled="isCodeLocked" @input="markDirty">
-                      <template #append>
-                        <div class="code-actions">
-                          <el-button text :disabled="isCodeLocked" @click="generateCode">随机</el-button>
-                          <el-button text :disabled="!form.code" @click="showQrDialog = true">二维码</el-button>
-                        </div>
-                      </template>
-                    </el-input>
-                    <div class="hint">访问链接: {{ accessUrl }}</div>
-                    <div v-if="isCodeLocked" class="hint code-lock-hint">微站已上线，访问码已锁定，避免已分享的链接失效。</div>
-                  </el-form-item>
-                </el-form>
-              </div>
+              <el-collapse v-model="activeSettingGroups" class="setting-collapse">
+                <!-- 基本信息 -->
+                <el-collapse-item name="basic">
+                  <template #title>
+                    <div class="collapse-title">
+                      <el-icon><Document /></el-icon>
+                      <span>基本信息</span>
+                    </div>
+                  </template>
+                  <el-form label-width="76px" size="small">
+                    <el-form-item label="微站名称" required>
+                      <el-input v-model="form.name" placeholder="请输入名称" @input="markDirty" />
+                    </el-form-item>
+                    <el-form-item label="访问码" required>
+                      <el-input v-model="form.code" placeholder="英文+数字" :disabled="isCodeLocked" @input="markDirty">
+                        <template #append>
+                          <div class="code-actions">
+                            <el-button text :disabled="isCodeLocked" @click="generateCode">随机</el-button>
+                            <el-button text :disabled="!form.code" @click="showQrDialog = true">二维码</el-button>
+                          </div>
+                        </template>
+                      </el-input>
+                      <div class="hint">访问链接: {{ accessUrl }}</div>
+                      <div v-if="isCodeLocked" class="hint code-lock-hint">微站已上线，访问码已锁定，避免已分享的链接失效。</div>
+                    </el-form-item>
+                  </el-form>
+                </el-collapse-item>
 
-              <!-- KV 图 -->
-              <div class="config-card">
-                <div class="card-title"><el-icon><Picture /></el-icon>KV 图</div>
-                <el-upload
-                  action="/api/v1/upload/image"
-                  :headers="uploadHeaders"
-                  :show-file-list="false"
-                  :on-success="onKvSuccess"
-                  accept="image/*"
-                >
-                  <div v-if="form.kv_image" class="upload-preview">
-                    <img :src="form.kv_image" class="preview-img" />
-                    <div class="preview-mask">点击更换</div>
-                  </div>
-                  <div v-else class="upload-placeholder">
-                    <el-icon size="28"><Plus /></el-icon>
-                    <span>上传 KV 图</span>
-                    <span class="upload-tip">建议 750×340 或等比横幅</span>
-                  </div>
-                </el-upload>
-                <el-button v-if="form.kv_image" text size="small" @click="form.kv_image = ''; markDirty()" style="margin-top: 8px">移除 KV 图</el-button>
-              </div>
-
-              <!-- 背景设置 -->
-              <div class="config-card">
-                <div class="card-title"><el-icon><Brush /></el-icon>背景设置</div>
-                <el-form label-width="70px" size="small">
-                  <el-form-item label="背景图">
+                <!-- 页面外观：KV图 + 背景设置 + 模板风格 -->
+                <el-collapse-item name="appearance">
+                  <template #title>
+                    <div class="collapse-title">
+                      <el-icon><Brush /></el-icon>
+                      <span>页面外观</span>
+                    </div>
+                  </template>
+                  <!-- KV 图 -->
+                  <div class="sub-section">
+                    <div class="sub-section-label">KV 图</div>
                     <el-upload
                       action="/api/v1/upload/image"
                       :headers="uploadHeaders"
                       :show-file-list="false"
-                      :on-success="onBgSuccess"
+                      :on-success="onKvSuccess"
                       accept="image/*"
                     >
-                      <div v-if="form.background_image" class="upload-preview small">
-                        <img :src="form.background_image" class="preview-img" />
-                        <div class="preview-mask">更换</div>
+                      <div v-if="form.kv_image" class="upload-preview">
+                        <img :src="form.kv_image" class="preview-img" />
+                        <div class="preview-mask">点击更换</div>
                       </div>
-                      <div v-else class="upload-placeholder small">
-                        <el-icon size="22"><Plus /></el-icon>
-                        <span>上传背景图</span>
+                      <div v-else class="upload-placeholder">
+                        <el-icon size="28"><Plus /></el-icon>
+                        <span>上传 KV 图</span>
+                        <span class="upload-tip">建议 750×340 或等比横幅</span>
                       </div>
                     </el-upload>
-                    <el-button v-if="form.background_image" text size="small" @click="form.background_image = ''; markDirty()" style="margin-top: 8px">移除背景图</el-button>
-                  </el-form-item>
-                  <el-form-item label="背景色">
-                    <div class="color-row">
-                      <el-color-picker v-model="form.background_color" @change="markDirty" />
-                      <el-button v-if="form.background_color" text size="small" @click="form.background_color = ''; markDirty()">清除</el-button>
-                    </div>
-                    <div class="hint">优先级：背景图 > 背景色 > 模板默认</div>
-                  </el-form-item>
-                </el-form>
-              </div>
+                    <el-button v-if="form.kv_image" text size="small" @click="form.kv_image = ''; markDirty()" style="margin-top: 8px">移除 KV 图</el-button>
+                  </div>
 
-              <!-- 模板 -->
-              <div class="config-card">
-                <div class="card-title"><el-icon><MagicStick /></el-icon>模板风格</div>
-                <el-form label-width="0" size="small">
-                  <el-form-item>
-                    <el-radio-group v-model="form.template" @change="markDirty">
+                  <el-divider class="sub-divider" />
+
+                  <!-- 背景设置 -->
+                  <div class="sub-section">
+                    <div class="sub-section-label">背景设置</div>
+                    <el-form label-width="70px" size="small">
+                      <el-form-item label="背景图">
+                        <el-upload
+                          action="/api/v1/upload/image"
+                          :headers="uploadHeaders"
+                          :show-file-list="false"
+                          :on-success="onBgSuccess"
+                          accept="image/*"
+                        >
+                          <div v-if="form.background_image" class="upload-preview small">
+                            <img :src="form.background_image" class="preview-img" />
+                            <div class="preview-mask">更换</div>
+                          </div>
+                          <div v-else class="upload-placeholder small">
+                            <el-icon size="22"><Plus /></el-icon>
+                            <span>上传背景图</span>
+                          </div>
+                        </el-upload>
+                        <el-button v-if="form.background_image" text size="small" @click="form.background_image = ''; markDirty()" style="margin-top: 8px">移除背景图</el-button>
+                      </el-form-item>
+                      <el-form-item label="背景色">
+                        <div class="color-row">
+                          <el-color-picker v-model="form.background_color" @change="markDirty" />
+                          <el-button v-if="form.background_color" text size="small" @click="form.background_color = ''; markDirty()">清除</el-button>
+                        </div>
+                        <div class="hint">优先级：背景图 > 背景色 > 模板默认</div>
+                      </el-form-item>
+                    </el-form>
+                  </div>
+
+                  <el-divider class="sub-divider" />
+
+                  <!-- 模板风格 -->
+                  <div class="sub-section">
+                    <div class="sub-section-label">模板风格</div>
+                    <el-radio-group v-model="form.template" @change="markDirty" size="small">
+                      <el-radio-button value="default">默认</el-radio-button>
                       <el-radio-button value="classic">经典蓝紫</el-radio-button>
                       <el-radio-button value="dark">暗夜科技</el-radio-button>
                       <el-radio-button value="festive">节日红金</el-radio-button>
                     </el-radio-group>
-                  </el-form-item>
-                </el-form>
-              </div>
+                  </div>
+                </el-collapse-item>
 
-              <!-- 微信分享 -->
-              <div class="config-card">
-                <div class="card-title"><el-icon><Share /></el-icon>微信分享</div>
-                <el-form label-width="76px" size="small">
-                  <el-form-item label="分享图标">
-                    <el-upload
-                      action="/api/v1/upload/image"
-                      :headers="uploadHeaders"
-                      :show-file-list="false"
-                      :on-success="onShareImageSuccess"
-                      accept="image/*"
-                    >
-                      <div v-if="form.share_image" class="share-image-preview">
-                        <img :src="form.share_image" class="preview-img" />
-                        <div class="preview-mask">点击更换</div>
-                      </div>
-                      <div v-else class="upload-placeholder share-image-placeholder">
-                        <el-icon size="22"><Plus /></el-icon>
-                        <span>上传分享图标</span>
-                      </div>
-                    </el-upload>
-                    <el-button v-if="form.share_image" text size="small" @click="form.share_image = ''; markDirty()" style="margin-top: 8px">移除图标</el-button>
-                  </el-form-item>
-                  <el-form-item label="分享标题">
-                    <el-input v-model="form.share_title" maxlength="128" show-word-limit placeholder="默认使用微站名称" @input="markDirty" />
-                  </el-form-item>
-                  <el-form-item label="分享副标题">
-                    <el-input v-model="form.share_subtitle" type="textarea" :rows="2" maxlength="255" show-word-limit placeholder="可选，展示在微信分享描述中" @input="markDirty" />
-                  </el-form-item>
-                </el-form>
-                <div class="hint">需先在“管理员配置”中启用微信分享并填写全局接入参数。</div>
-              </div>
-
-              <!-- 客服设置 -->
-              <div class="config-card">
-                <div class="card-title"><el-icon><Service /></el-icon>客服设置</div>
-                <el-form label-width="82px" size="small">
-                  <el-form-item label="开启客服">
-                    <el-switch v-model="form.customer_service_config.enabled" @change="markDirty" />
-                    <span class="hint inline-hint">在移动端右下角显示客服入口</span>
-                  </el-form-item>
-                  <template v-if="form.customer_service_config.enabled">
-                    <el-form-item label="说明文案">
-                      <el-input v-model="form.customer_service_config.description" type="textarea" :rows="2" maxlength="255" show-word-limit placeholder="例如：报名、交通及活动问题，请联系工作人员" @input="markDirty" />
-                    </el-form-item>
-                    <el-form-item label="客服电话">
-                      <el-input v-model="form.customer_service_config.phone" placeholder="例如：400-123-4567" @input="markDirty" />
-                    </el-form-item>
-                    <el-form-item label="客服微信">
-                      <el-input v-model="form.customer_service_config.wechat" placeholder="点击后可一键复制" @input="markDirty" />
-                    </el-form-item>
-                    <el-form-item label="客服链接">
-                      <el-input v-model="form.customer_service_config.link" placeholder="在线客服或企业微信链接" @input="markDirty" />
-                    </el-form-item>
-                    <el-form-item label="服务时间">
-                      <el-input v-model="form.customer_service_config.service_hours" placeholder="例如：工作日 09:00-18:00" @input="markDirty" />
-                    </el-form-item>
-                    <el-form-item label="客服二维码">
+                <!-- 微信分享 -->
+                <el-collapse-item name="share">
+                  <template #title>
+                    <div class="collapse-title">
+                      <el-icon><Share /></el-icon>
+                      <span>微信分享</span>
+                    </div>
+                  </template>
+                  <el-form label-width="76px" size="small">
+                    <el-form-item label="分享图标">
                       <el-upload
                         action="/api/v1/upload/image"
                         :headers="uploadHeaders"
                         :show-file-list="false"
-                        :on-success="onServiceQrSuccess"
+                        :on-success="onShareImageSuccess"
                         accept="image/*"
                       >
-                        <div v-if="form.customer_service_config.qrcode_url" class="share-image-preview">
-                          <img :src="form.customer_service_config.qrcode_url" class="preview-img" />
+                        <div v-if="form.share_image" class="share-image-preview">
+                          <img :src="form.share_image" class="preview-img" />
                           <div class="preview-mask">点击更换</div>
                         </div>
                         <div v-else class="upload-placeholder share-image-placeholder">
                           <el-icon size="22"><Plus /></el-icon>
-                          <span>上传二维码</span>
+                          <span>上传分享图标</span>
                         </div>
                       </el-upload>
-                      <el-button v-if="form.customer_service_config.qrcode_url" text size="small" @click="form.customer_service_config.qrcode_url = ''; markDirty()" style="margin-top: 8px">移除二维码</el-button>
+                      <el-button v-if="form.share_image" text size="small" @click="form.share_image = ''; markDirty()" style="margin-top: 8px">移除图标</el-button>
                     </el-form-item>
+                    <el-form-item label="分享标题">
+                      <el-input v-model="form.share_title" maxlength="128" show-word-limit placeholder="默认使用微站名称" @input="markDirty" />
+                    </el-form-item>
+                    <el-form-item label="分享副标题">
+                      <el-input v-model="form.share_subtitle" type="textarea" :rows="2" maxlength="255" show-word-limit placeholder="可选，展示在微信分享描述中" @input="markDirty" />
+                    </el-form-item>
+                  </el-form>
+                  <div class="hint">需先在"管理员配置"中启用微信分享并填写全局接入参数。</div>
+                </el-collapse-item>
+
+                <!-- 客服设置 -->
+                <el-collapse-item name="service">
+                  <template #title>
+                    <div class="collapse-title">
+                      <el-icon><Service /></el-icon>
+                      <span>客服设置</span>
+                      <el-tag v-if="form.customer_service_config.enabled" type="success" size="small" effect="plain" class="collapse-badge">已开启</el-tag>
+                    </div>
                   </template>
-                </el-form>
-                <div v-if="form.customer_service_config.enabled" class="hint">至少配置电话、微信、客服链接或二维码中的一种联系方式。</div>
-              </div>
-
-              <!-- 高级设置 -->
-              <div class="config-card">
-                <div class="card-title"><el-icon><Setting /></el-icon>高级设置</div>
-                <el-form label-width="80px" size="small">
-                  <el-form-item label="需要登录">
-                    <el-switch v-model="form.need_login" @change="markDirty" />
-                  </el-form-item>
-
-                  <!-- 登录字段配置 -->
-                  <template v-if="form.need_login">
-                    <el-form-item label="需要密码">
-                      <el-switch v-model="form.login_require_password" @change="markDirty" />
-                      <span class="inline-hint" style="color: #999; font-size: 12px">关闭后用户输入账号即可登录</span>
+                  <el-form label-width="82px" size="small">
+                    <el-form-item label="开启客服">
+                      <el-switch v-model="form.customer_service_config.enabled" @change="markDirty" />
+                      <span class="hint inline-hint">在移动端右下角显示客服入口</span>
                     </el-form-item>
-                    <el-form-item label="签到系统">
-                      <el-switch v-model="form.need_checkin" @change="markDirty" />
-                      <span class="inline-hint" style="color: #999; font-size: 12px">开启后可在模块中添加「我的二维码」</span>
-                    </el-form-item>
-                    <el-form-item label="登录方式">
-                      <div class="login-fields-config">
-                        <div
-                          v-for="(field, idx) in form.login_fields_config"
-                          :key="idx"
-                          class="login-field-item"
+                    <template v-if="form.customer_service_config.enabled">
+                      <el-form-item label="说明文案">
+                        <el-input v-model="form.customer_service_config.description" type="textarea" :rows="2" maxlength="255" show-word-limit placeholder="例如：报名、交通及活动问题，请联系工作人员" @input="markDirty" />
+                      </el-form-item>
+                      <el-form-item label="客服电话">
+                        <el-input v-model="form.customer_service_config.phone" placeholder="例如：400-123-4567" @input="markDirty" />
+                      </el-form-item>
+                      <el-form-item label="客服微信">
+                        <el-input v-model="form.customer_service_config.wechat" placeholder="点击后可一键复制" @input="markDirty" />
+                      </el-form-item>
+                      <el-form-item label="客服链接">
+                        <el-input v-model="form.customer_service_config.link" placeholder="在线客服或企业微信链接" @input="markDirty" />
+                      </el-form-item>
+                      <el-form-item label="服务时间">
+                        <el-input v-model="form.customer_service_config.service_hours" placeholder="例如：工作日 09:00-18:00" @input="markDirty" />
+                      </el-form-item>
+                      <el-form-item label="客服二维码">
+                        <el-upload
+                          action="/api/v1/upload/image"
+                          :headers="uploadHeaders"
+                          :show-file-list="false"
+                          :on-success="onServiceQrSuccess"
+                          accept="image/*"
                         >
-                          <div class="login-field-row">
-                            <el-select
-                              v-model="field.key"
-                              placeholder="选择字段"
-                              style="width: 120px"
-                              @change="onLoginFieldKeyChange(field)"
-                            >
-                              <el-option label="账号" value="username" />
-                              <el-option label="手机号" value="phone" />
-                              <el-option label="自定义字段" value="custom" />
-                            </el-select>
-                            <el-input
-                              v-model="field.display_name"
-                              placeholder="显示名称"
-                              style="width: 100px; margin-left: 6px"
-                              @input="markDirty"
-                            />
-                            <el-button
-                              type="danger"
-                              text
-                              size="small"
-                              @click="removeLoginField(idx)"
-                              style="margin-left: 4px"
-                            >删除</el-button>
+                          <div v-if="form.customer_service_config.qrcode_url" class="share-image-preview">
+                            <img :src="form.customer_service_config.qrcode_url" class="preview-img" />
+                            <div class="preview-mask">点击更换</div>
                           </div>
-                          <div v-if="field.key === 'custom'" class="login-field-row" style="margin-top: 6px">
-                            <el-input
-                              v-model="field.custom_key"
-                              placeholder="自定义字段标识(英文)"
-                              style="width: 140px"
-                              @input="onCustomKeyChange(field)"
-                            />
-                            <el-select
-                              v-model="field.type"
-                              placeholder="输入类型"
-                              style="width: 100px; margin-left: 6px"
-                              @change="markDirty"
-                            >
-                              <el-option label="文本" value="text" />
-                              <el-option label="数字" value="number" />
-                              <el-option label="邮箱" value="email" />
-                            </el-select>
+                          <div v-else class="upload-placeholder share-image-placeholder">
+                            <el-icon size="22"><Plus /></el-icon>
+                            <span>上传二维码</span>
                           </div>
-                        </div>
-                        <el-button
-                          type="primary"
-                          text
-                          size="small"
-                          @click="addLoginField"
-                          style="margin-top: 6px"
-                        >+ 添加登录字段</el-button>
-                        <div class="hint" style="margin-top: 6px">选择一种或多种登录方式，用户可用任一已配置字段登录。自定义字段需确保唯一性。</div>
-                      </div>
-                    </el-form-item>
-                    <el-form-item label="表单位置">
-                      <el-radio-group v-model="form.login_form_config.position" @change="markDirty">
-                        <el-radio-button value="top">居上</el-radio-button>
-                        <el-radio-button value="center">居中</el-radio-button>
-                        <el-radio-button value="bottom">居下</el-radio-button>
-                      </el-radio-group>
-                    </el-form-item>
-                  </template>
+                        </el-upload>
+                        <el-button v-if="form.customer_service_config.qrcode_url" text size="small" @click="form.customer_service_config.qrcode_url = ''; markDirty()" style="margin-top: 8px">移除二维码</el-button>
+                      </el-form-item>
+                    </template>
+                  </el-form>
+                  <div v-if="form.customer_service_config.enabled" class="hint">至少配置电话、微信、客服链接或二维码中的一种联系方式。</div>
+                </el-collapse-item>
 
-                  <el-form-item label="开启时间">
-                    <el-date-picker v-model="form.start_time" type="datetime" placeholder="不选则始终" format="YYYY-MM-DD HH:mm" value-format="YYYY-MM-DDTHH:mm:ss" @change="markDirty" style="width: 100%" />
-                  </el-form-item>
-                  <el-form-item label="关闭时间">
-                    <el-date-picker v-model="form.end_time" type="datetime" placeholder="不选则始终" format="YYYY-MM-DD HH:mm" value-format="YYYY-MM-DDTHH:mm:ss" @change="markDirty" style="width: 100%" />
-                  </el-form-item>
-                  <el-form-item label="关闭文案">
-                    <el-input v-model="form.close_message" type="textarea" :rows="2" placeholder="微站关闭后展示" @input="markDirty" />
-                  </el-form-item>
-                </el-form>
-              </div>
+                <!-- 高级设置 -->
+                <el-collapse-item name="advanced">
+                  <template #title>
+                    <div class="collapse-title">
+                      <el-icon><Setting /></el-icon>
+                      <span>高级设置</span>
+                      <el-tag v-if="form.need_login" type="warning" size="small" effect="plain" class="collapse-badge">需登录</el-tag>
+                    </div>
+                  </template>
+                  <el-form label-width="80px" size="small">
+                    <el-form-item label="需要登录">
+                      <el-switch v-model="form.need_login" @change="markDirty" />
+                    </el-form-item>
+
+                    <!-- 登录字段配置 -->
+                    <template v-if="form.need_login">
+                      <el-form-item label="需要密码">
+                        <el-switch v-model="form.login_require_password" @change="markDirty" />
+                        <span class="inline-hint" style="color: #999; font-size: 12px">关闭后用户输入账号即可登录</span>
+                      </el-form-item>
+                      <el-form-item label="签到系统">
+                        <el-switch v-model="form.need_checkin" @change="markDirty" />
+                        <span class="inline-hint" style="color: #999; font-size: 12px">开启后可在模块中添加「我的二维码」</span>
+                      </el-form-item>
+                      <el-form-item label="登录方式">
+                        <div class="login-fields-config">
+                          <div
+                            v-for="(field, idx) in form.login_fields_config"
+                            :key="idx"
+                            class="login-field-item"
+                          >
+                            <div class="login-field-row">
+                              <el-select
+                                v-model="field.key"
+                                placeholder="选择字段"
+                                style="width: 120px"
+                                @change="onLoginFieldKeyChange(field)"
+                              >
+                                <el-option label="账号" value="username" />
+                                <el-option label="手机号" value="phone" />
+                                <el-option label="自定义字段" value="custom" />
+                              </el-select>
+                              <el-input
+                                v-model="field.display_name"
+                                placeholder="显示名称"
+                                style="width: 100px; margin-left: 6px"
+                                @input="markDirty"
+                              />
+                              <el-button
+                                type="danger"
+                                text
+                                size="small"
+                                @click="removeLoginField(idx)"
+                                style="margin-left: 4px"
+                              >删除</el-button>
+                            </div>
+                            <div v-if="field.key === 'custom'" class="login-field-row" style="margin-top: 6px">
+                              <el-input
+                                v-model="field.custom_key"
+                                placeholder="自定义字段标识(英文)"
+                                style="width: 140px"
+                                @input="onCustomKeyChange(field)"
+                              />
+                              <el-select
+                                v-model="field.type"
+                                placeholder="输入类型"
+                                style="width: 100px; margin-left: 6px"
+                                @change="markDirty"
+                              >
+                                <el-option label="文本" value="text" />
+                                <el-option label="数字" value="number" />
+                                <el-option label="邮箱" value="email" />
+                              </el-select>
+                            </div>
+                          </div>
+                          <el-button
+                            type="primary"
+                            text
+                            size="small"
+                            @click="addLoginField"
+                            style="margin-top: 6px"
+                          >+ 添加登录字段</el-button>
+                          <div class="hint" style="margin-top: 6px">选择一种或多种登录方式，用户可用任一已配置字段登录。自定义字段需确保唯一性。</div>
+                        </div>
+                      </el-form-item>
+                      <el-form-item label="表单位置">
+                        <el-radio-group v-model="form.login_form_config.position" @change="markDirty">
+                          <el-radio-button value="top">居上</el-radio-button>
+                          <el-radio-button value="center">居中</el-radio-button>
+                          <el-radio-button value="bottom">居下</el-radio-button>
+                        </el-radio-group>
+                      </el-form-item>
+                    </template>
+
+                    <el-form-item label="开启时间">
+                      <el-date-picker v-model="form.start_time" type="datetime" placeholder="不选则始终" format="YYYY-MM-DD HH:mm" value-format="YYYY-MM-DDTHH:mm:ss" @change="markDirty" style="width: 100%" />
+                    </el-form-item>
+                    <el-form-item label="关闭时间">
+                      <el-date-picker v-model="form.end_time" type="datetime" placeholder="不选则始终" format="YYYY-MM-DD HH:mm" value-format="YYYY-MM-DDTHH:mm:ss" @change="markDirty" style="width: 100%" />
+                    </el-form-item>
+                    <el-form-item label="关闭文案">
+                      <el-input v-model="form.close_message" type="textarea" :rows="2" placeholder="微站关闭后展示" @input="markDirty" />
+                    </el-form-item>
+                  </el-form>
+                </el-collapse-item>
+              </el-collapse>
             </div>
           </div>
 
@@ -385,7 +419,7 @@
                   />
                   <span class="grid-offset-value">{{ (form.grid_offset_y || 0).toFixed(1) }}%</span>
                 </div>
-                <div class="hint">调整按钮在页面上的垂直距离，可拖拽预览区手柄微调</div>
+                <div class="hint">调整按钮在页面上的垂直距离</div>
               </div>
               <el-button v-if="isEdit" class="add-module-btn" type="primary" plain @click="addModule">
                 <el-icon><Plus /></el-icon>添加按钮
@@ -464,11 +498,6 @@
 
                 <!-- 九宫格布局 -->
                 <div v-if="form.layout === 'grid'" class="content-area" :style="{ paddingTop: (form.grid_offset_y || 0) + '%' }">
-                  <div
-                    class="grid-drag-handle"
-                    @pointerdown.prevent="startGridDrag"
-                    title="拖拽调整宫格位置"
-                  >⋮⋮</div>
                   <div class="grid-layout">
                     <div
                       v-for="m in modules"
@@ -486,11 +515,6 @@
 
                 <!-- 按钮列表布局 -->
                 <div v-else-if="form.layout === 'button'" class="content-area" :style="{ paddingTop: (form.grid_offset_y || 0) + '%' }">
-                  <div
-                    class="grid-drag-handle"
-                    @pointerdown.prevent="startGridDrag"
-                    title="拖拽调整按钮列表位置"
-                  >⋮⋮</div>
                   <div class="button-layout">
                     <div
                       v-for="m in modules"
@@ -602,19 +626,11 @@
 
             <div class="field-block">
               <label class="field-label">图标</label>
-              <el-upload
-                action="/api/v1/upload/image"
-                :headers="uploadHeaders"
-                :show-file-list="false"
-                :on-success="onIconSuccess"
-                accept="image/*"
-              >
-                <div class="icon-target">
-                  <img v-if="selectedModule.icon" :src="selectedModule.icon" />
-                  <div v-else class="icon-placeholder"><el-icon><Plus /></el-icon></div>
-                </div>
-              </el-upload>
-              <div class="hint" style="margin-top: 4px">建议 128×128 正方形图标</div>
+              <IconPicker
+                :model-value="selectedModule.icon"
+                @update:model-value="(v: string) => onIconChange(v)"
+              />
+              <div class="hint" style="margin-top: 4px">可从图标库选择或上传自定义图标，建议 128×128 正方形</div>
             </div>
 
             <div class="field-block">
@@ -821,15 +837,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, inject, defineExpose } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
-  Plus, Rank, Grid, Tickets, Document, Picture, Brush,
-  MagicStick, Setting, Edit, Share, Service, User, Lock, Phone,
+  Plus, Rank, Grid, Tickets, Document, Brush,
+  Setting, Edit, Share, Service, User, Lock, Phone,
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/store/auth'
 import api from '@/api'
+import IconPicker from '@/components/IconPicker.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -853,6 +870,7 @@ const qrCodeUrl = computed(() => form.code
 const saving = ref(false)
 const isDirty = ref(false)
 const leftTab = ref<'site' | 'modules'>('site')
+const activeSettingGroups = ref<string[]>(['basic'])
 const previewMode = ref<'main' | 'login'>('main')
 const loginFormPosition = computed(() => form.login_form_config?.position || 'center')
 
@@ -885,10 +903,10 @@ function metaTagText(contentType: string): string {
 const form = reactive({
   name: '',
   code: '',
-  template: 'classic',
+  template: 'default',
   layout: 'grid',
   kv_image: '',
-  background_color: '',
+  background_color: '#ffffff',
   background_image: '',
   share_image: '',
   share_title: '',
@@ -1173,36 +1191,7 @@ function startDrag(e: PointerEvent, module: any) {
   document.addEventListener('pointerup', onUp)
 }
 
-// --- 九宫格整体拖拽 ---
-const gridDragging = ref(false)
-
-function startGridDrag(e: PointerEvent) {
-  const container = e.currentTarget?.closest('.device-screen') as HTMLElement
-  if (!container) return
-  e.preventDefault()
-
-  const containerRect = container.getBoundingClientRect()
-  const startY = e.clientY
-  const startOffset = form.grid_offset_y || 0
-  gridDragging.value = true
-
-  function onMove(ev: PointerEvent) {
-    const dy = ev.clientY - startY
-    const dyPct = (dy / containerRect.height) * 100
-    form.grid_offset_y = Math.max(0, Math.min(60, Math.round((startOffset + dyPct) * 10) / 10))
-  }
-
-  function onUp() {
-    gridDragging.value = false
-    document.removeEventListener('pointermove', onMove)
-    document.removeEventListener('pointerup', onUp)
-    patchGridOffset()
-  }
-
-  document.addEventListener('pointermove', onMove)
-  document.addEventListener('pointerup', onUp)
-}
-
+// --- 按钮位置偏移保存 ---
 async function patchGridOffset() {
   if (!isEdit.value) return
   try {
@@ -1272,13 +1261,11 @@ function onServiceQrSuccess(res: any) {
   } else ElMessage.error('上传失败')
 }
 
-function onIconSuccess(res: any) {
+function onIconChange(icon: string) {
   const m = selectedModule.value
   if (!m) return
-  if (res.url) {
-    m.icon = res.url
-    patchModule(m, { icon: res.url })
-  } else ElMessage.error('上传失败')
+  m.icon = icon
+  patchModule(m, { icon: icon })
 }
 
 // --- 生成访问码 ---
@@ -1343,9 +1330,50 @@ async function patchModule(m: any, patch: Record<string, any>) {
   }
 }
 
+// 从父级 SiteWorkspace 注入切 Tab 方法（编辑模式下可用）
+const switchWorkspaceTab = inject<(tab: string) => void>('switchWorkspaceTab', () => {})
+
 async function goModuleManage() {
   if (!isEdit.value) return
+  // 优先切到工作台模块管理 Tab
+  if (switchWorkspaceTab) {
+    switchWorkspaceTab('modules')
+    return
+  }
   router.push(`/sites/${route.params.id}/modules`)
+}
+
+const statusText = computed(() => {
+  const map: Record<string, string> = { draft: '草稿', online: '在线', offline: '已下线' }
+  return map[siteStatus.value] || siteStatus.value
+})
+
+const statusTagType = computed(() => {
+  const map: Record<string, string> = { draft: 'info', online: 'success', offline: 'danger' }
+  return map[siteStatus.value] || 'info'
+})
+
+async function toggleStatus() {
+  if (!isEdit.value) return
+  const newStatus = siteStatus.value === 'online' ? 'offline' : 'online'
+  try {
+    await api.put(`/sites/${route.params.id}/status`, { status: newStatus })
+    siteStatus.value = newStatus
+    ElMessage.success(newStatus === 'online' ? '已上线' : '已下线')
+  } catch {
+    ElMessage.error('操作失败')
+  }
+}
+
+async function deleteSite() {
+  if (!isEdit.value) return
+  try {
+    await api.delete(`/sites/${route.params.id}`)
+    ElMessage.success('已删除')
+    router.replace('/sites')
+  } catch {
+    ElMessage.error('删除失败')
+  }
 }
 
 async function addModule() {
@@ -1455,7 +1483,7 @@ onMounted(async () => {
     Object.assign(form, {
       name: res.name || '',
       code: res.code || '',
-      template: res.template || 'classic',
+      template: res.template || 'default',
       layout: res.layout || 'grid',
       kv_image: res.kv_image || '',
       background_color: res.background_color || '',
@@ -1492,6 +1520,13 @@ onMounted(async () => {
     await loadModules()
   }
 })
+
+// 暴露方法给父级 SiteWorkspace
+defineExpose({
+  updateSiteStatus(newStatus: string) {
+    siteStatus.value = newStatus
+  },
+})
 </script>
 
 <style scoped>
@@ -1520,6 +1555,9 @@ onMounted(async () => {
   align-items: center;
   gap: 10px;
   flex: 1;
+}
+.topbar-right .el-divider--vertical {
+  margin: 0 4px;
 }
 .topbar-right {
   justify-content: flex-end;
@@ -1595,27 +1633,71 @@ onMounted(async () => {
 .left-scroll {
   height: 100%;
   overflow-y: auto;
-  padding: 16px;
+  padding: 12px 16px 16px;
 }
 
-.config-card {
-  background: #fff;
-  border: 1px solid #e8e8e8;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+/* 折叠面板 */
+.setting-collapse {
+  border: none;
 }
-.card-title {
+.setting-collapse :deep(.el-collapse-item) {
+  margin-bottom: 10px;
+  border: 1px solid #ebeef5;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.setting-collapse :deep(.el-collapse-item:hover) {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.setting-collapse :deep(.el-collapse-item__header) {
+  padding: 0 16px;
+  height: 46px;
+  line-height: 46px;
+  background: #fafbfc;
+  border-bottom: none;
   font-size: 14px;
   font-weight: 600;
   color: #1f2937;
-  margin-bottom: 14px;
+}
+.setting-collapse :deep(.el-collapse-item__header.is-active) {
+  background: #f0f7ff;
+  border-bottom: 1px solid #ebeef5;
+}
+.setting-collapse :deep(.el-collapse-item__wrap) {
+  border-bottom: none;
+}
+.setting-collapse :deep(.el-collapse-item__content) {
+  padding: 16px;
+}
+.collapse-title {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
-.card-title .el-icon { color: #409eff; }
+.collapse-title .el-icon {
+  color: #409eff;
+  font-size: 16px;
+}
+.collapse-badge {
+  margin-left: 4px;
+  transform: scale(0.85);
+}
+
+/* 子分区 */
+.sub-section {
+  margin-bottom: 4px;
+}
+.sub-section-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #606266;
+  margin-bottom: 10px;
+  padding-left: 2px;
+}
+.sub-divider {
+  margin: 16px 0;
+}
 
 .hint {
   color: #999;
@@ -1892,26 +1974,31 @@ onMounted(async () => {
   /* 顶部刘海区域渲染为黑色（设备屏幕顶部），模板渐变从刘海下方开始 */
   background:
     linear-gradient(to bottom, #1a1a1a 0, #1a1a1a var(--status-area), transparent var(--status-area)),
-    linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    linear-gradient(135deg, #c5cef5 0%, #c8bde0 100%);
   box-shadow:
     0 0 0 2px #2a2a2a,
     0 24px 60px rgba(0,0,0,0.35),
     0 8px 20px rgba(0,0,0,0.18);
 }
+.device-frame.tpl-default {
+  background:
+    linear-gradient(to bottom, #1a1a1a 0, #1a1a1a var(--status-area), transparent var(--status-area)),
+    #ffffff;
+}
 .device-frame.tpl-classic {
   background:
     linear-gradient(to bottom, #1a1a1a 0, #1a1a1a var(--status-area), transparent var(--status-area)),
-    linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    linear-gradient(135deg, #c5cef5 0%, #c8bde0 100%);
 }
 .device-frame.tpl-dark {
   background:
     linear-gradient(to bottom, #1a1a1a 0, #1a1a1a var(--status-area), transparent var(--status-area)),
-    linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    linear-gradient(135deg, #4a4a68 0%, #3e3e5a 100%);
 }
 .device-frame.tpl-festive {
   background:
     linear-gradient(to bottom, #1a1a1a 0, #1a1a1a var(--status-area), transparent var(--status-area)),
-    linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+    linear-gradient(135deg, #e8c5c5 0%, #e0b8b8 100%);
 }
 
 .device-notch {
@@ -1934,6 +2021,7 @@ onMounted(async () => {
   position: relative;
   z-index: 1;
   box-sizing: border-box;
+  padding-top: var(--status-area);
 }
 
 /* 背景图：铺满整个屏幕内容区域，但不包含刘海/状态栏顶部区域 */
@@ -2158,20 +2246,6 @@ onMounted(async () => {
   padding: 14px 16px;
   gap: 10px;
 }
-
-/* 九宫格拖拽手柄 */
-.grid-drag-handle {
-  text-align: center;
-  padding: 4px 0 2px;
-  color: rgba(255,255,255,0.35);
-  font-size: 14px;
-  line-height: 1;
-  cursor: grab;
-  user-select: none;
-  letter-spacing: 2px;
-  margin-bottom: 4px;
-}
-.grid-drag-handle:active { cursor: grabbing; }
 
 /* 九宫格 */
 .grid-layout {
@@ -2410,33 +2484,6 @@ onMounted(async () => {
 .qr-dialog-content { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
 .qr-code { width: 240px; height: 240px; border: 1px solid #ebeef5; border-radius: 8px; }
 .qr-url { width: 100%; margin: 0; color: #606266; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
-.icon-target {
-  width: 72px;
-  height: 72px;
-  border-radius: 10px;
-  overflow: hidden;
-  cursor: pointer;
-  border: 1px dashed #d0d7de;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fafafa;
-  transition: border-color 0.2s;
-}
-.icon-target:hover {
-  border-color: #409eff;
-}
-.icon-target img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.icon-placeholder {
-  color: #8c8c8c;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 .inspector-empty {
   flex: 1;
   display: flex;

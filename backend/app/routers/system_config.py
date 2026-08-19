@@ -43,6 +43,9 @@ def to_out(config: SystemConfig) -> SystemConfigOut:
         oss_endpoint=config.oss_endpoint or "",
         oss_custom_domain=config.oss_custom_domain or "",
         local_icon_library=icons,
+        ai_provider=config.ai_provider or "dashscope",
+        ai_api_key_configured=bool(config.ai_api_key),
+        ai_image_model=config.ai_image_model or "wanx2.1-t2i-turbo",
     )
 
 
@@ -53,7 +56,16 @@ def read_runtime_config(
 ):
     """供后台编辑器读取的非敏感运行时配置。"""
     config = get_config(db)
-    return {"h5_domain": (config.h5_domain or "").rstrip("/")}
+    try:
+        icons = json.loads(config.local_icon_library) if config.local_icon_library else []
+        if not isinstance(icons, list):
+            icons = []
+    except (TypeError, json.JSONDecodeError):
+        icons = []
+    return {
+        "h5_domain": (config.h5_domain or "").rstrip("/"),
+        "local_icon_library": icons,
+    }
 
 
 @router.get("", response_model=SystemConfigOut)
@@ -79,7 +91,7 @@ def update_system_config(
         config.local_icon_library = json.dumps(data.pop("local_icon_library"), ensure_ascii=False)
 
     # 机密字段传空字符串时视为“不更新”；要清空请在数据库或环境变量中处理。
-    for secret_field in ("wechat_app_secret", "oss_access_key_secret"):
+    for secret_field in ("wechat_app_secret", "oss_access_key_secret", "ai_api_key"):
         if secret_field in data and not data[secret_field]:
             data.pop(secret_field)
 

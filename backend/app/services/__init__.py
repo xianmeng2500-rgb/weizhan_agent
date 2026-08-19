@@ -107,3 +107,44 @@ async def upload_image_local(file: UploadFile, upload_dir: str = None) -> str:
     # 返回相对路径
     rel_path = os.path.relpath(file_path, upload_dir)
     return f"/static/uploads/{rel_path}"
+
+
+def upload_image_bytes(content: bytes, ext: str = "png") -> str:
+    """将字节内容直接落盘到 OSS（已配置时）或本地存储。
+
+    供 AI 生成结果转存、参考图转存等非 UploadFile 场景复用。
+    与 upload_image 保持一致的文件路径规则：weizhan/yyyy/mm/dd/uuid.ext
+
+    Args:
+        content: 图片字节内容
+        ext: 文件扩展名（不含点，如 png/jpg）
+    Returns:
+        图片的可访问 URL
+    """
+    now = datetime.now()
+    file_key = f"weizhan/{now.strftime('%Y/%m/%d')}/{uuid.uuid4().hex}.{ext}"
+
+    if oss_is_configured():
+        storage_config = get_storage_config()
+        bucket = _get_oss_bucket(storage_config)
+        bucket.put_object(file_key, content)
+        if storage_config["custom_domain"]:
+            domain = storage_config["custom_domain"].rstrip("/")
+            if not domain.startswith("http://") and not domain.startswith("https://"):
+                domain = f"https://{domain}"
+            return f"{domain}/{file_key}"
+        return f"https://{storage_config['bucket_name']}.{storage_config['endpoint']}/{file_key}"
+
+    # 本地存储
+    upload_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        settings.UPLOAD_DIR,
+    )
+    dir_path = os.path.join(upload_dir, now.strftime("%Y/%m/%d"))
+    os.makedirs(dir_path, exist_ok=True)
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    file_path = os.path.join(dir_path, filename)
+    with open(file_path, "wb") as f:
+        f.write(content)
+    rel_path = os.path.relpath(file_path, upload_dir)
+    return f"/static/uploads/{rel_path}"

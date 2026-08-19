@@ -7,6 +7,7 @@ from app.database import get_db
 from app.models import User, SiteAccount, AccountModulePermission, Module, Site
 from app.utils.security import hash_password, verify_password, create_access_token
 from app.utils.deps import get_current_admin, assert_site_access
+from app.services.billing_service import assert_active_membership
 from app.schemas.account import (
     AccountImportRequest, AccountCreate, AccountUpdate, AccountOut,
     PaginatedAccounts, AccountPermissionUpdate,
@@ -17,11 +18,14 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/sites/{site_id}/accounts", tags=["账号管理"])
 
 
-def _get_site_or_404(db: Session, site_id: int, current: User) -> Site:
+def _get_site_or_404(db: Session, site_id: int, current: User, require_membership: bool = False) -> Site:
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
         raise HTTPException(status_code=404, detail="微站不存在")
     assert_site_access(site, current)
+    # 商业化: 写操作校验会员状态（过期后微站只读）
+    if require_membership:
+        assert_active_membership(db, current)
     return site
 
 
@@ -80,7 +84,7 @@ def create_account(
     current: User = Depends(get_current_admin),
 ):
     """创建单个账号"""
-    _get_site_or_404(db, site_id, current)
+    _get_site_or_404(db, site_id, current, require_membership=True)
     # 校验 username 唯一性
     existing = db.query(SiteAccount).filter(
         SiteAccount.site_id == site_id,
@@ -115,7 +119,7 @@ def import_accounts(
     current: User = Depends(get_current_admin),
 ):
     """批量导入账号"""
-    _get_site_or_404(db, site_id, current)
+    _get_site_or_404(db, site_id, current, require_membership=True)
     created = 0
     skipped = 0
     try:
@@ -163,6 +167,7 @@ def update_account(
     current: User = Depends(get_current_admin),
 ):
     """更新账号"""
+    assert_active_membership(db, current)
     acc = db.query(SiteAccount).filter(
         SiteAccount.id == account_id, SiteAccount.site_id == site_id
     ).first()
@@ -205,6 +210,7 @@ def delete_account(
     current: User = Depends(get_current_admin),
 ):
     """删除账号"""
+    assert_active_membership(db, current)
     acc = db.query(SiteAccount).filter(
         SiteAccount.id == account_id, SiteAccount.site_id == site_id
     ).first()
@@ -229,6 +235,7 @@ def update_permissions(
     current: User = Depends(get_current_admin),
 ):
     """设置账号可访问的模块权限"""
+    assert_active_membership(db, current)
     acc = db.query(SiteAccount).filter(
         SiteAccount.id == account_id, SiteAccount.site_id == site_id
     ).first()

@@ -9,6 +9,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { showToast } from 'vant'
 import api from '@/api'
 
 const route = useRoute()
@@ -20,8 +21,8 @@ const content = ref<any>({})
 async function loadContent() {
   try {
     content.value = await api.get(`/p/modules/${moduleId}`)
-  } catch {
-    // 错误已在拦截器处理
+  } catch (err: any) {
+    showToast(err.response?.data?.detail || '内容加载失败')
   }
 }
 

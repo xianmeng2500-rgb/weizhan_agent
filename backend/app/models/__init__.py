@@ -7,6 +7,10 @@ from app.models.stats import AccessLog, ModuleClickLog
 from app.models.form_submission import FormSubmission
 from app.models.system_config import SystemConfig
 from app.models.checkin import CheckinConfig, CheckinRecord, CheckinSession
+from app.models.membership import MembershipPlan, Membership
+from app.models.session_credit import SessionCredit
+from app.models.wallet import WalletTransaction
+from app.models.ai_generation import AIGeneration
 
 __all__ = [
     "User",
@@ -21,4 +25,9 @@ __all__ = [
     "CheckinConfig",
     "CheckinRecord",
     "CheckinSession",
+    "MembershipPlan",
+    "Membership",
+    "SessionCredit",
+    "WalletTransaction",
+    "AIGeneration",
 ]

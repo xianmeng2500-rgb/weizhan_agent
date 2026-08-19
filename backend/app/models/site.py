@@ -12,7 +12,7 @@ class Site(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(128), nullable=False, comment="微站名称")
     code = Column(String(64), unique=True, index=True, nullable=False, comment="微站唯一码(用于URL)")
-    template = Column(String(20), default="classic", nullable=False, comment="模板: classic/dark/festive")
+    template = Column(String(20), default="default", nullable=False, comment="模板: default/classic/dark/festive")
     layout = Column(String(20), default="grid", nullable=False, comment="布局: grid/button")
     kv_image = Column(String(500), nullable=True, comment="KV图URL")
     background_color = Column(String(20), default="", nullable=True, comment="自定义背景色")

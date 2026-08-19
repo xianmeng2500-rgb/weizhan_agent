@@ -28,7 +28,9 @@ request.interceptors.response.use(
         ElMessage.error('登录已过期，请重新登录')
         window.location.href = '/admin/login'
       } else {
-        ElMessage.error(data?.detail || '请求失败')
+        // 去掉后端计费错误码前缀（如 CREDIT_INSUFFICIENT:xxx）
+        const detail = String(data?.detail || '').replace(/^(CREDIT_INSUFFICIENT|MEMBERSHIP_EXPIRED|INSUFFICIENT_BALANCE):/, '')
+        ElMessage.error(detail || '请求失败')
       }
     } else {
       ElMessage.error('网络错误')

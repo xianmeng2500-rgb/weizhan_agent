@@ -13,3 +13,5 @@ oss2>=2.18.1
 python-dotenv>=1.0.1
 alembic>=1.13.1
 email-validator>=2.1.1
+dashscope>=1.23.8
+Pillow>=10.0.0

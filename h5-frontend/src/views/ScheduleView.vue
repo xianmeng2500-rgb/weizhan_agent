@@ -102,6 +102,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { showToast } from 'vant'
 import api from '@/api'
 
 const route = useRoute()
@@ -260,8 +261,8 @@ async function loadData() {
 
     // 默认选中今天
     selectedDate.value = todayStr.value
-  } catch {
-    // 错误已在拦截器处理
+  } catch (err: any) {
+    showToast(err.response?.data?.detail || '加载失败')
   } finally {
     loading.value = false
   }
