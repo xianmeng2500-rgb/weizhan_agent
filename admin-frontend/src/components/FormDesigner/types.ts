@@ -17,6 +17,8 @@ export interface FormConfig {
   title: string
   description: string
   buttonText: string
+  /** 提交后是否允许修改（模块级，默认 false） */
+  allowEditAfterSubmit?: boolean
   fields: FormField[]
 }
 

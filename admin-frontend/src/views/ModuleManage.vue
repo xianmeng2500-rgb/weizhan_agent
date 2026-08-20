@@ -280,6 +280,7 @@ const editing = reactive({
     title: '',
     description: '',
     buttonText: '提交',
+    allowEditAfterSubmit: false,
     fields: [],
   },
   schedule_config: { items: [] } as { items: any[] },
@@ -311,7 +312,7 @@ function openCreate() {
   Object.assign(editing, {
     id: null, title: '', icon: '', sort_order: list.value.length,
     content_type: 'rich_text', external_url: '', rich_content: '',
-    form_config: { title: '', description: '', buttonText: '提交', fields: [] },
+    form_config: { title: '', description: '', buttonText: '提交', allowEditAfterSubmit: false, fields: [] },
     schedule_config: { items: [] },
     qrcode_config: { hint: '', display_fields: [] },
     start_time: '', end_time: '', is_active: true,
@@ -322,7 +323,7 @@ function openCreate() {
 function openEdit(row: any) {
   Object.assign(editing, {
     ...row,
-    form_config: row.form_config || { title: '', description: '', buttonText: '提交', fields: [] },
+    form_config: row.form_config || { title: '', description: '', buttonText: '提交', allowEditAfterSubmit: false, fields: [] },
     schedule_config: row.schedule_config || { items: [] },
     qrcode_config: row.qrcode_config || { hint: '', display_fields: [] },
   })

@@ -12,8 +12,8 @@
         <div class="success-icon-wrap">
           <van-icon name="checked" class="success-icon" />
         </div>
-        <h2 class="success-title">提交成功</h2>
-        <p class="success-desc">感谢您的报名，信息已成功提交！</p>
+        <h2 class="success-title">{{ successTitle }}</h2>
+        <p class="success-desc">{{ successDesc }}</p>
         <van-button round block class="success-btn" @click="goBack">返回首页</van-button>
       </div>
     </div>
@@ -34,11 +34,11 @@
       </div>
 
       <div v-if="isSubmitted" class="submitted-notice">
-        <van-icon name="info-o" />
-        <span>您已提交过该报名表单，以下信息仅供查看，暂不支持修改。</span>
+        <van-icon :name="canEdit ? 'edit' : 'info-o'" />
+        <span>{{ canEdit ? '您已提交过该报名表单，可修改信息后点击“保存修改”。' : '您已提交过该报名表单，以下信息仅供查看，暂不支持修改。' }}</span>
       </div>
 
-      <van-form :class="{ 'form-readonly': isSubmitted }" @submit="onSubmit">
+      <van-form :class="{ 'form-readonly': formReadonly }" @submit="onSubmit">
         <div v-for="field in formConfig.fields" :key="field.id" class="field-wrapper"
              :class="{ 'field-wrapper--display': ['divider', 'tip_text'].includes(field.type) }">
 
@@ -260,11 +260,11 @@
         </div>
 
         <div class="submit-area">
-          <van-button round block type="primary" native-type="submit" :loading="submitting" :disabled="isSubmitted" class="submit-btn">
+          <van-button round block type="primary" native-type="submit" :loading="submitting" :disabled="formReadonly" class="submit-btn">
             <van-icon v-if="!isSubmitted" name="send" class="submit-icon" />
-            {{ isSubmitted ? '已提交' : (formConfig.buttonText || '提交') }}
+            {{ canEdit ? '保存修改' : (isSubmitted ? '已提交' : (formConfig.buttonText || '提交')) }}
           </van-button>
-          <p class="submit-tip">请确认信息无误后提交</p>
+          <p class="submit-tip">{{ canEdit ? '修改后请确认信息无误再保存' : '请确认信息无误后提交' }}</p>
         </div>
       </van-form>
     </div>
@@ -310,8 +310,20 @@ const fileList = ref<Record<string, any[]>>({})      // 图片文件列表
 const fieldError = ref<Record<string, string>>({})
 const needsLogin = ref(false)
 const isSubmitted = ref(false)                       // 是否已提交（只读模式）
+const submission = ref<any>(null)                    // 我的报名记录（含 allow_edit 等）
 const successVisible = ref(false)                    // 提交成功页
+const successTitle = ref('提交成功')                 // 成功页标题（提交/修改共用）
+const successDesc = ref('感谢您的报名，信息已成功提交！') // 成功页描述
 const site = ref<any>({})                            // 微站信息（用于主题）
+
+// 最终可修改 = 模块级允许提交后修改 且 单条数据级允许修改
+const canEdit = computed(() => {
+  return isSubmitted.value
+    && Boolean(formConfig.value.allowEditAfterSubmit)
+    && submission.value?.allow_edit !== false
+})
+// 表单只读（已提交且不可修改）
+const formReadonly = computed(() => isSubmitted.value && !canEdit.value)
 
 const themeClass = computed(() => `tpl-${site.value.template || 'classic'}`)
 
@@ -355,7 +367,7 @@ function goBack() {
 
 // 字段校验规则
 function getRules(field: any) {
-  if (isSubmitted.value) return []
+  if (formReadonly.value) return []
   const rules = []
   if (field.required) {
     rules.push({ required: true, message: `请填写${field.title}` })
@@ -374,7 +386,7 @@ function getRules(field: any) {
 
 // 多选切换
 function toggleCheckbox(fieldId: string, opt: string) {
-  if (isSubmitted.value) return
+  if (formReadonly.value) return
   const arr = formData.value[fieldId] || []
   const idx = arr.indexOf(opt)
   if (idx > -1) { arr.splice(idx, 1) } else { arr.push(opt) }
@@ -383,7 +395,7 @@ function toggleCheckbox(fieldId: string, opt: string) {
 
 // 下拉选择
 function openPicker(field: any) {
-  if (isSubmitted.value) return
+  if (formReadonly.value) return
   currentPickerField.value = field.id
   // Vant 4 picker 对 string[] columns 在 getColumnsType 中会触发
   // "Cannot use 'in' operator to search for 'children' in xxx"，因此统一转成对象数组
@@ -414,7 +426,7 @@ function onAreaConfirm({ selectedOptions }: any) {
 
 // 交通方式选择器
 function openTransportPicker(field: any, subKey: string) {
-  if (isSubmitted.value) return
+  if (formReadonly.value) return
   currentTransportFieldId.value = field.id
   currentTransportSubKey.value = subKey
   const optionKey = subKey === 'departure_method' ? 'departureOptions' : 'returnOptions'
@@ -461,7 +473,7 @@ function collectImageUrls(fieldId: string): string[] {
 
 // 提交
 async function onSubmit() {
-  if (isSubmitted.value) return
+  if (formReadonly.value) return
   // 图片必填校验
   let valid = true
   for (const field of formConfig.value.fields || []) {
@@ -489,15 +501,29 @@ async function onSubmit() {
 
   submitting.value = true
   try {
-    await api.post(`/p/sites/${code}/modules/${moduleId}/form-submissions`, {
-      data,
-      submitter_name: submitterName,
-      submitter_phone: submitterPhone,
-    })
-    showSuccessToast('提交成功')
+    if (canEdit.value) {
+      // 修改模式：更新原记录
+      await api.put(`/p/sites/${code}/modules/${moduleId}/form-submissions/mine`, {
+        data,
+        submitter_name: submitterName,
+        submitter_phone: submitterPhone,
+      })
+      showSuccessToast('修改成功')
+      successTitle.value = '修改成功'
+      successDesc.value = '您的报名信息已成功更新！'
+    } else {
+      await api.post(`/p/sites/${code}/modules/${moduleId}/form-submissions`, {
+        data,
+        submitter_name: submitterName,
+        submitter_phone: submitterPhone,
+      })
+      showSuccessToast('提交成功')
+      successTitle.value = '提交成功'
+      successDesc.value = '感谢您的报名，信息已成功提交！'
+    }
     successVisible.value = true
   } catch (err: any) {
-    showToast(err.response?.data?.detail || '提交失败')
+    showToast(err.response?.data?.detail || (canEdit.value ? '修改失败' : '提交失败'))
   } finally {
     submitting.value = false
   }
@@ -542,11 +568,12 @@ async function loadModule() {
     formData.value = initData
     fileList.value = initFiles
 
-    // 需要登录的微站：读取当前账号既有报名记录，回填为只读
+    // 需要登录的微站：读取当前账号既有报名记录，回填展示（是否可修改由模块级与数据级共同决定）
     if (needsLogin.value) {
-      const submission: any = await api.get(`/p/sites/${code}/modules/${moduleId}/form-submissions/mine`)
-      if (submission?.data) {
-        applySubmittedData(submission.data)
+      const sub: any = await api.get(`/p/sites/${code}/modules/${moduleId}/form-submissions/mine`)
+      if (sub?.data) {
+        submission.value = sub
+        applySubmittedData(sub.data)
         isSubmitted.value = true
       }
     }

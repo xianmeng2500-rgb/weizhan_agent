@@ -32,8 +32,16 @@ class FormSubmissionCreate(BaseModel):
 
 
 class FormSubmissionUpdate(BaseModel):
-    """管理员更新提交记录备注"""
+    """管理员更新提交记录（备注 / 单条数据级修改权限）"""
     note: Optional[str] = None
+    allow_edit: Optional[bool] = Field(None, description="是否允许提交后修改（单条数据级，需模块级允许才生效）")
+
+
+class FormSubmissionSelfUpdate(BaseModel):
+    """H5 用户修改自己已提交的报名数据"""
+    data: dict[str, Any] = Field(..., description="字段ID到值的映射")
+    submitter_name: Optional[str] = Field(None, max_length=128)
+    submitter_phone: Optional[str] = Field(None, max_length=20)
 
 
 class FormSubmissionOut(BaseModel):
@@ -45,6 +53,7 @@ class FormSubmissionOut(BaseModel):
     submitter_phone: Optional[str] = None
     data: dict[str, Any]
     note: Optional[str] = None
+    allow_edit: bool = True
     created_at: datetime
 
     model_config = {"from_attributes": True}

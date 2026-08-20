@@ -9,7 +9,9 @@ from sqlalchemy.exc import IntegrityError
 from app.database import get_db
 from app.models import User, Site, Module, SiteAccount, FormSubmission
 from app.utils.deps import get_current_admin, get_optional_frontend_account, assert_site_access
-from app.schemas.form_submission import FormSubmissionCreate, FormSubmissionUpdate, FormSubmissionOut
+from app.schemas.form_submission import (
+    FormSubmissionCreate, FormSubmissionUpdate, FormSubmissionSelfUpdate, FormSubmissionOut,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +44,53 @@ def _assert_site_access(db: Session, site_id: int, current: User) -> Site:
         raise HTTPException(status_code=404, detail="微站不存在")
     assert_site_access(site, current)
     return site
+
+
+def _check_account_module_permission(db: Session, account: SiteAccount, module: Module) -> None:
+    """校验登录账号对该模块的访问权限（配置了白名单时校验）"""
+    from app.models import AccountModulePermission
+    permitted_ids = {
+        p.module_id for p in
+        db.query(AccountModulePermission).filter(
+            AccountModulePermission.account_id == account.id
+        ).all()
+    }
+    if permitted_ids and module.id not in permitted_ids:
+        raise HTTPException(status_code=403, detail="无权访问此模块")
+
+
+def _validate_and_extract(module: Module, req: FormSubmissionCreate | FormSubmissionSelfUpdate):
+    """校验必填字段，并尝试自动提取提交者姓名/手机号，返回 (submitter_name, submitter_phone)"""
+    config: dict[str, Any] = module.form_config or {}
+    fields = config.get("fields", [])
+    missing = []
+    for field in fields:
+        fid = field.get("id")
+        if field.get("required") and fid:
+            value = req.data.get(fid)
+            if value is None or value == "" or value == []:
+                missing.append(field.get("title", fid))
+    if missing:
+        raise HTTPException(status_code=422, detail=f"请填写必填项: {', '.join(missing)}")
+
+    submitter_name = req.submitter_name
+    submitter_phone = req.submitter_phone
+    for field in fields:
+        fid = field.get("id")
+        ftype = field.get("type")
+        value = req.data.get(fid)
+        if not submitter_name and ftype == "text" and "姓名" in (field.get("title") or ""):
+            submitter_name = str(value) if value else None
+        if not submitter_phone and ftype in ("phone", "mobile") and value:
+            submitter_phone = str(value)
+        if not submitter_phone and "手机号" in (field.get("title") or "") and value:
+            submitter_phone = str(value)
+    return submitter_name, submitter_phone
+
+
+def _module_can_edit_after_submit(module: Module) -> bool:
+    """模块级是否允许提交后修改（form_config.allowEditAfterSubmit）"""
+    return bool((module.form_config or {}).get("allowEditAfterSubmit"))
 
 
 @router.get("", response_model=list[FormSubmissionOut])
@@ -103,7 +152,7 @@ def update_submission(
     db: Session = Depends(get_db),
     current: User = Depends(get_current_admin),
 ):
-    """管理后台 - 更新提交记录备注"""
+    """管理后台 - 更新提交记录（备注 / 单条数据级修改权限）"""
     _assert_site_access(db, site_id, current)
     row = db.query(FormSubmission).filter(
         FormSubmission.id == submission_id,
@@ -114,6 +163,8 @@ def update_submission(
         raise HTTPException(status_code=404, detail="提交记录不存在")
     if req.note is not None:
         row.note = req.note
+    if req.allow_edit is not None:
+        row.allow_edit = req.allow_edit
     try:
         db.commit()
         db.refresh(row)
@@ -227,43 +278,10 @@ def create_public_submission(
 
     # 权限校验
     if site.need_login and account:
-        from app.models import AccountModulePermission
-        permitted_ids = {
-            p.module_id for p in
-            db.query(AccountModulePermission).filter(
-                AccountModulePermission.account_id == account.id
-            ).all()
-        }
-        if permitted_ids and module.id not in permitted_ids:
-            raise HTTPException(status_code=403, detail="无权访问此模块")
+        _check_account_module_permission(db, account, module)
 
-    # 基础必填校验
-    config: dict[str, Any] = module.form_config or {}
-    fields = config.get("fields", [])
-    field_map = {f.get("id"): f for f in fields if f.get("id")}
-    missing = []
-    for field in fields:
-        fid = field.get("id")
-        if field.get("required") and fid:
-            value = req.data.get(fid)
-            if value is None or value == "" or value == []:
-                missing.append(field.get("title", fid))
-    if missing:
-        raise HTTPException(status_code=422, detail=f"请填写必填项: {', '.join(missing)}")
-
-    # 尝试自动提取姓名/手机号作为提交者信息
-    submitter_name = req.submitter_name
-    submitter_phone = req.submitter_phone
-    for field in fields:
-        fid = field.get("id")
-        ftype = field.get("type")
-        value = req.data.get(fid)
-        if not submitter_name and ftype == "text" and "姓名" in (field.get("title") or ""):
-            submitter_name = str(value) if value else None
-        if not submitter_phone and ftype in ("phone", "mobile") and value:
-            submitter_phone = str(value)
-        if not submitter_phone and "手机号" in (field.get("title") or "") and value:
-            submitter_phone = str(value)
+    # 必填校验 + 自动提取提交者姓名/手机号
+    submitter_name, submitter_phone = _validate_and_extract(module, req)
 
     row = FormSubmission(
         site_id=site.id,
@@ -289,4 +307,83 @@ def create_public_submission(
         db.rollback()
         logger.error(f"保存表单提交失败: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"提交失败: {str(e)}")
+    return FormSubmissionOut.model_validate(row)
+
+
+@public_router.put("/sites/{code}/modules/{module_id}/form-submissions/mine", response_model=FormSubmissionOut)
+def update_my_public_submission(
+    code: str,
+    module_id: int,
+    req: FormSubmissionSelfUpdate,
+    db: Session = Depends(get_db),
+    account: SiteAccount | None = Depends(get_optional_frontend_account),
+):
+    """H5 - 修改当前登录账号已提交的报名记录。
+
+    最终可修改需同时满足：
+      1) 模块级：form_config.allowEditAfterSubmit = true
+      2) 单条数据级：form_submissions.allow_edit = true
+    """
+    site = db.query(Site).filter(Site.code == code, Site.status == "online").first()
+    if not site:
+        raise HTTPException(status_code=404, detail="微站不存在")
+
+    now = _now()
+    if site.status == "offline":
+        raise HTTPException(status_code=403, detail=site.close_message or "微站已关闭")
+    if site.start_time and now < site.start_time:
+        raise HTTPException(status_code=403, detail="微站尚未开启")
+    if site.end_time and now > site.end_time:
+        raise HTTPException(status_code=403, detail=site.close_message or "微站已关闭")
+
+    # 仅支持需要登录的微站（否则无法定位"我的"报名记录）
+    if not site.need_login:
+        raise HTTPException(status_code=403, detail="该微站不支持修改报名信息")
+    if not account:
+        raise HTTPException(status_code=401, detail="请先登录")
+
+    module = db.query(Module).filter(
+        Module.id == module_id,
+        Module.site_id == site.id,
+        Module.is_active == True,
+        Module.content_type == "registration_form",
+    ).first()
+    if not module:
+        raise HTTPException(status_code=404, detail="模块不存在")
+    if module.start_time and now < module.start_time:
+        raise HTTPException(status_code=403, detail="模块尚未开启")
+    if module.end_time and now > module.end_time:
+        raise HTTPException(status_code=403, detail="模块已关闭")
+
+    _check_account_module_permission(db, account, module)
+
+    # 模块级：允许提交后修改
+    if not _module_can_edit_after_submit(module):
+        raise HTTPException(status_code=403, detail="该报名表单不支持提交后修改")
+
+    row = db.query(FormSubmission).filter(
+        FormSubmission.site_id == site.id,
+        FormSubmission.module_id == module.id,
+        FormSubmission.account_id == account.id,
+    ).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="未找到您的报名记录")
+
+    # 单条数据级：允许修改
+    if not row.allow_edit:
+        raise HTTPException(status_code=403, detail="该报名记录已被管理员禁止修改")
+
+    # 必填校验 + 自动提取提交者姓名/手机号
+    submitter_name, submitter_phone = _validate_and_extract(module, req)
+
+    row.data = req.data
+    row.submitter_name = submitter_name
+    row.submitter_phone = submitter_phone
+    try:
+        db.commit()
+        db.refresh(row)
+    except Exception as e:
+        db.rollback()
+        logger.error(f"更新报名记录失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"修改失败: {str(e)}")
     return FormSubmissionOut.model_validate(row)

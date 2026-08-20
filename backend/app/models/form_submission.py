@@ -1,6 +1,6 @@
 """表单提交记录模型"""
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey, Text, Index
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON, ForeignKey, Text, Index
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -24,6 +24,7 @@ class FormSubmission(Base):
     submitter_phone = Column(String(20), nullable=True, comment="提交者手机号")
     data = Column(JSON, nullable=False, comment="提交数据(JSON)")
     note = Column(Text, nullable=True, comment="备注/管理员备注")
+    allow_edit = Column(Boolean, default=True, nullable=False, comment="是否允许提交后修改(单条数据级)")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), comment="提交时间")
 
     # 关系

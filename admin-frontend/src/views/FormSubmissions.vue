@@ -55,9 +55,25 @@
             {{ formatTime(row.created_at) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="260" fixed="right">
           <template #default="{ row }">
             <el-button size="small" @click="openDetail(row)">详情</el-button>
+            <el-tooltip
+              v-if="moduleAllowEdit"
+              :content="row.allow_edit ? '该条数据当前允许报名者修改，点击可禁止' : '该条数据当前已禁止修改，点击可恢复'"
+              placement="top"
+            >
+              <el-switch
+                :model-value="row.allow_edit"
+                inline-prompt
+                :active-text="row.allow_edit ? '可修改' : '禁修改'"
+                inactive-text="禁修改"
+                @change="(val: any) => toggleAllowEdit(row, Boolean(val))"
+              />
+            </el-tooltip>
+            <el-tooltip v-else content="模块级已禁止提交后修改，数据级设置不生效" placement="top">
+              <span class="allow-edit-disabled"><el-icon><Lock /></el-icon> 已锁定</span>
+            </el-tooltip>
             <el-popconfirm title="确认删除？" @confirm="deleteRow(row)">
               <template #reference><el-button size="small" type="danger">删除</el-button></template>
             </el-popconfirm>
@@ -79,6 +95,18 @@
         <div class="detail-item">
           <span class="detail-label">手机号</span>
           <span class="detail-value">{{ detailRow.submitter_phone || '-' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">修改权限</span>
+          <span class="detail-value">
+            <template v-if="!moduleAllowEdit">
+              <el-tag type="info" size="small">模块级已锁定</el-tag>
+              <span style="color: #909399; margin-left: 6px">模块未开启提交后修改</span>
+            </template>
+            <el-tag v-else :type="detailRow.allow_edit ? 'success' : 'danger'" size="small">
+              {{ detailRow.allow_edit ? '允许修改' : '禁止修改' }}
+            </el-tag>
+          </span>
         </div>
         <el-divider />
         <div v-for="(field, idx) in formFields" :key="idx" class="detail-item">
@@ -104,7 +132,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Download, Search, Refresh, Document } from '@element-plus/icons-vue'
+import { ArrowLeft, Download, Search, Refresh, Document, Lock } from '@element-plus/icons-vue'
 import api from '@/api'
 import dayjs from 'dayjs'
 
@@ -132,6 +160,9 @@ const savingNote = ref(false)
 const formFields = computed(() => {
   return formConfig.value?.fields || []
 })
+
+// 模块级是否允许提交后修改（form_config.allowEditAfterSubmit）
+const moduleAllowEdit = computed(() => Boolean(formConfig.value?.allowEditAfterSubmit))
 
 function goBack() {
   router.push(`/sites/${siteId}/modules`)
@@ -197,6 +228,20 @@ async function saveNote() {
     detailRow.value.note = detailNote.value
   } finally {
     savingNote.value = false
+  }
+}
+
+// 单条数据级：允许/禁止提交者修改
+async function toggleAllowEdit(row: any, val: boolean) {
+  try {
+    await api.put(`/sites/${siteId}/modules/${moduleId}/form-submissions/${row.id}`, {
+      allow_edit: val,
+    })
+    row.allow_edit = val
+    ElMessage.success(val ? '已允许该记录修改' : '已禁止该记录修改')
+  } catch (e) {
+    console.error(e)
+    ElMessage.error('操作失败')
   }
 }
 
@@ -290,6 +335,16 @@ onMounted(() => {
 .range-sep {
   margin: 0 8px;
   color: #909399;
+}
+
+.allow-edit-disabled {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin: 0 8px;
+  font-size: 12px;
+  color: #909399;
+  cursor: help;
 }
 
 .detail-content {

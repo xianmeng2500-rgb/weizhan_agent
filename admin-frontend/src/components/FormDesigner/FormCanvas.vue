@@ -124,6 +124,13 @@
           <el-input v-model="config.buttonText" placeholder="提交按钮文字" style="width: 200px">
             <template #prefix><el-icon color="#c0c4cc"><Pointer /></el-icon></template>
           </el-input>
+          <div class="form-footer-design__allow-edit">
+            <span class="allow-edit-label">提交后允许修改</span>
+            <el-switch v-model="config.allowEditAfterSubmit" />
+            <el-tooltip content="开启后，报名者可修改自己已提交的信息；管理员还可在报名数据中对单条记录单独限制" placement="top">
+              <el-icon class="allow-edit-hint" color="#c0c4cc"><InfoFilled /></el-icon>
+            </el-tooltip>
+          </div>
         </div>
         <div v-else class="form-footer-preview">
           <el-button type="primary" size="large" style="width: 100%">{{ config.buttonText || '提交' }}</el-button>
@@ -416,6 +423,22 @@ function handleListDrop(e: DragEvent) {
 .form-footer-design {
   margin-top: 24px;
   text-align: center;
+}
+
+.form-footer-design__allow-edit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed #e4e7ed;
+  font-size: 13px;
+  color: #606266;
+}
+
+.allow-edit-hint {
+  cursor: help;
 }
 
 .form-footer-preview {
