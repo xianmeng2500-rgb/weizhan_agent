@@ -185,7 +185,7 @@ footer{border-top:1px solid var(--border);padding:28px 0 48px;color:var(--text-3
     <div class="feat"><h5><span class="dot" style="background:#4F46E5;"></span>多微站并行</h5><p>一个账号可创建多个微站，每个独立链接、独立管理。</p></div>
     <div class="feat"><h5><span class="dot" style="background:#0F766E;"></span>模板体系</h5><p>内置多套风格模板，管理员可自建模板预设外观与按钮，建站一键套用。</p></div>
     <div class="feat"><h5><span class="dot" style="background:#B45309;"></span>富文本 &amp; 外链</h5><p>图文混排编辑器，图片上传云端；模块也可直接跳转外部链接。</p></div>
-    <div class="feat"><h5><span class="dot" style="background:#9333EA;"></span>报名表单</h5><p>可视化配置报名表单，数据后台沉淀，支持去重与备注。</p></div>
+    <div class="feat"><h5><span class="dot" style="background:#9333EA;"></span>报名表单</h5><p>可视化配置报名表单，数据后台沉淀；支持提交后修改、去重与备注。</p></div>
     <div class="feat"><h5><span class="dot" style="background:#0F766E;"></span>签到核销</h5><p>多场次签到，PC 摄像头 / 手机扫码核销，支持补签与撤销。</p></div>
     <div class="feat"><h5><span class="dot" style="background:#4F46E5;"></span>账号与权限</h5><p>微站登录账号批量导入，模块级权限按账号分配。</p></div>
     <div class="feat"><h5><span class="dot" style="background:#B45309;"></span>数据统计</h5><p>PV / UV、模块点击量、访问趋势，实时掌握运营效果。</p></div>
@@ -242,7 +242,7 @@ footer{border-top:1px solid var(--border);padding:28px 0 48px;color:var(--text-3
       <ul>
         <li><b>富文本</b>：图文混排内容页，适合公告、详情、产品介绍；</li>
         <li><b>外部链接</b>：点击后跳转到指定网址；</li>
-        <li><b>报名表单</b>：配置报名字段，用户填写后数据进入「报名数据」；</li>
+        <li><b>报名表单</b>：配置报名字段，用户填写后数据进入「报名数据」；可开启「提交后允许修改」，让报名者自助更新已提交的信息；</li>
         <li><b>日程安排</b>：以时间线展示日程，支持批量导入；</li>
         <li><b>我的二维码</b>：为登录用户生成专属签到二维码。</li>
       </ul>
@@ -308,7 +308,7 @@ footer{border-top:1px solid var(--border);padding:28px 0 48px;color:var(--text-3
     </div>
     <div class="feat">
       <h5><span class="dot" style="background:#9333EA;"></span>报名表单</h5>
-      <p>可视化配置表单字段（姓名、手机号、自定义字段等），用户在 H5 端填写提交，数据沉淀在「报名数据」页，支持查看 / 备注管理。</p>
+      <p>可视化配置表单字段（姓名、手机号、自定义字段等），用户在 H5 端填写提交，数据沉淀在「报名数据」页，支持查看 / 备注管理；可开启「提交后允许修改」，并支持对单条记录锁定。</p>
     </div>
     <div class="feat">
       <h5><span class="dot" style="background:#B45309;"></span>日程安排</h5>
@@ -392,8 +392,14 @@ footer{border-top:1px solid var(--border);padding:28px 0 48px;color:var(--text-3
     <ul>
       <li>汇总该微站所有「报名表单」模块的提交记录；</li>
       <li>展示提交者姓名、手机号、提交内容与提交时间；</li>
-      <li>支持添加管理员备注，用于跟进处理状态；</li>
+      <li>支持添加管理员备注，用于跟进处理状态（备注仅管理员可见）；</li>
       <li>同一微站同一模块同一登录账号 <b>仅保留一条有效记录</b>，重复提交自动去重。</li>
+    </ul>
+    <h4>单条记录修改控制</h4>
+    <ul>
+      <li>当表单开启「提交后允许修改」时，每条记录可切换<b>可修改 / 禁修改</b>：默认允许修改，报名者可在 H5 端自助更新；</li>
+      <li>需要锁定某条数据时（如已审核、已分配名额），可切换为「禁修改」，该报名者将无法再修改自己的信息；</li>
+      <li>表单模块级未开启「提交后允许修改」时，记录显示「已锁定」，数据级开关不生效。</li>
     </ul>
   </div>
 
@@ -493,7 +499,7 @@ footer{border-top:1px solid var(--border);padding:28px 0 48px;color:var(--text-3
   <h3>4.3 浏览与互动</h3>
   <div class="grid3">
     <div class="feat"><h5><span class="dot" style="background:#4F46E5;"></span>内容浏览</h5><p>点击模块查看富文本详情，或跳转外部链接。</p></div>
-    <div class="feat"><h5><span class="dot" style="background:#9333EA;"></span>提交报名</h5><p>填写报名表单提交，姓名 / 手机号等字段由运营者配置。</p></div>
+    <div class="feat"><h5><span class="dot" style="background:#9333EA;"></span>提交报名</h5><p>填写报名表单提交，姓名 / 手机号等字段由运营者配置。若表单开启「提交后允许修改」，再次进入可直接编辑自己的信息并保存。</p></div>
     <div class="feat"><h5><span class="dot" style="background:#B45309;"></span>查看日程</h5><p>按时间线查看活动日程安排。</p></div>
     <div class="feat"><h5><span class="dot" style="background:#0F766E;"></span>签到二维码</h5><p>「我的二维码」模块展示专属二维码，供现场核销员扫码签到。</p></div>
     <div class="feat"><h5><span class="dot" style="background:#0F766E;"></span>客服咨询</h5><p>通过客服配置入口联系运营者。</p></div>
@@ -544,6 +550,10 @@ footer{border-top:1px solid var(--border);padding:28px 0 48px;color:var(--text-3
     <div class="body">报名表单对「同一微站 + 同一模块 + 同一登录账号」自动去重；签到时同一用户同一场次仅可签到一次，重复扫码提示「已签到」。误操作可通过后台撤销签到（需填写原因）。</div>
   </details>
   <details>
+    <summary>报名提交后，报名者还能修改自己的信息吗？</summary>
+    <div class="body">取决于两级开关：① 表单设计器开启「提交后允许修改」（模块级，默认关闭）；② 该条记录在「报名数据」中未被管理员设为「禁修改」（数据级，默认允许）。两级同时满足时，报名者再次进入表单即可直接修改并点「保存修改」；管理员也可随时对单条记录切换「禁修改」锁定。修改无次数限制，但系统不保留修改历史。</div>
+  </details>
+  <details>
     <summary>AI 生图怎么收费？</summary>
     <div class="body">AI 生图按生成张数计费（默认 0.1 元 / 张），从钱包余额扣除；余额不足时无法生成。生成失败的图片不扣费。生成的历史图片可在「AI 生图」页面随时下载复用，不重复收费。超级管理员免扣费。</div>
   </details>
@@ -591,7 +601,7 @@ footer{border-top:1px solid var(--border);padding:28px 0 48px;color:var(--text-3
       <tr><th style="width:70px;">时间</th><th style="width:120px;">章节</th><th>内容</th></tr>
       <tr><td>0-20s</td><td>开场</td><td>一句话引入：「如何用微站系统，从零搭建并上线一个活动微站」。展示最终效果截图作预告。</td></tr>
       <tr><td>20s-1min10s</td><td>选模板并创建</td><td>登录后台 → 创建微站：先进入模板选择页，套用一个模板（外观与按钮自动带入）；再演示「AI 生图」生成 KV 图与背景图，全程无需准备设计素材。</td></tr>
-      <tr><td>1min10s-2min30s</td><td>配置模块</td><td>逐个演示模块类型：富文本（图文编辑 / 图片上传）、外部链接、报名表单（字段配置）、日程（CSV 导入）、我的二维码；演示视觉编辑调整样式。</td></tr>
+      <tr><td>1min10s-2min30s</td><td>配置模块</td><td>逐个演示模块类型：富文本（图文编辑 / 图片上传）、外部链接、报名表单（字段配置 + 提交后修改开关）、日程（CSV 导入）、我的二维码；演示视觉编辑调整样式。</td></tr>
       <tr><td>2min30s-3min20s</td><td>账号与签到</td><td>演示批量导入登录账号、勾选模块权限；开启签到 → 配置场次 → 手机 <code class="inline">/m/</code> 扫码核销 + 补签流程。</td></tr>
       <tr><td>3min20s-3min50s</td><td>上线</td><td>演示会员中心查看余额 / 购买额度 → 微站上线 → 手机访问 H5 全流程体验（登录、浏览、报名、二维码）。</td></tr>
       <tr><td>3min50s-4min</td><td>收尾</td><td>总结五步：选模板建站 → 配模块 → 导账号 → 开签到 → 上线；提示数据统计入口；附客服 / 联系方式。</td></tr>
@@ -613,7 +623,7 @@ footer{border-top:1px solid var(--border);padding:28px 0 48px;color:var(--text-3
 </main>
 
 <footer>
-  <div class="wrap">微站系统 · 用户使用手册 v1.2 · 更新于 2026-08-19 · 如有疑问请联系平台运营</div>
+  <div class="wrap">微站系统 · 用户使用手册 v1.3 · 更新于 2026-08-20 · 如有疑问请联系平台运营</div>
 </footer>
 
 <script>

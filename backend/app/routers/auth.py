@@ -134,6 +134,9 @@ def create_account(
         created_by=current.id,
     )
     db.add(user)
+    db.flush()  # 先拿到 user.id，用于后续自推校验
+    if req.recommend_code:
+        _apply_recommend_code(db, user, req.recommend_code, current)
     db.commit()
     db.refresh(user)
     return AdminUserOut.model_validate(user)
@@ -190,6 +193,14 @@ def update_account(
         if user.id == current.id and not req.is_active:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="不能禁用当前登录账号")
         user.is_active = req.is_active
+    if req.recommend_code is not None:
+        # 推荐人调整仅超管可操作（管理员创建子账号时由 create 接口处理）
+        if current.role != ROLE_SUPER_ADMIN:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="仅超管可调整推荐人")
+        if req.recommend_code.strip() == "":
+            user.recommend_by = None
+        else:
+            _apply_recommend_code(db, user, req.recommend_code, current)
 
     db.commit()
     db.refresh(user)
@@ -230,3 +241,20 @@ def _check_account_scope(user: User, current: User):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权操作该账号")
         return
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权操作该账号")
+
+
+def _apply_recommend_code(db: Session, user: User, code: str, operator: User):
+    """按推广码为账号绑定推荐人（分销）
+
+    - 推广码不存在或对应账号停用 → 400
+    - 推广码归属操作者本人或目标账号本人（自推）→ 400
+    """
+    from app.services import distribution_service
+    recommender = distribution_service.resolve_recommend_code(db, code)
+    if not recommender:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="推广码不存在或对应账号已停用")
+    if recommender.id == operator.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="不能填写自己的推广码")
+    if user.id and recommender.id == user.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="不能填写自己的推广码")
+    user.recommend_by = recommender.id

@@ -97,6 +97,21 @@
         </div>
       </el-card>
 
+      <el-card shadow="never" class="config-card">
+        <template #header><div class="card-title">站点容量限制</div></template>
+        <div class="config-grid">
+          <el-form-item label="单个微站登录账号数上限">
+            <el-input-number v-model="form.max_accounts_per_site" :min="1" :max="100000" controls-position="right" style="width: 100%" />
+          </el-form-item>
+          <el-form-item label="单个微站报名人数上限">
+            <el-input-number v-model="form.max_submissions_per_site" :min="1" :max="100000" controls-position="right" style="width: 100%" />
+          </el-form-item>
+        </div>
+        <div class="form-hint">
+          每个微站的需登录账号数、报名总人数均不得超过此上限（默认 2000）。账号由后台创建/导入、报名由 H5 端提交时校验，超限将无法继续创建账号或提交报名。
+        </div>
+      </el-card>
+
       <div class="actions"><el-button type="primary" :loading="saving" @click="save">保存配置</el-button></div>
     </el-form>
   </div>
@@ -128,6 +143,8 @@ const form = reactive({
   ai_api_key: '',
   ai_api_key_configured: false,
   ai_image_model: 'wan2.2-t2i-flash',
+  max_accounts_per_site: 2000,
+  max_submissions_per_site: 2000,
 })
 
 async function load() {
@@ -165,6 +182,8 @@ async function save() {
       ai_provider: form.ai_provider,
       ai_api_key: form.ai_api_key || undefined,
       ai_image_model: form.ai_image_model,
+      max_accounts_per_site: form.max_accounts_per_site,
+      max_submissions_per_site: form.max_submissions_per_site,
     })
     ElMessage.success('管理员配置已保存')
     await load()

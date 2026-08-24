@@ -23,6 +23,12 @@
         <el-table :data="list" v-loading="loading" stripe>
           <el-table-column prop="username" label="用户名" min-width="120" />
           <el-table-column prop="nickname" label="昵称" min-width="120" />
+          <el-table-column prop="recommend_code" label="推广码" width="120" align="center">
+            <template #default="{ row }">
+              <el-tag v-if="row.recommend_code" size="small" effect="plain">{{ row.recommend_code }}</el-tag>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
           <el-table-column label="角色" width="120" align="center">
             <template #default="{ row }">
               <el-tag :type="roleTagType(row.role)" size="small">{{ roleText(row.role) }}</el-tag>
@@ -70,6 +76,13 @@
             <el-option v-for="opt in roleOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
           </el-select>
         </el-form-item>
+        <el-form-item v-if="!editing.id || auth.role === 'super_admin'" label="推荐人推广码">
+          <el-input
+            v-model="editing.recommend_code"
+            :placeholder="editing.id ? '填写推广码调整推荐人，留空不修改，清空则移除推荐人' : '选填：分销商推广码，客户消费后自动返佣'"
+            maxlength="32"
+          />
+        </el-form-item>
         <el-form-item v-if="editing.id" label="启用">
           <el-switch v-model="editing.is_active" />
         </el-form-item>
@@ -116,6 +129,7 @@ const editing = reactive({
   nickname: '',
   role: 'sub_admin',
   is_active: true,
+  recommend_code: '',
 })
 
 function roleText(role: string) {
@@ -156,6 +170,7 @@ function openCreate() {
     nickname: '',
     role: 'sub_admin',
     is_active: true,
+    recommend_code: '',
   })
   dialogVisible.value = true
 }
@@ -168,6 +183,7 @@ function openEdit(row: any) {
     nickname: row.nickname || '',
     role: row.role,
     is_active: row.is_active,
+    recommend_code: '',
   })
   dialogVisible.value = true
 }
@@ -186,9 +202,12 @@ async function save() {
     if (editing.password) data.password = editing.password
     if (editing.id) {
       data.is_active = editing.is_active
+      // 超管可调整推荐人（传空串清除）
+      if (auth.role === 'super_admin') data.recommend_code = editing.recommend_code ?? ''
       await api.put(`/auth/accounts/${editing.id}`, data)
       ElMessage.success('更新成功')
     } else {
+      if (editing.recommend_code) data.recommend_code = editing.recommend_code
       await api.post('/auth/accounts', data)
       ElMessage.success('创建成功')
     }

@@ -253,6 +253,23 @@ users (后台管理员)  ── 自引用 created_by ──> users (上级管理
 | click_date | DATE | 点击日期 |
 | click_time | DATETIME | 点击时间 |
 
+#### system_configs — 系统级配置（全局单例，id=1）
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INT, PK | 主键（恒为 1） |
+| h5_domain | VARCHAR(500) | 移动端 H5 对外域名 |
+| wechat_share_enabled | BOOLEAN | 是否启用微信分享 |
+| wechat_app_id / wechat_app_secret | VARCHAR | 微信分享 AppID / AppSecret |
+| oss_access_key_id / oss_access_key_secret | VARCHAR | 阿里云 OSS 凭证 |
+| oss_bucket_name / oss_endpoint / oss_custom_domain | VARCHAR | OSS Bucket / Endpoint / 自定义域名 |
+| local_icon_library | TEXT | 本地图标库 JSON |
+| ai_provider / ai_api_key / ai_image_model | VARCHAR | AI 生图配置 |
+| **max_accounts_per_site** | INT | **单个微站登录账号数上限（默认 2000，系统配置可调）** |
+| **max_submissions_per_site** | INT | **单个微站报名人数上限（默认 2000，系统配置可调）** |
+| updated_by / updated_at | INT / DATETIME | 最后修改人 / 时间 |
+
+**容量限制规则**：单个微站的需登录账号数、报名总人数均不得超过 `max_accounts_per_site` / `max_submissions_per_site`。账号由后台创建/导入、报名由 H5 端提交时校验，超限返回 400 并给出明确提示；删除账号/报名记录后名额自动释放。
+
 ## 6. 权限模型 (后台管理员)
 
 后台管理员(`users` 表)分三级，通过 `role` 字段区分：

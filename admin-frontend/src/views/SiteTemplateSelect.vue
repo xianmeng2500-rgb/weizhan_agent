@@ -86,15 +86,13 @@
             <div
               v-for="(m, i) in activeModules"
               :key="i"
-              class="preview-btn free-btn"
+              class="preview-btn free-btn icon-only"
               :class="{ 'has-height': m.height != null }"
               :style="freeBtnStyle(m)"
             >
-              <div class="free-btn-inner" :class="freeBtnClass(m)">
+              <div class="free-btn-inner">
                 <img v-if="m.icon" :src="m.icon" class="btn-icon" />
                 <div v-else class="btn-icon-placeholder">{{ (m.title || '?').charAt(0) }}</div>
-                <span class="btn-text">{{ m.title }}</span>
-                <span v-if="m.show_arrow !== false" class="btn-arrow">›</span>
               </div>
             </div>
           </div>
@@ -218,13 +216,6 @@ function freeBtnStyle(m: any) {
   if (m.bg_color) style.background = m.bg_color
   if (m.font_color) style.color = m.font_color
   return style
-}
-
-function freeBtnClass(m: any) {
-  const cls: string[] = []
-  cls.push('icon-' + (m.icon_position || 'left'))
-  if (m.content_align) cls.push('align-' + m.content_align)
-  return cls.join(' ')
 }
 
 function openPreview(tpl: any) {
@@ -599,6 +590,28 @@ onMounted(async () => {
   gap: 6px;
   white-space: nowrap;
   box-sizing: border-box;
+}
+/* 自由布局纯图标模式 */
+.free-btn.icon-only {
+  padding: 0;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  justify-content: center;
+  align-items: center;
+}
+.free-btn.icon-only .free-btn-inner {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.free-btn.icon-only .btn-icon,
+.free-btn.icon-only .btn-icon-placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: inherit;
+  font-size: 20px;
 }
 .free-btn-inner {
   display: flex;

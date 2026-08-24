@@ -18,6 +18,8 @@ class DashboardOverview(BaseModel):
     online_sites: int = 0
     total_pv: int = 0
     total_uv: int = 0
+    today_pv: int = 0
+    today_uv: int = 0
 
 
 class ModuleStatItem(BaseModel):

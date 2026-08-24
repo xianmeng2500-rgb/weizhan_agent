@@ -15,6 +15,9 @@ class User(Base):
     role = Column(String(20), default="sub_admin", nullable=False, comment="角色: super_admin/admin/sub_admin")
     is_active = Column(Boolean, default=True, nullable=False, comment="是否启用")
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True, comment="创建者(上级管理员)")
+    # 分销: 推广码与推荐人
+    recommend_code = Column(String(32), unique=True, nullable=True, index=True, comment="分销推广码")
+    recommend_by = Column(Integer, ForeignKey("users.id"), nullable=True, comment="推荐人(分销上级)")
     # 商业化: 钱包与会员缓存字段
     wallet_balance = Column(Integer, default=0, nullable=False, comment="钱包余额(分)")
     membership_status = Column(String(20), default="none", nullable=False, comment="会员状态缓存: active/expired/none")

@@ -46,6 +46,10 @@ def to_out(config: SystemConfig) -> SystemConfigOut:
         ai_provider=config.ai_provider or "dashscope",
         ai_api_key_configured=bool(config.ai_api_key),
         ai_image_model=config.ai_image_model or "wanx2.1-t2i-turbo",
+        max_accounts_per_site=config.max_accounts_per_site or 2000,
+        max_submissions_per_site=config.max_submissions_per_site or 2000,
+        distribution_enabled=bool(config.distribution_enabled),
+        rebate_rate=config.rebate_rate if config.rebate_rate is not None else 10,
     )
 
 

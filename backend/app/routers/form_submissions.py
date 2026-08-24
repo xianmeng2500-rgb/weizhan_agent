@@ -12,6 +12,7 @@ from app.utils.deps import get_current_admin, get_optional_frontend_account, ass
 from app.schemas.form_submission import (
     FormSubmissionCreate, FormSubmissionUpdate, FormSubmissionSelfUpdate, FormSubmissionOut,
 )
+from app.services.site_limits import get_site_limits
 
 logger = logging.getLogger(__name__)
 
@@ -282,6 +283,15 @@ def create_public_submission(
 
     # 必填校验 + 自动提取提交者姓名/手机号
     submitter_name, submitter_phone = _validate_and_extract(module, req)
+
+    # 报名人数上限校验（统计整个微站所有报名模块的提交记录）
+    _, max_submissions = get_site_limits(db)
+    submission_total = db.query(FormSubmission).filter(FormSubmission.site_id == site.id).count()
+    if submission_total >= max_submissions:
+        raise HTTPException(
+            status_code=400,
+            detail=f"该微站报名人数已达上限（{max_submissions}），暂无法提交报名",
+        )
 
     row = FormSubmission(
         site_id=site.id,

@@ -17,6 +17,7 @@ from app.routers import auth, sites, modules, accounts, upload, stats, public, f
 from app.routers import billing, admin_billing
 from app.routers import ai_generate
 from app.routers import templates
+from app.routers import distribution
 from app.services import billing_service
 from app.utils.rate_limit import RateLimitMiddleware
 
@@ -152,6 +153,7 @@ app.include_router(billing.router, prefix=api_prefix)
 app.include_router(admin_billing.router, prefix=api_prefix)
 app.include_router(ai_generate.router, prefix=api_prefix)
 app.include_router(templates.router, prefix=api_prefix)
+app.include_router(distribution.router, prefix=api_prefix)
 # 公开接口不在/api/v1下, 直接挂在/p
 app.include_router(public.router)
 app.include_router(form_submissions.public_router)

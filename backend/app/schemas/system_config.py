@@ -18,6 +18,10 @@ class SystemConfigUpdate(BaseModel):
     ai_provider: Optional[str] = Field(None, max_length=50)
     ai_api_key: Optional[str] = Field(None, max_length=255)
     ai_image_model: Optional[str] = Field(None, max_length=100)
+    max_accounts_per_site: Optional[int] = Field(None, ge=1, description="单个微站登录账号数上限")
+    max_submissions_per_site: Optional[int] = Field(None, ge=1, description="单个微站报名人数上限")
+    distribution_enabled: Optional[bool] = Field(None, description="是否启用分销返佣")
+    rebate_rate: Optional[int] = Field(None, ge=0, le=20, description="返佣比例(百分比)")
 
     @field_validator("h5_domain", "oss_custom_domain")
     @classmethod
@@ -39,3 +43,7 @@ class SystemConfigOut(BaseModel):
     ai_provider: str = "dashscope"
     ai_api_key_configured: bool = False
     ai_image_model: str = "wanx2.1-t2i-turbo"
+    max_accounts_per_site: int = 2000
+    max_submissions_per_site: int = 2000
+    distribution_enabled: bool = False
+    rebate_rate: int = 10

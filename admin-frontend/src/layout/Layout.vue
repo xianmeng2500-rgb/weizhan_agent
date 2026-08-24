@@ -104,9 +104,17 @@
             <el-icon><Wallet /></el-icon>
             <template #title>会员中心</template>
           </el-menu-item>
+          <el-menu-item index="/distribution">
+            <el-icon><Promotion /></el-icon>
+            <template #title>推广中心</template>
+          </el-menu-item>
           <el-menu-item v-if="auth.canManageAccounts" index="/admin/accounts">
             <el-icon><UserFilled /></el-icon>
             <template #title>账号管理</template>
+          </el-menu-item>
+          <el-menu-item v-if="auth.isSuperAdmin" index="/admin/distribution">
+            <el-icon><TrendCharts /></el-icon>
+            <template #title>分销管理</template>
           </el-menu-item>
           <el-menu-item v-if="auth.isSuperAdmin" index="/admin/members">
             <el-icon><CreditCard /></el-icon>
@@ -228,7 +236,7 @@ import { useAuthStore } from '@/store/auth'
 import { useSiteStore } from '@/store/site'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
-import { ArrowRight, Fold, Expand, SwitchButton, Key, UserFilled, Checked, List, Grid, CaretLeft, CaretRight, Wallet, CreditCard, MagicStick, Files } from '@element-plus/icons-vue'
+import { ArrowRight, Fold, Expand, SwitchButton, Key, UserFilled, Checked, List, Grid, CaretLeft, CaretRight, Wallet, CreditCard, MagicStick, Files, Promotion, TrendCharts } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -334,9 +342,11 @@ const activeMenu = computed(() => {
     return '/sites'
   }
   if (route.path.startsWith('/admin/accounts')) return '/admin/accounts'
+  if (route.path.startsWith('/admin/distribution')) return '/admin/distribution'
   if (route.path.startsWith('/admin/system-config')) return '/admin/system-config'
   if (route.path.startsWith('/templates')) return '/templates'
   if (route.path.startsWith('/ai-generate')) return '/ai-generate'
+  if (route.path.startsWith('/distribution')) return '/distribution'
   return route.path
 })
 

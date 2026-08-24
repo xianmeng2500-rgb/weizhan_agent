@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, Site
 from app.utils.deps import get_current_admin, assert_site_access
-from app.services.stats_service import get_overview, get_module_stats, get_trend, get_dashboard_overview
+from app.services.stats_service import get_overview, get_module_stats, get_trend, get_dashboard_overview, get_global_trend
 from app.schemas.stats import StatsOverview, ModuleStatItem, StatsTrend, DashboardOverview
 
 router = APIRouter(prefix="/sites/{site_id}/stats", tags=["统计"])
@@ -38,6 +38,16 @@ def dashboard_overview(
 ):
     """工作台首页全局统计（跨所有微站聚合，按角色过滤可见范围）"""
     return get_dashboard_overview(db, current)
+
+
+@dashboard_router.get("/trend", response_model=StatsTrend)
+def dashboard_trend(
+    days: int = Query(14, ge=7, le=90),
+    db: Session = Depends(get_db),
+    current: User = Depends(get_current_admin),
+):
+    """工作台访问趋势（跨所有微站聚合，按角色过滤可见范围）"""
+    return get_global_trend(db, current, days)
 
 
 @router.get("/modules", response_model=list[ModuleStatItem])

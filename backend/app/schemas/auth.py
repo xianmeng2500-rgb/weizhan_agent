@@ -44,6 +44,7 @@ class AdminUserCreate(BaseModel):
     password: str = Field(..., min_length=6, max_length=64)
     nickname: Optional[str] = Field(None, max_length=64)
     role: str = Field("sub_admin", description="角色: super_admin/admin/sub_admin")
+    recommend_code: Optional[str] = Field(None, max_length=32, description="分销推广码（推荐人）")
 
 
 class AdminUserUpdate(BaseModel):
@@ -51,6 +52,7 @@ class AdminUserUpdate(BaseModel):
     nickname: Optional[str] = Field(None, max_length=64)
     role: Optional[str] = None
     is_active: Optional[bool] = None
+    recommend_code: Optional[str] = Field(None, max_length=32, description="重置为指定推荐人推广码（传空串清除推荐人）")
 
 
 class AdminUserOut(BaseModel):
@@ -60,6 +62,8 @@ class AdminUserOut(BaseModel):
     role: str
     is_active: bool
     created_by: Optional[int] = None
+    recommend_code: Optional[str] = None
+    recommend_by: Optional[int] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

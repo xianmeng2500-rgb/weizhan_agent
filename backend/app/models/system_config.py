@@ -25,5 +25,10 @@ class SystemConfig(Base):
     ai_provider = Column(String(50), default="dashscope", nullable=False, comment="AI 服务商")
     ai_api_key = Column(String(255), nullable=True, comment="AI API Key（通义万相/DashScope）")
     ai_image_model = Column(String(100), default="wanx2.1-t2i-turbo", nullable=False, comment="AI 生图模型")
+    # 分销配置
+    distribution_enabled = Column(Boolean, default=False, nullable=False, comment="是否启用分销返佣")
+    rebate_rate = Column(Integer, default=10, nullable=False, comment="返佣比例(百分比, 默认10%)")
+    max_accounts_per_site = Column(Integer, default=2000, nullable=False, comment="单个微站登录账号数上限")
+    max_submissions_per_site = Column(Integer, default=2000, nullable=False, comment="单个微站报名人数上限")
     updated_by = Column(Integer, nullable=True, comment="最后修改人")
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

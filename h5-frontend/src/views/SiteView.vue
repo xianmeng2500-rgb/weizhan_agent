@@ -15,21 +15,19 @@
       {{ titleConfig.text || site.name }}
     </div>
 
-    <!-- 自由拖拽布局 -->
+    <!-- 自由拖拽布局：纯图标模式，只显示图标（缩放即缩放图标） -->
     <div v-if="site.layout === 'free'" class="free-layout">
       <div
         v-for="m in modules"
         :key="m.id"
-        class="free-btn"
+        class="free-btn icon-only"
         :class="{ 'has-height': m.height != null }"
         :style="freeBtnStyle(m)"
         @click="handleClick(m)"
       >
-        <div class="free-btn-inner" :class="freeBtnClass(m)">
+        <div class="free-btn-inner">
           <img v-if="m.icon" :src="m.icon" class="btn-icon" />
           <div v-else class="btn-icon-placeholder">{{ (m.title || '?').charAt(0) }}</div>
-          <span class="btn-text">{{ m.title }}</span>
-          <span v-if="m.show_arrow !== false" class="btn-arrow">›</span>
         </div>
       </div>
     </div>
@@ -197,13 +195,6 @@ function freeBtnStyle(m: any): Record<string, string> {
   return style
 }
 
-function freeBtnClass(m: any): string {
-  const cls: string[] = []
-  cls.push('icon-' + (m.icon_position || 'left'))
-  if (m.content_align) cls.push('align-' + m.content_align)
-  return cls.join(' ')
-}
-
 async function loadSite() {
   try {
     site.value = await api.get(`/p/sites/${code}`)
@@ -368,6 +359,30 @@ onMounted(loadSite)
 }
 .free-btn:active { transform: scale(0.96); }
 
+/* 自由布局纯图标模式：只显示图标，隐藏文字/箭头 */
+.free-btn.icon-only {
+  padding: 0;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  box-shadow: none;
+  justify-content: center;
+  align-items: center;
+}
+.free-btn.icon-only .free-btn-inner {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.free-btn.icon-only .btn-icon,
+.free-btn.icon-only .btn-icon-placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: inherit;
+  font-size: 20px;
+}
+
 /* 内部内容容器 */
 .free-btn-inner {
   display: flex;
@@ -527,6 +542,10 @@ onMounted(loadSite)
 
 /* ====== 节日模板 ====== */
 .tpl-festive .free-btn { border: 1px solid #ffd700; }
+
+/* 纯图标模式不受模板风格背景/边框影响 */
+.tpl-dark .free-btn.icon-only { background: transparent; }
+.tpl-festive .free-btn.icon-only { border: none; }
 .tpl-festive .grid-item { border: 1px solid #ffd700; }
 .tpl-festive .button-item { border: 1px solid #ffd700; }
 

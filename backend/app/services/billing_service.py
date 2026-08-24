@@ -94,6 +94,12 @@ def recharge(db: Session, user_id: int, amount: int, operator: User, remark: str
         remark=remark,
     )
     db.add(tx)
+    # 入账后优先处理挂起的分销返佣扣回（同一事务）
+    try:
+        from app.services import distribution_service
+        distribution_service.process_pending_clawbacks(db, user_id)
+    except Exception as e:  # noqa: BLE001 分销扣回失败不影响充值主流程
+        logger.warning(f"[DIST] 充值后挂起扣回处理异常: {e}")
     db.commit()
     db.refresh(tx)
     return tx
@@ -148,6 +154,13 @@ def purchase_membership(db: Session, user: User, plan_id: int) -> Membership:
     db.add(tx)
     owner.membership_status = "active"
     owner.membership_end_at = end_at
+    db.flush()  # 拿到 tx.id
+    # 分销返佣（同一事务，由下方 commit 一并提交）
+    try:
+        from app.services import distribution_service
+        distribution_service.credit_rebate(db, user, "membership", plan.price, tx.id)
+    except Exception as e:  # noqa: BLE001 返佣失败不影响购买主流程
+        logger.warning(f"[DIST] 会员购买返佣异常: {e}")
     db.commit()
     db.refresh(membership)
     return membership
@@ -195,6 +208,12 @@ def purchase_credits(db: Session, user: User, plan_id: int, quantity: int) -> li
     db.flush()
     tx.session_credit_ids = ",".join(str(c.id) for c in credits)
     recalc_credit_balance(db, user.id)
+    # 分销返佣（同一事务，由下方 commit 一并提交）
+    try:
+        from app.services import distribution_service
+        distribution_service.credit_rebate(db, user, "session_credit", total_price, tx.id)
+    except Exception as e:  # noqa: BLE001 返佣失败不影响购买主流程
+        logger.warning(f"[DIST] 额度购买返佣异常: {e}")
     db.commit()
     return credits
 
@@ -325,6 +344,12 @@ def refund_transaction(db: Session, operator: User, transaction_id: int, remark:
     # 刷新缓存
     refresh_membership_cache(db, tx.user_id)
     recalc_credit_balance(db, tx.user_id)
+    # 分销返佣扣回（同一事务，由下方 commit 一并提交）
+    try:
+        from app.services import distribution_service
+        distribution_service.clawback_rebate(db, tx.id)
+    except Exception as e:  # noqa: BLE001 返佣扣回失败不影响退款主流程
+        logger.warning(f"[DIST] 退款返佣扣回异常: {e}")
     db.commit()
     db.refresh(refund_tx)
     return refund_tx

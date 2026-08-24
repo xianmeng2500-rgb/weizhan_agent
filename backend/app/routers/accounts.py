@@ -8,6 +8,7 @@ from app.models import User, SiteAccount, AccountModulePermission, Module, Site
 from app.utils.security import hash_password, verify_password, create_access_token
 from app.utils.deps import get_current_admin, assert_site_access
 from app.services.billing_service import assert_active_membership
+from app.services.site_limits import get_site_limits
 from app.schemas.account import (
     AccountImportRequest, AccountCreate, AccountUpdate, AccountOut,
     PaginatedAccounts, AccountPermissionUpdate,
@@ -85,6 +86,14 @@ def create_account(
 ):
     """创建单个账号"""
     _get_site_or_404(db, site_id, current, require_membership=True)
+    # 校验账号数量上限
+    max_accounts, _ = get_site_limits(db)
+    current_total = db.query(SiteAccount).filter(SiteAccount.site_id == site_id).count()
+    if current_total >= max_accounts:
+        raise HTTPException(
+            status_code=400,
+            detail=f"该微站登录账号数量已达上限（{max_accounts}），无法继续创建",
+        )
     # 校验 username 唯一性
     existing = db.query(SiteAccount).filter(
         SiteAccount.site_id == site_id,
@@ -120,6 +129,23 @@ def import_accounts(
 ):
     """批量导入账号"""
     _get_site_or_404(db, site_id, current, require_membership=True)
+    # 校验账号数量上限：现有账号 + 本次将新增的账号 <= 上限
+    max_accounts, _ = get_site_limits(db)
+    existing_usernames = {
+        row[0] for row in db.query(SiteAccount.username).filter(SiteAccount.site_id == site_id).all()
+    }
+    seen = set()
+    to_create = 0
+    for item in req.accounts:
+        if item.username not in existing_usernames and item.username not in seen:
+            to_create += 1
+        seen.add(item.username)
+    if len(existing_usernames) + to_create > max_accounts:
+        remaining = max_accounts - len(existing_usernames)
+        raise HTTPException(
+            status_code=400,
+            detail=f"该微站登录账号数量已达上限（{max_accounts}），当前仅可再新增 {remaining} 个，请调整导入名单",
+        )
     created = 0
     skipped = 0
     try:

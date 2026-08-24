@@ -325,18 +325,16 @@
               <div
                 v-for="m in modules"
                 :key="m.id"
-                class="preview-btn free-btn"
+                class="preview-btn free-btn icon-only"
                 :class="{ dragging: draggingId === m.id, resizing: resizingId === m.id, selected: selectedModuleId === m.id, 'has-height': m.height != null, disabled: !m.is_active }"
                 :style="freeBtnStyle(m)"
                 @pointerdown="startDrag($event, m)"
                 @click.stop="selectedModuleId = m.id"
                 @dblclick="selectedModuleId = m.id"
               >
-                <div class="free-btn-inner" :class="freeBtnClass(m)">
+                <div class="free-btn-inner">
                   <img v-if="m.icon" :src="m.icon" class="btn-icon" />
                   <div v-else class="btn-icon-placeholder">{{ (m.title || '?').charAt(0) }}</div>
-                  <span class="btn-text">{{ m.title }}</span>
-                  <span v-if="m.show_arrow !== false" class="btn-arrow">›</span>
                 </div>
 
                 <template v-if="selectedModuleId === m.id">
@@ -362,6 +360,11 @@
             >
               {{ previewTitleText }}
             </div>
+            <!-- 拖拽辅助线 -->
+            <template v-if="guides.vLines.length || guides.hLines.length">
+              <div v-for="(v, i) in guides.vLines" :key="'gv' + i" class="guide-line guide-v" :style="{ left: v + '%' }"></div>
+              <div v-for="(h, i) in guides.hLines" :key="'gh' + i" class="guide-line guide-h" :style="{ top: h + '%' }"></div>
+            </template>
             <div class="device-screen">
               <!-- KV 区域 -->
               <div class="kv-area" v-if="form.kv_image">
@@ -989,6 +992,92 @@ const deviceFrameRef = ref<HTMLElement>()
 const draggingId = ref<number | null>(null)
 const resizingId = ref<number | null>(null)
 
+// --- 拖拽辅助线（对齐吸附） ---
+const SNAP_THRESHOLD = 1.5 // 百分比阈值
+const guides = ref<{ vLines: number[]; hLines: number[] }>({ vLines: [], hLines: [] })
+
+function computeGuides(
+  bounds: { left: number; top: number; width: number; height: number },
+  excludeModuleId?: number,
+  isTitle?: boolean,
+) {
+  const vLines = new Set<number>()
+  const hLines = new Set<number>()
+
+  // 参考元素的 X/Y 值：左、右、中心
+  const refXs: number[] = [50] // 容器中心
+  const refYs: number[] = [50]
+
+  for (const m of modules.value) {
+    if (m.id === excludeModuleId) continue
+    if (m.is_active === false) continue
+    const mw = m.width ?? 30
+    const mh = m.height ?? 10
+    const mx = m.position_x ?? 5
+    const my = m.position_y ?? 10
+    refXs.push(mx, mx + mw, mx + mw / 2)
+    if (mh > 0) refYs.push(my, my + mh, my + mh / 2)
+  }
+
+  // 拖拽标题时，模块仍作为参考；拖拽模块时，标题也作为参考
+  if (!isTitle && form.title_config?.enabled) {
+    const tc = form.title_config
+    const tw = tc.max_width ?? 80
+    const tx = tc.position_x ?? 5
+    refXs.push(tx, tx + tw, tx + tw / 2)
+  }
+
+  // 被拖拽元素的参考点：左、右、中心
+  const dragXRefs = [bounds.left, bounds.left + bounds.width, bounds.left + bounds.width / 2]
+  const dragYRefs = [bounds.top, bounds.top + bounds.height, bounds.top + bounds.height / 2]
+
+  let snappedX = bounds.left
+  let snappedY = bounds.top
+
+  // X 轴最近对齐
+  let bestXDist = SNAP_THRESHOLD
+  for (const dragVal of dragXRefs) {
+    for (const refVal of refXs) {
+      const dist = Math.abs(dragVal - refVal)
+      if (dist < bestXDist) {
+        bestXDist = dist
+        snappedX = bounds.left + (refVal - dragVal)
+        vLines.add(Math.round(refVal * 10) / 10)
+      }
+    }
+  }
+
+  // Y 轴最近对齐（标题高度不确定，跳过 Y 吸附）
+  if (!isTitle) {
+    let bestYDist = SNAP_THRESHOLD
+    for (const dragVal of dragYRefs) {
+      for (const refVal of refYs) {
+        const dist = Math.abs(dragVal - refVal)
+        if (dist < bestYDist) {
+          bestYDist = dist
+          snappedY = bounds.top + (refVal - dragVal)
+          hLines.add(Math.round(refVal * 10) / 10)
+        }
+      }
+    }
+  }
+
+  // 边界约束
+  snappedX = Math.max(0, Math.min(100 - bounds.width, snappedX))
+  if (!isTitle) {
+    snappedY = Math.max(0, Math.min(100 - bounds.height, snappedY))
+  } else {
+    snappedY = Math.max(0, Math.min(100, snappedY))
+  }
+
+  return {
+    snappedX: Math.round(snappedX * 10) / 10,
+    snappedY: Math.round(snappedY * 10) / 10,
+    vLines: [...vLines],
+    hLines: [...hLines],
+  }
+}
+
 function freeBtnStyle(m: any) {
   const style: Record<string, string> = {
     left: (m.position_x ?? 5) + '%',
@@ -1000,13 +1089,6 @@ function freeBtnStyle(m: any) {
   if (m.bg_color) style.background = m.bg_color
   if (m.font_color) style.color = m.font_color
   return style
-}
-
-function freeBtnClass(m: any) {
-  const cls: string[] = []
-  cls.push('icon-' + (m.icon_position || 'left'))
-  if (m.content_align) cls.push('align-' + m.content_align)
-  return cls.join(' ')
 }
 
 // 属性面板: 宽度/高度/圆角滑块
@@ -1191,8 +1273,14 @@ function startDrag(e: PointerEvent, module: any) {
     const btnWidthPct = (btnRect.width / containerRect.width) * 100
     const btnHeightPct = (btnRect.height / containerRect.height) * 100
 
-    const xPct = Math.max(0, Math.min(100 - btnWidthPct, (x / containerRect.width) * 100))
-    const yPct = Math.max(0, Math.min(100 - btnHeightPct, (y / containerRect.height) * 100))
+    let xPct = Math.max(0, Math.min(100 - btnWidthPct, (x / containerRect.width) * 100))
+    let yPct = Math.max(0, Math.min(100 - btnHeightPct, (y / containerRect.height) * 100))
+
+    // 辅助线对齐吸附
+    const g = computeGuides({ left: xPct, top: yPct, width: btnWidthPct, height: btnHeightPct }, module.id, false)
+    xPct = g.snappedX
+    yPct = g.snappedY
+    guides.value = { vLines: g.vLines, hLines: g.hLines }
 
     module.position_x = Math.round(xPct * 10) / 10
     module.position_y = Math.round(yPct * 10) / 10
@@ -1204,6 +1292,7 @@ function startDrag(e: PointerEvent, module: any) {
     btn.releasePointerCapture(ev.pointerId)
     document.removeEventListener('pointermove', onMove)
     document.removeEventListener('pointerup', onUp)
+    guides.value = { vLines: [], hLines: [] }
     markDirty()
   }
 
@@ -1233,8 +1322,14 @@ function startTitleDrag(e: PointerEvent) {
     const wPct = (elRect.width / containerRect.width) * 100
     const hPct = (elRect.height / containerRect.height) * 100
 
-    const xPct = Math.max(0, Math.min(100 - wPct, (x / containerRect.width) * 100))
-    const yPct = Math.max(0, Math.min(100 - hPct, (y / containerRect.height) * 100))
+    let xPct = Math.max(0, Math.min(100 - wPct, (x / containerRect.width) * 100))
+    let yPct = Math.max(0, Math.min(100 - hPct, (y / containerRect.height) * 100))
+
+    // 辅助线对齐吸附
+    const g = computeGuides({ left: xPct, top: yPct, width: wPct, height: hPct }, undefined, true)
+    xPct = g.snappedX
+    yPct = g.snappedY
+    guides.value = { vLines: g.vLines, hLines: g.hLines }
 
     form.title_config.position_x = Math.round(xPct * 10) / 10
     form.title_config.position_y = Math.round(yPct * 10) / 10
@@ -1244,6 +1339,7 @@ function startTitleDrag(e: PointerEvent) {
     el.releasePointerCapture(ev.pointerId)
     document.removeEventListener('pointermove', onMove)
     document.removeEventListener('pointerup', onUp)
+    guides.value = { vLines: [], hLines: [] }
     markDirty()
   }
 
@@ -1896,6 +1992,24 @@ onMounted(async () => {
   outline-offset: 3px;
 }
 
+/* 拖拽辅助线 */
+.guide-line {
+  position: absolute;
+  z-index: 1000;
+  pointer-events: none;
+  background: #ff4d4f;
+}
+.guide-v {
+  width: 1px;
+  height: 100%;
+  top: 0;
+}
+.guide-h {
+  height: 1px;
+  width: 100%;
+  left: 0;
+}
+
 /* 内容区域 */
 .content-area {
   padding: 16px;
@@ -1944,6 +2058,28 @@ onMounted(async () => {
   white-space: nowrap;
   touch-action: none;
   box-sizing: border-box;
+}
+/* 自由布局纯图标模式：只显示图标，隐藏文字/箭头，缩放即缩放图标 */
+.free-btn.icon-only {
+  padding: 0;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  justify-content: center;
+  align-items: center;
+}
+.free-btn.icon-only .free-btn-inner {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.free-btn.icon-only .btn-icon,
+.free-btn.icon-only .btn-icon-placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: inherit;
+  font-size: 20px;
 }
 .free-btn-inner {
   display: flex;

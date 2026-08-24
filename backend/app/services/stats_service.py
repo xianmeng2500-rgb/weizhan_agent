@@ -100,12 +100,15 @@ def get_dashboard_overview(db: Session, current) -> DashboardOverview:
     total_sites = total_sites_q.scalar() or 0
     online_sites = online_sites_q.scalar() or 0
 
+    today = date.today()
+    today_pv = today_uv = 0
+
     if site_filter is not None:
         site_ids = [s.id for s in db.query(Site.id).filter(site_filter).all()]
         if not site_ids:
             return DashboardOverview(
                 total_sites=total_sites, online_sites=online_sites,
-                total_pv=0, total_uv=0,
+                total_pv=0, total_uv=0, today_pv=0, today_uv=0,
             )
         total_pv = (
             db.query(func.count(AccessLog.id)).filter(AccessLog.site_id.in_(site_ids)).scalar() or 0
@@ -114,13 +117,69 @@ def get_dashboard_overview(db: Session, current) -> DashboardOverview:
             db.query(func.count(distinct(AccessLog.ip)))
             .filter(AccessLog.site_id.in_(site_ids)).scalar() or 0
         )
+        today_pv = (
+            db.query(func.count(AccessLog.id))
+            .filter(AccessLog.site_id.in_(site_ids), AccessLog.visit_date == today).scalar() or 0
+        )
+        today_uv = (
+            db.query(func.count(distinct(AccessLog.ip)))
+            .filter(AccessLog.site_id.in_(site_ids), AccessLog.visit_date == today).scalar() or 0
+        )
     else:
         total_pv = db.query(func.count(AccessLog.id)).scalar() or 0
         total_uv = db.query(func.count(distinct(AccessLog.ip))).scalar() or 0
+        today_pv = (
+            db.query(func.count(AccessLog.id)).filter(AccessLog.visit_date == today).scalar() or 0
+        )
+        today_uv = (
+            db.query(func.count(distinct(AccessLog.ip)))
+            .filter(AccessLog.visit_date == today).scalar() or 0
+        )
 
     return DashboardOverview(
         total_sites=total_sites,
         online_sites=online_sites,
         total_pv=total_pv,
         total_uv=total_uv,
+        today_pv=today_pv,
+        today_uv=today_uv,
     )
+
+
+def get_global_trend(db: Session, current, days: int = 30) -> StatsTrend:
+    """工作台跨微站聚合访问趋势（按角色过滤可见范围）"""
+    site_filter = None
+    if current.role != ROLE_SUPER_ADMIN:
+        site_filter = Site.created_by == current.id
+
+    if site_filter is not None:
+        site_ids = [s.id for s in db.query(Site.id).filter(site_filter).all()]
+        if not site_ids:
+            return StatsTrend(items=_fill_trend([], days))
+        base = db.query(
+            AccessLog.visit_date.label("d"),
+            func.count(AccessLog.id).label("pv"),
+            func.count(distinct(AccessLog.ip)).label("uv"),
+        ).filter(AccessLog.site_id.in_(site_ids))
+    else:
+        base = db.query(
+            AccessLog.visit_date.label("d"),
+            func.count(AccessLog.id).label("pv"),
+            func.count(distinct(AccessLog.ip)).label("uv"),
+        )
+
+    start_date = date.today() - timedelta(days=days - 1)
+    rows = base.filter(AccessLog.visit_date >= start_date).group_by(AccessLog.visit_date).order_by(AccessLog.visit_date).all()
+    return StatsTrend(items=_fill_trend(rows, days))
+
+
+def _fill_trend(rows, days: int) -> list[TrendItem]:
+    """按天填充，缺失日期补零"""
+    start_date = date.today() - timedelta(days=days - 1)
+    date_map = {row.d: (row.pv, row.uv) for row in rows}
+    items = []
+    for i in range(days):
+        d = start_date + timedelta(days=i)
+        pv, uv = date_map.get(d, (0, 0))
+        items.append(TrendItem(date=d, pv=pv, uv=uv))
+    return items
