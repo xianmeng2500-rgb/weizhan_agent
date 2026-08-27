@@ -16,9 +16,12 @@ request.interceptors.response.use(
       if (status === 401) {
         // 已在登录页或登录接口返回 401，不跳转，由调用方处理
         const path = window.location.pathname
+        const url = error.config?.url || ''
         const isLoginPage = path.includes('/login')
-        const isLoginApi = (error.config?.url || '').includes('/login')
-        if (isLoginPage || isLoginApi) {
+        const isLoginApi = url.includes('/login')
+        // 公开上传接口本身无需登录，401 不跳转，由调用方提示失败
+        const isPublicUploadApi = url.startsWith('/p/upload/')
+        if (isLoginPage || isLoginApi || isPublicUploadApi) {
           return Promise.reject(error)
         }
         // 需要登录 - 跳转登录页

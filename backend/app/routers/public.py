@@ -5,7 +5,7 @@ import json
 import time
 from urllib.parse import urlencode
 from urllib.request import urlopen
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Site, Module, SiteAccount, AccessLog, ModuleClickLog, AccountModulePermission, SystemConfig
@@ -15,6 +15,7 @@ from app.utils.deps import get_optional_frontend_account
 from app.utils.checkin_code import generate_checkin_code
 from app.schemas.auth import FrontendLoginRequest, TokenResponse
 from app.schemas.module import ModuleOut
+from app.services import oss_is_configured, upload_image, upload_image_local
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/p", tags=["公开接口"])
@@ -117,6 +118,21 @@ def get_runtime_config(db: Session = Depends(get_db)):
     """H5 运行时公开配置，仅返回可公开的访问域名。"""
     config = db.query(SystemConfig).filter(SystemConfig.id == 1).first()
     return {"h5_domain": (config.h5_domain or "").rstrip("/") if config else ""}
+
+
+@router.post("/upload/image")
+async def upload_image_public(
+    file: UploadFile = File(...),
+):
+    """H5 - 公开图片上传（无需登录，供报名表单图片字段使用）
+
+    与后台管理端 /api/v1/upload/image 共用同一套文件类型/大小校验与存储逻辑。
+    """
+    if oss_is_configured():
+        url = await upload_image(file)
+    else:
+        url = await upload_image_local(file)
+    return {"url": url, "original_name": file.filename}
 
 
 @router.get("/sites/{code}")

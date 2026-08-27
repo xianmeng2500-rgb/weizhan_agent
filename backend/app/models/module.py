@@ -40,5 +40,5 @@ class Module(Base):
     # 关系
     site = relationship("Site", back_populates="modules")
     permissions = relationship("AccountModulePermission", back_populates="module", cascade="all, delete-orphan")
-    form_submissions = relationship("FormSubmission", back_populates="module")
+    form_submissions = relationship("FormSubmission", back_populates="module", cascade="all, delete-orphan")
     click_logs = relationship("ModuleClickLog", back_populates="module", cascade="all, delete-orphan")

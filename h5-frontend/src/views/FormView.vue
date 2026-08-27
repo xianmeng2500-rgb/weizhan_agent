@@ -409,6 +409,16 @@ function onPickerConfirm({ selectedOptions }: any) {
 }
 
 // 日期/时间
+function openDatePicker(field: any) {
+  if (formReadonly.value) return
+  currentDateField.value = field.id
+  showDatePicker.value = true
+}
+function openTimePicker(field: any) {
+  if (formReadonly.value) return
+  currentTimeField.value = field.id
+  showTimePicker.value = true
+}
 function onDateConfirm({ selectedValues }: any) {
   formData.value[currentDateField.value] = selectedValues.join('-')
   showDatePicker.value = false
@@ -450,7 +460,7 @@ async function afterRead(fieldId: string, file: any) {
   const form = new FormData()
   form.append('file', file.file)
   try {
-    const res: any = await api.post('/api/v1/upload/image', form, {
+    const res: any = await api.post('/p/upload/image', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
     file.url = res.url

@@ -23,7 +23,7 @@ class CheckinConfig(Base):
     created_at = Column(DateTime, default=_utcnow, comment="创建时间")
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow, comment="更新时间")
 
-    site = relationship("Site", backref="checkin_config")
+    site = relationship("Site", back_populates="checkin_configs")
 
     __table_args__ = (
         UniqueConstraint("site_id", name="uk_checkin_config_site"),
@@ -45,7 +45,7 @@ class CheckinSession(Base):
     created_at = Column(DateTime, default=_utcnow, comment="创建时间")
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow, comment="更新时间")
 
-    site = relationship("Site", backref="checkin_sessions")
+    site = relationship("Site", back_populates="checkin_sessions")
 
 
 class CheckinRecord(Base):
@@ -69,6 +69,6 @@ class CheckinRecord(Base):
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow, comment="更新时间")
 
     # 关系
-    site = relationship("Site", backref="checkin_records")
+    site = relationship("Site", back_populates="checkin_records")
     account = relationship("SiteAccount", backref="checkin_records")
     session = relationship("CheckinSession", backref="records")

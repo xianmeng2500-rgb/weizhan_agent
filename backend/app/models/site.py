@@ -39,5 +39,10 @@ class Site(Base):
     # 关系
     modules = relationship("Module", back_populates="site", cascade="all, delete-orphan", order_by="Module.sort_order")
     accounts = relationship("SiteAccount", back_populates="site", cascade="all, delete-orphan")
-    access_logs = relationship("AccessLog", back_populates="site")
-    form_submissions = relationship("FormSubmission", back_populates="site")
+    access_logs = relationship("AccessLog", back_populates="site", cascade="all, delete-orphan")
+    form_submissions = relationship("FormSubmission", back_populates="site", cascade="all, delete-orphan")
+    checkin_configs = relationship("CheckinConfig", back_populates="site", cascade="all, delete-orphan")
+    checkin_sessions = relationship("CheckinSession", back_populates="site", cascade="all, delete-orphan")
+    checkin_records = relationship("CheckinRecord", back_populates="site", cascade="all, delete-orphan")
+    # session_credits 为记账记录(site_id 可空)：删除站点时仅解除关联、保留历史，不删除记录
+    session_credits = relationship("SessionCredit", back_populates="site")

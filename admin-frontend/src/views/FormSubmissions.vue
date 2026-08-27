@@ -47,7 +47,7 @@
           show-overflow-tooltip
         >
           <template #default="{ row }">
-            {{ formatValue(row.data && row.data[field.id]) }}
+            {{ formatValue(row.data && row.data[field.id], field) }}
           </template>
         </el-table-column>
         <el-table-column prop="created_at" label="提交时间" width="170">
@@ -111,7 +111,7 @@
         <el-divider />
         <div v-for="(field, idx) in formFields" :key="idx" class="detail-item">
           <span class="detail-label">{{ field.title }}</span>
-          <span class="detail-value">{{ formatValue(detailRow.data[field.id]) }}</span>
+          <span class="detail-value">{{ formatValue(detailRow.data[field.id], field) }}</span>
         </div>
         <el-divider />
         <el-form label-position="top">
@@ -172,9 +172,29 @@ function formatTime(t: string) {
   return t ? dayjs(t).format('YYYY-MM-DD HH:mm:ss') : ''
 }
 
-function formatValue(val: any) {
+function formatValue(val: any, field?: any) {
   if (val === null || val === undefined) return '-'
   if (Array.isArray(val)) return val.join(', ')
+  if (typeof val === 'object') {
+    // 交通信息字段：结构化展示 去程/回程/备注
+    if (field?.type === 'transport_info') {
+      const parts: string[] = []
+      if (val.departure_method) {
+        parts.push(`去程：${val.departure_method}${val.departure_number ? ' ' + val.departure_number : ''}`)
+      }
+      if (val.return_method) {
+        parts.push(`回程：${val.return_method}${val.return_number ? ' ' + val.return_number : ''}`)
+      }
+      if (val.remark) parts.push(`备注：${val.remark}`)
+      if (parts.length) return parts.join('；')
+    }
+    // 其他对象类型兜底为 JSON 字符串，避免出现 [object Object]
+    try {
+      return JSON.stringify(val)
+    } catch {
+      return String(val)
+    }
+  }
   return String(val)
 }
 
@@ -266,9 +286,11 @@ function escapeCSV(value: any) {
 function exportCSV() {
   const headers = ['ID', '提交时间', '姓名', '手机号']
   const fieldIds: string[] = []
+  const fieldMap: Record<string, any> = {}
   for (const field of formFields.value) {
     headers.push(field.title)
     fieldIds.push(field.id)
+    fieldMap[field.id] = field
   }
   headers.push('管理员备注')
 
@@ -281,7 +303,7 @@ function exportCSV() {
       row.submitter_phone || '',
     ]
     for (const fid of fieldIds) {
-      cells.push(escapeCSV(formatValue(row.data?.[fid])))
+      cells.push(escapeCSV(formatValue(row.data?.[fid], fieldMap[fid])))
     }
     cells.push(escapeCSV(row.note || ''))
     lines.push(cells.join(','))

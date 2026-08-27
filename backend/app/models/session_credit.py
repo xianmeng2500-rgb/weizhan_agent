@@ -29,4 +29,4 @@ class SessionCredit(Base):
 
     user = relationship("User", backref="session_credits")
     session = relationship("CheckinSession")
-    site = relationship("Site")
+    site = relationship("Site", back_populates="session_credits")
