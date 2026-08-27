@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微站系统 · 演示指南</title>
+<style>
+:root{
+  --primary:#4F46E5; --primary-dark:#3730A3; --primary-light:#EEF2FF;
+  --teal:#0F766E; --teal-light:#F0FDFA;
+  --amber:#B45309; --amber-light:#FFFBEB;
+  --red:#B91C1C; --red-light:#FEF2F2;
+  --bg:#F8FAFC; --card:#FFFFFF; --border:#E2E8F0;
+  --text:#0F172A; --text-2:#475569; --text-3:#94A3B8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.75;font-size:15px;}
+.wrap{max-width:1100px;margin:0 auto;padding:0 24px;}
+
+/* header */
+header.top{background:linear-gradient(135deg,#0F766E 0%,#0D9488 55%,#0EA5E9 100%);color:#fff;padding:56px 0 72px;position:relative;overflow:hidden;}
+header.top::after{content:"";position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;background:rgba(255,255,255,.08);}
+header.top .wrap{position:relative;z-index:1;}
+.badge{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:999px;padding:4px 14px;font-size:13px;margin-bottom:18px;letter-spacing:.5px;}
+header.top h1{font-size:40px;font-weight:600;letter-spacing:1px;margin-bottom:12px;}
+header.top p.desc{font-size:17px;color:rgba(255,255,255,.88);max-width:760px;line-height:1.8;}
+.meta{display:flex;gap:24px;margin-top:28px;flex-wrap:wrap;}
+.meta span{font-size:13px;color:rgba(255,255,255,.78);}
+.meta span b{color:#fff;font-weight:500;}
+
+/* sticky toc */
+nav.toc{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);}
+nav.toc .wrap{display:flex;align-items:center;gap:4px;overflow-x:auto;padding-top:0;padding-bottom:0;white-space:nowrap;}
+nav.toc a{display:inline-block;padding:14px 12px;font-size:14px;color:var(--text-2);text-decoration:none;border-bottom:2px solid transparent;transition:.15s;}
+nav.toc a:hover{color:var(--primary);}
+nav.toc a.on{color:var(--primary);border-bottom-color:var(--primary);font-weight:500;}
+nav.toc .logo{font-weight:600;color:var(--primary);font-size:15px;margin-right:12px;letter-spacing:.3px;}
+
+/* sections */
+main{padding:56px 0 80px;}
+section{margin-bottom:64px;scroll-margin-top:56px;}
+h2.sec{font-size:26px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+h2.sec .num{width:38px;height:38px;border-radius:10px;background:var(--primary);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+h3{font-size:19px;font-weight:600;margin:32px 0 14px;color:var(--primary-dark);}
+h4{font-size:16px;font-weight:600;margin:22px 0 10px;}
+p{margin-bottom:12px;color:var(--text-2);}
+p b, li b{color:var(--text);font-weight:500;}
+ul,ol{margin:0 0 14px 1.4em;color:var(--text-2);}
+li{margin-bottom:6px;}
+.sec-tip{font-size:13px;color:var(--text-3);margin-bottom:20px;}
+
+/* cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px 28px;margin-bottom:16px;}
+.card h4{margin-top:0;}
+.callout{border-radius:10px;padding:14px 18px;margin:16px 0;font-size:14px;}
+.callout.tip{background:var(--teal-light);border-left:4px solid var(--teal);color:#134E4A;}
+.callout.warn{background:var(--amber-light);border-left:4px solid var(--amber);color:#78350F;}
+.callout.alert{background:var(--red-light);border-left:4px solid var(--red);color:#7F1D1D;}
+.callout.info{background:var(--primary-light);border-left:4px solid var(--primary);color:#3730A3;}
+.callout b{font-weight:600;}
+
+/* grid */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;}
+.feat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 22px;}
+.feat h5{font-size:15px;font-weight:600;margin-bottom:8px;color:var(--text);}
+.feat h5 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:2px;}
+.feat p{font-size:13.5px;color:var(--text-2);margin:0;}
+
+/* steps */
+.steps{counter-reset:step;margin:18px 0;}
+.step{position:relative;padding:0 0 26px 56px;border-left:2px solid var(--border);margin-left:19px;}
+.step:last-child{border-left-color:transparent;padding-bottom:0;}
+.step::before{counter-increment:step;content:counter(step);position:absolute;left:-21px;top:0;width:40px;height:40px;border-radius:50%;background:var(--primary);color:#fff;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 6px var(--bg);}
+.step h5{font-size:16px;font-weight:600;margin-bottom:6px;}
+.step p,.step li{font-size:14px;}
+.step .talk{margin-top:10px;background:var(--primary-light);border-left:3px solid var(--primary);border-radius:8px;padding:10px 14px;font-size:13.5px;color:var(--primary-dark);}
+.step .talk b{font-weight:600;}
+
+/* tables */
+.table-box{overflow-x:auto;margin:14px 0 20px;border:1px solid var(--border);border-radius:12px;background:var(--card);}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:560px;}
+th{background:#F1F5F9;color:var(--text);font-weight:600;text-align:left;padding:12px 16px;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:11px 16px;border-bottom:1px solid #F1F5F9;color:var(--text-2);vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+td code{background:#F1F5F9;padding:1px 7px;border-radius:5px;font-size:12.5px;color:#334155;}
+
+/* pills */
+.pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap;}
+.pill.p{background:var(--primary-light);color:var(--primary-dark);}
+.pill.t{background:var(--teal-light);color:var(--teal);}
+.pill.a{background:var(--amber-light);color:var(--amber);}
+.pill.r{background:var(--red-light);color:var(--red);}
+.pill.g{background:#F0FDF4;color:#15803D;}
+
+/* code / cred */
+kbd{background:#F1F5F9;border:1px solid var(--border);border-bottom-width:2px;border-radius:6px;padding:2px 8px;font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#334155;}
+code.inline{background:#F1F5F9;padding:1px 7px;border-radius:5px;font-size:13px;color:#334155;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+.cred{display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#0F172A,#1E293B);border-radius:12px;padding:18px 22px;margin:14px 0;color:#E2E8F0;flex-wrap:wrap;gap:12px;}
+.cred .acct{font-size:18px;font-weight:700;letter-spacing:1px;color:#fff;}
+.cred .pwd{font-size:14px;color:#94A3B8;}
+.cred .pwd b{color:#7DD3FC;font-family:ui-monospace,Menlo,monospace;letter-spacing:1px;}
+
+/* faq */
+details{border:1px solid var(--border);border-radius:12px;background:var(--card);margin-bottom:10px;overflow:hidden;}
+details summary{cursor:pointer;padding:16px 22px;font-weight:600;font-size:15px;list-style:none;display:flex;align-items:center;gap:10px;}
+details summary::-webkit-details-marker{display:none;}
+details summary::before{content:"＋";color:var(--primary);font-weight:600;font-size:16px;transition:.2s;}
+details[open] summary::before{content:"－";}
+details .body{padding:0 22px 18px;color:var(--text-2);font-size:14px;}
+
+/* footer */
+footer{border-top:1px solid var(--border);padding:28px 0 48px;color:var(--text-3);font-size:13px;text-align:center;}
+
+/* print */
+@media print{
+  nav.toc{display:none;}
+  body{background:#fff;}
+  header.top{padding:30px 0;}
+  .card,.feat{box-shadow:none;border:1px solid #ddd;page-break-inside:avoid;}
+}
+@media (max-width:720px){
+  header.top h1{font-size:28px;}
+  .grid2,.grid3{grid-template-columns:1fr;}
+  main{padding:32px 0 60px;}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <span class="badge">微站系统 · DEMO GUIDE</span>
+    <h1>演示指南</h1>
+    <p class="desc">面向销售 / 市场人员的标准演示脚本与讲解话术，也包含可发给客户的自助体验说明。演示前请确认演示账号可用，按「路线A 后台 → 路线B H5」顺序走一遍即可完整覆盖核心卖点。</p>
+    <div class="meta">
+      <span><b>版本</b>&nbsp; v1.0</span>
+      <span><b>适用对象</b>&nbsp; 销售 / 市场 / 客户成功</span>
+      <span><b>时长</b>&nbsp; 完整版 15 分钟 · 精简版 8 分钟</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrap">
+    <span class="logo">目录</span>
+    <a href="#s1">01 演示准备</a>
+    <a href="#s2">02 演示账号</a>
+    <a href="#s3">03 路线A 后台演示</a>
+    <a href="#s4">04 路线B H5 体验</a>
+    <a href="#s5">05 路线C 进阶卖点</a>
+    <a href="#s6">06 话术要点</a>
+    <a href="#s7">07 常见问题</a>
+    <a href="#s8">08 客户自助体验</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<!-- ==================== 01 ==================== -->
+<section id="s1">
+  <h2 class="sec"><span class="num">01</span>演示准备</h2>
+  <p class="sec-tip">演示前 5 分钟检查，避免现场翻车。</p>
+
+  <div class="card">
+    <h4>环境检查清单</h4>
+    <ul>
+      <li>后台地址可访问：<code class="inline">https://您的域名/admin/</code>，能正常登录 <code class="inline">demo_admin</code>；</li>
+      <li>H5 地址可访问：<code class="inline">/s/demo-launch</code> 与 <code class="inline">/s/demo-festival</code> 均能打开；</li>
+      <li>两个演示账号、H5 登录账号（<code class="inline">zhangsan</code> / <code class="inline">lisi</code>）密码均为 <code class="inline">Demo@123456</code>；</li>
+      <li>建议用无痕窗口 + 双屏（或浏览器分屏）演示：左屏后台、右屏 H5，同步展示操作与效果；</li>
+      <li>演示前把「工作台」和「微站列表」刷新到最新状态，避免页面残留。</li>
+    </ul>
+  </div>
+
+  <div class="grid3">
+    <div class="feat"><h5><span class="dot" style="background:#0F766E;"></span>精简版（8 分钟）</h5><p>登录后台 → 工作台 → 创建微站（选模板 + AI 生图）→ 报名/签到模块 → 上线 → H5 体验。适合初次接触、时间紧的客户。</p></div>
+    <div class="feat"><h5><span class="dot" style="background:#4F46E5;"></span>完整版（15 分钟）</h5><p>精简版 + 模板管理 + 账号权限 + 签到核销 + 报名数据 + 分销返佣 + 工作台数据。适合决策型 / 对比选型客户。</p></div>
+    <div class="feat"><h5><span class="dot" style="background:#B45309;"></span>按需补讲</h5><p>客户对哪个卖点追问，直接跳「路线C 进阶卖点」对应小节单独演示。</p></div>
+  </div>
+
+  <div class="callout warn"><b>演示顺序铁律：</b>先演示「快速见效」的（建站、AI 生图），再讲「运营深度」的（签到、数据、分销）。客户的耐心是递减的，开场 3 分钟就要让他看到「3 分钟搭一个微站」。</div>
+</section>
+
+<!-- ==================== 02 ==================== -->
+<section id="s2">
+  <h2 class="sec"><span class="num">02</span>演示账号一览</h2>
+  <p class="sec-tip">以下账号与微站为系统预置的演示数据，可直接使用。</p>
+
+  <h3>2.1 后台演示账号</h3>
+  <div class="card">
+    <div class="cred">
+      <div class="acct">demo_admin</div>
+      <div class="pwd">密码 <b>Demo@123456</b> · 演示商家·发布会运营</div>
+    </div>
+    <ul>
+      <li>已开通<b>年费会员</b>（有效期 1 年）、钱包余额 <b>¥500</b>、上线额度 <b>5</b> 个；</li>
+      <li>预置微站「2026 新品发布会」：需登录 + 签到 + 报名 + 日程 + 模块级权限，功能最全；</li>
+      <li>持有<b>分销推广码</b>（在「推广中心」查看），可现场演示拉新返佣。</li>
+    </ul>
+    <div class="cred">
+      <div class="acct">demo_shop</div>
+      <div class="pwd">密码 <b>Demo@123456</b> · 演示商家·品牌推广</div>
+    </div>
+    <ul>
+      <li>已开通年费会员、钱包余额 <b>¥300</b>、上线额度 <b>3</b> 个；</li>
+      <li>预置微站「中秋品牌盛典」：公开访问，展示富文本 / 报名 / 日程；</li>
+      <li>由 <code class="inline">demo_admin</code> 推荐绑定，可演示分销归属关系。</li>
+    </ul>
+  </div>
+
+  <h3>2.2 H5 微站演示账号</h3>
+  <div class="card">
+    <table>
+      <tr><th>微站</th><th>地址</th><th>访问方式</th><th>说明</th></tr>
+      <tr>
+        <td>2026 新品发布会</td>
+        <td><code class="inline">/s/demo-launch</code></td>
+        <td><code class="inline">zhangsan</code> / <code class="inline">lisi</code>（密码 <code class="inline">Demo@123456</code>）</td>
+        <td>需登录；lisi 仅可见部分模块（演示模块级权限）</td>
+      </tr>
+      <tr>
+        <td>中秋品牌盛典</td>
+        <td><code class="inline">/s/demo-festival</code></td>
+        <td>公开访问，无需登录</td>
+        <td>富文本 / 报名 / 日程 / 外链</td>
+      </tr>
+    </table>
+    <div class="callout tip"><b>提示：</b>H5 端「我的二维码」模块需登录后展示专属签到二维码，演示时使用 <code class="inline">demo-launch</code> 登录账号。</div>
+  </div>
+</section>
+
+<!-- ==================== 03 ==================== -->
+<section id="s3">
+  <h2 class="sec"><span class="num">03</span>路线A：后台功能演示</h2>
+  <p class="sec-tip">用 <code class="inline">demo_admin</code> 登录后台，按顺序走完 8 步，覆盖从登录到上线全流程。</p>
+
+  <div class="steps">
+    <div class="step">
+      <h5>登录与工作台</h5>
+      <p>打开 <code class="inline">/admin/</code>，用 <code class="inline">demo_admin / Demo@123456</code> 登录，展示首页。</p>
+      <div class="talk"><b>话术：</b>「登录后所有经营数据一目了然——微站数量、今日访问、访问趋势，还有我的账户和推广信息，不用翻报表。」</div>
+    </div>
+    <div class="step">
+      <h5>模板管理</h5>
+      <p>左侧「模板管理」，展示模板卡片列表；点进一个模板的编辑，展示可视化配置（KV 图 / 背景 / 预置按钮）。</p>
+      <div class="talk"><b>话术：</b>「我们内置多套风格模板，管理员还能自建模板预设外观和按钮，客户建站一键套用、秒级起步。」</div>
+    </div>
+    <div class="step">
+      <h5>创建微站（重点演示）</h5>
+      <p>「微站列表 → 创建微站」→ 选择模板（或空白创建）→ 进入编辑器：</p>
+      <ul>
+        <li>填名称 / 编码；</li>
+        <li>在 KV 图区域点<b>「AI 生图」</b>，输入「蓝色渐变科技风活动横幅」→ 生成 → 选一张「使用此图」；</li>
+        <li>背景图同样用 AI 生成一张；</li>
+        <li>点保存。</li>
+      </ul>
+      <div class="talk"><b>话术：</b>「客户不需要会设计，描述一句话，AI 帮你出 KV 图、背景图、图标——这是全流程最打动人的环节，放慢节奏操作。」</div>
+    </div>
+    <div class="step">
+      <h5>配置模块</h5>
+      <p>进入「模块」标签，逐个介绍 5 种模块类型，打开 <code class="inline">demo-launch</code> 查看实例：</p>
+      <ul>
+        <li><b>富文本</b>：活动介绍（图文混排）；</li>
+        <li><b>报名表单</b>：表单设计器，字段拖拽配置，可开「提交后允许修改」；</li>
+        <li><b>日程安排</b>：时间线展示，支持 CSV 导入；</li>
+        <li><b>我的二维码</b>：为登录用户生成专属签到二维码；</li>
+        <li><b>外部链接</b>：跳转官网等。</li>
+      </ul>
+      <div class="talk"><b>话术：</b>「活动要用的：报名收集、日程公示、现场签到二维码，全都能配，不需要开发。」</div>
+    </div>
+    <div class="step">
+      <h5>账号与权限</h5>
+      <p>打开 <code class="inline">demo-launch</code> 的「账号」标签，展示已导入的 <code class="inline">zhangsan</code> / <code class="inline">lisi</code> 及模块勾选。</p>
+      <div class="talk"><b>话术：</b>「每个账号能看哪些模块可以单独勾选——比如只有报名学员能看培训资料，做定向内容很灵活。」</div>
+    </div>
+    <div class="step">
+      <h5>签到管理</h5>
+      <p>「签到管理 → demo-launch」查看已配置的「上午场 / 下午场」两个场次；说明 PC 摄像头核销与手机 <code class="inline">/m/</code> 扫码核销两种方式。</p>
+      <div class="talk"><b>话术：</b>「现场一个手机就能核销签到，还能人工补签、导出名单，活动主办方最刚需的功能。」</div>
+    </div>
+    <div class="step">
+      <h5>报名数据</h5>
+      <p>「报名数据」查看该微站报名记录，展示备注、单条「可修改 / 禁修改」开关。</p>
+      <div class="talk"><b>话术：</b>「报名数据后台沉淀，可备注跟进；还能控制报名者提交后能否自助修改，灵活又安全。」</div>
+    </div>
+    <div class="step">
+      <h5>上线</h5>
+      <p>回到微站列表，展示「上线」操作消耗 1 个上线额度；打开 H5 地址收尾。</p>
+      <div class="talk"><b>话术：</b>「配置完一键上线，额度用完在会员中心自助购买，商业化闭环完整。」</div>
+    </div>
+  </div>
+
+  <div class="callout tip"><b>演示建议：</b>第 3 步「创建微站 + AI 生图」是全流程高潮，建议现场真实操作一次生成，不要只放录屏。</div>
+</section>
+
+<!-- ==================== 04 ==================== -->
+<section id="s4">
+  <h2 class="sec"><span class="num">04</span>路线B：H5 端体验</h2>
+  <p class="sec-tip">用手机或浏览器移动模拟打开 H5，让客户以「访客」身份体验。建议与路线A同屏对照。</p>
+
+  <div class="steps">
+    <div class="step">
+      <h5>登录体验</h5>
+      <p>打开 <code class="inline">/s/demo-launch</code>，展示需登录页（与微站主页同视觉风格）；用 <code class="inline">zhangsan / Demo@123456</code> 登录。</p>
+      <div class="talk"><b>话术：</b>「支持密码登录、自定义登录字段，适合定向邀请类活动，访客登录后看到的内容还可以按人区分。」</div>
+    </div>
+    <div class="step">
+      <h5>内容浏览与日程</h5>
+      <p>点「活动介绍」看富文本详情；点「大会议程」按时间线查看日程。</p>
+    </div>
+    <div class="step">
+      <h5>提交报名（重点演示）</h5>
+      <p>进入「立即报名」表单，填写姓名 / 手机号提交；返回再进入同一表单，展示「您已提交，可修改信息后点击保存修改」——演示提交后修改。</p>
+      <div class="talk"><b>话术：</b>「报名填错了不用找主办方，自己就能改——但要不要开放修改、哪条数据能改，主办方后台完全可控。」</div>
+    </div>
+    <div class="step">
+      <h5>签到二维码</h5>
+      <p>点「签到二维码」模块，展示专属二维码；说明现场核销员扫码即完成签到。</p>
+    </div>
+    <div class="step">
+      <h5>公开微站体验</h5>
+      <p>切到 <code class="inline">/s/demo-festival</code>，展示公开访问场景（无需登录即可浏览报名），对照两种访问模式。</p>
+    </div>
+  </div>
+
+  <div class="callout warn"><b>注意：</b>H5 摄像头扫码功能依赖 HTTPS 环境，演示前确认域名是 HTTPS，否则现场扫码环节会报错。</div>
+</section>
+
+<!-- ==================== 05 ==================== -->
+<section id="s5">
+  <h2 class="sec"><span class="num">05</span>路线C：进阶卖点</h2>
+  <p class="sec-tip">客户追问以下方向时，按需单独演示。</p>
+
+  <div class="grid2">
+    <div class="feat">
+      <h5><span class="dot" style="background:#4F46E5;"></span>AI 生图（4 类场景）</h5>
+      <p>在编辑器内演示 4 个 AI 生图入口：KV 图、背景图、微信分享图、模块图标。每处都是「输一句描述 → 生成 → 一键使用」。强调覆盖全部图片素材、无需设计能力。</p>
+    </div>
+    <div class="feat">
+      <h5><span class="dot" style="background:#0F766E;"></span>模板体系</h5>
+      <p>演示「模板管理」中新建模板：预设外观 + 预置按钮 + 预览图；再演示建站时一键套用、套用后微站与模板互不影响。</p>
+    </div>
+    <div class="feat">
+      <h5><span class="dot" style="background:#B45309;"></span>分销返佣</h5>
+      <p>用 <code class="inline">demo_admin</code> 打开「推广中心」展示推广码与累计数据；切到 <code class="inline">demo_shop</code> 的账号管理，展示其「推荐人」绑定（演示开户填推广码）。说明一级返佣 10%、钱包结算、按真实消费计酬。</p>
+    </div>
+    <div class="feat">
+      <h5><span class="dot" style="background:#B91C1C;"></span>工作台与数据</h5>
+      <p>切 <code class="inline">demo_admin</code> 展示工作台：统计卡、访问趋势图、最近微站、我的推广。超管可另行登录查看「收入统计 / 分销概况」。</p>
+    </div>
+  </div>
+
+  <div class="callout info"><b>分销演示提示：</b>分销是「帮你卖」的功能，对渠道型客户 / 代理商客户重点讲；对只做自营活动的客户可略过。</div>
+</section>
+
+<!-- ==================== 06 ==================== -->
+<section id="s6">
+  <h2 class="sec"><span class="num">06</span>话术要点</h2>
+  <p class="sec-tip">开场与收尾的标准话术，可逐句使用或按风格改写。</p>
+
+  <div class="card">
+    <h4>开场（30 秒价值主张）</h4>
+    <div class="callout tip"><b>话术：</b>「很多团队做活动 H5 都要找开发排期，两三天才能上一个页面。用微站系统，<b>不需要开发、不需要设计师</b>，3 分钟搭一个活动微站——报名、日程、现场签到全都有，还内置 AI 生图帮你出素材。」</div>
+  </div>
+  <div class="card">
+    <h4>功能一句话话术速查</h4>
+    <table>
+      <tr><th>功能</th><th>一句话话术</th></tr>
+      <tr><td>模板</td><td>内置多套模板，管理员还能自建，建站一键套用</td></tr>
+      <tr><td>AI 生图</td><td>KV 图、背景、分享图、图标，描述一句就能生成</td></tr>
+      <tr><td>报名表单</td><td>可视化拖拽配置，数据后台沉淀，支持提交后修改</td></tr>
+      <tr><td>签到核销</td><td>多场次签到，手机扫码核销，支持补签与撤销</td></tr>
+      <tr><td>账号权限</td><td>批量导入账号，模块级权限按人分配</td></tr>
+      <tr><td>商业化</td><td>会员 + 上线额度，按需付费，超管后台统一管理</td></tr>
+      <tr><td>分销</td><td>老客户带新客户，一级返佣进钱包，帮你把产品卖出去</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>收尾（CTA）</h4>
+    <div class="callout tip"><b>话术：</b>「这套系统开箱即用，您可以用 <code class="inline">demo_admin</code> 自己上手体验（也可以直接把演示账号发给团队），有任何活动场景都可以用它快速落地。要不要我安排一次专门针对您业务场景的演示？」</div>
+  </div>
+</section>
+
+<!-- ==================== 07 ==================== -->
+<section id="s7">
+  <h2 class="sec"><span class="num">07</span>常见问题与兜底</h2>
+  <p class="sec-tip">演示中可能遇到的问题与客户高频追问。</p>
+
+  <details>
+    <summary>登录报错 / 演示账号登不上去？</summary>
+    <div class="body">先确认数据库与后端服务已启动；再确认账号未被禁用。若数据异常，可在后端目录执行 <code class="inline">python seed_demo.py</code> 幂等重建（不会重复插入），极端情况用 <code class="inline">--reset</code> 清空重建。</div>
+  </details>
+  <details>
+    <summary>AI 生图生成很慢或失败？</summary>
+    <div class="body">生成通常需 10-60 秒，属正常。若失败，检查「管理员配置 → AI 服务」的 API Key 是否有效、账户余额是否充足。演示时建议提前生成几张素材备用。</div>
+  </details>
+  <details>
+    <summary>客户问「价格怎么算」？</summary>
+    <div class="body">预充值钱包模式：超管为账号充值余额，客户用余额自助购买。年费会员 499 元 / 年（可创建任意数量微站），微站每上线一次消耗 1 个上线额度（299 元 / 次），下线不退。价格超管可配置调价。</div>
+  </details>
+  <details>
+    <summary>客户问「有没有分销 / 代理政策」？</summary>
+    <div class="body">支持一级分销：推广客户首次购买会员或额度后，按 10% 返佣到钱包余额（比例可配）。合规设计：仅按真实消费计酬、不设团队计酬，规避多级分销风险。具体结算与提现规则可进一步洽谈。</div>
+  </details>
+  <details>
+    <summary>客户问「能接入微信、能统计吗」？</summary>
+    <div class="body">支持微信分享卡片（需配置公众号 AppID/AppSecret）；内置 PV/UV、模块点击、访问趋势统计，后台工作台与微站详情页均可查看。</div>
+  </details>
+  <details>
+    <summary>演示中途被提问打断怎么办？</summary>
+    <div class="body">先回答客户问题再回到主线；若问题超出当前步骤，快速答完并说「这个功能稍后专门演示给您看」，跳转对应小节后记得回到原位置。任何一步卡住，优先跳过，不要在现场排查，事后补演示。</div>
+  </details>
+</section>
+
+<!-- ==================== 08 ==================== -->
+<section id="s8">
+  <h2 class="sec"><span class="num">08</span>客户自助体验</h2>
+  <p class="sec-tip">以下内容可直接复制发给意向客户，让客户自行体验。</p>
+
+  <div class="card">
+    <h4>微站系统 · 体验说明（可直接转发）</h4>
+    <p>您好！感谢对微站系统的关注，以下是体验账号，您可随时登录试用：</p>
+    <ul>
+      <li><b>后台管理</b>：打开 <code class="inline">https://您的域名/admin/</code>，账号 <code class="inline">demo_admin</code>，密码 <code class="inline">Demo@123456</code>——可完整体验建站、模板、AI 生图、签到、分销等功能；</li>
+      <li><b>手机端微站</b>：
+        <ul>
+          <li>发布会场景（需登录）：<code class="inline">/s/demo-launch</code>，登录账号 <code class="inline">zhangsan</code> / <code class="inline">lisi</code>，密码 <code class="inline">Demo@123456</code>；</li>
+          <li>公开活动场景：<code class="inline">/s/demo-festival</code>，直接打开即可。</li>
+        </ul>
+      </li>
+      <li><b>体验路径建议</b>：登录后台 → 工作台看数据 → 创建微站选模板 → 用「AI 生图」生成 KV 图 → 配置报名 / 日程 → 上线 → 手机打开微站提交一次报名。</li>
+    </ul>
+    <div class="callout tip"><b>提示：</b>如页面无法访问，请联系我们获取最新的演示地址；演示数据不会影响您的正式使用。</div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">微站系统 · 演示指南 v1.0 · 配套演示账号 seed_demo.py · 问题请联系平台运营</div>
+</footer>
+
+<script>
+(function(){
+  var links=document.querySelectorAll('nav.toc a');
+  var sections=document.querySelectorAll('section');
+  function onScroll(){
+    var y=window.scrollY+80,cur=links[0];
+    sections.forEach(function(s,i){
+      if(s.offsetTop<=y)cur=links[i];
+    });
+    links.forEach(function(a){a.classList.remove('on')});
+    if(cur)cur.classList.add('on');
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});
+  onScroll();
+})();
+</script>
+</body>
+</html>
