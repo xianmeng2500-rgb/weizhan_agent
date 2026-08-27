@@ -39,8 +39,8 @@
       </div>
 
       <van-form :class="{ 'form-readonly': formReadonly }" @submit="onSubmit">
-        <div v-for="field in formConfig.fields" :key="field.id" class="field-wrapper"
-             :class="{ 'field-wrapper--display': ['divider', 'tip_text'].includes(field.type) }">
+        <div v-for="(field, index) in formConfig.fields" :key="field.id" class="field-wrapper"
+             :class="wrapperClass(field, index)">
 
           <!-- 分割线 -->
           <template v-if="field.type === 'divider'">
@@ -55,17 +55,23 @@
             </div>
           </template>
 
-          <!-- 文本/手机号/身份证/邮箱/数字 -->
-          <template v-else-if="['text', 'phone', 'idcard', 'email', 'number'].includes(field.type)">
-            <div class="field-card">
-              <div class="field-header">
-                <span class="field-icon"><van-icon :name="fieldIcon(field.type)" /></span>
-                <span class="field-label">{{ field.title }}</span>
-                <span v-if="field.required" class="required-mark">*</span>
-              </div>
-              <van-field v-model="formData[field.id]" :name="field.id"
-                :placeholder="field.placeholder || '请输入'" :rules="getRules(field)"
-                :maxlength="field.props?.maxLength" :border="false" :type="field.type === 'number' ? 'number' : 'text'" />
+          <!-- 文本/手机号/身份证/邮箱/数字/日期/时间/地区/下拉（Vant 横向单元格） -->
+          <template v-else-if="isSimpleInput(field.type)">
+            <div class="field-cell" :class="cellGroupClass(index)">
+              <van-field
+                v-model="formData[field.id]"
+                :name="field.id"
+                :label="field.title"
+                :required="field.required"
+                :placeholder="placeholderOf(field)"
+                :rules="getRules(field)"
+                :readonly="isPickerField(field.type)"
+                :clickable="isPickerField(field.type)"
+                :border="!isCellGroupLast(index)"
+                :maxlength="field.props?.maxLength"
+                :type="field.type === 'number' ? 'number' : 'text'"
+                @click="handleFieldClick(field)"
+              />
             </div>
           </template>
 
@@ -126,70 +132,6 @@
                   </div>
                 </div>
               </van-checkbox-group>
-            </div>
-          </template>
-
-          <!-- 下拉选择 -->
-          <template v-else-if="field.type === 'select'">
-            <div class="field-card">
-              <div class="field-header">
-                <span class="field-icon"><van-icon name="bars" /></span>
-                <span class="field-label">{{ field.title }}</span>
-                <span v-if="field.required" class="required-mark">*</span>
-              </div>
-              <van-field v-model="formData[field.id]" :name="field.id"
-                :placeholder="field.placeholder || '请选择'" :rules="getRules(field)"
-                readonly clickable :border="false" @click="openPicker(field)">
-                <template #right-icon><van-icon name="arrow" class="field-arrow" /></template>
-              </van-field>
-            </div>
-          </template>
-
-          <!-- 日期 -->
-          <template v-else-if="field.type === 'date'">
-            <div class="field-card">
-              <div class="field-header">
-                <span class="field-icon"><van-icon name="calendar-o" /></span>
-                <span class="field-label">{{ field.title }}</span>
-                <span v-if="field.required" class="required-mark">*</span>
-              </div>
-              <van-field v-model="formData[field.id]" :name="field.id"
-                :placeholder="field.placeholder || '选择日期'" :rules="getRules(field)"
-                readonly clickable :border="false" @click="openDatePicker(field)">
-                <template #right-icon><van-icon name="arrow" class="field-arrow" /></template>
-              </van-field>
-            </div>
-          </template>
-
-          <!-- 时间 -->
-          <template v-else-if="field.type === 'time'">
-            <div class="field-card">
-              <div class="field-header">
-                <span class="field-icon"><van-icon name="clock-o" /></span>
-                <span class="field-label">{{ field.title }}</span>
-                <span v-if="field.required" class="required-mark">*</span>
-              </div>
-              <van-field v-model="formData[field.id]" :name="field.id"
-                :placeholder="field.placeholder || '选择时间'" :rules="getRules(field)"
-                readonly clickable :border="false" @click="openTimePicker(field)">
-                <template #right-icon><van-icon name="arrow" class="field-arrow" /></template>
-              </van-field>
-            </div>
-          </template>
-
-          <!-- 地区 -->
-          <template v-else-if="field.type === 'region'">
-            <div class="field-card">
-              <div class="field-header">
-                <span class="field-icon"><van-icon name="location-o" /></span>
-                <span class="field-label">{{ field.title }}</span>
-                <span v-if="field.required" class="required-mark">*</span>
-              </div>
-              <van-field v-model="formData[field.id]" :name="field.id"
-                :placeholder="field.placeholder || '请选择地区'" :rules="getRules(field)"
-                readonly clickable :border="false" @click="showAreaPicker = true; currentAreaField = field.id">
-                <template #right-icon><van-icon name="arrow" class="field-arrow" /></template>
-              </van-field>
             </div>
           </template>
 
@@ -359,6 +301,62 @@ function tipIcon(tone: string) {
 function isChecked(fieldId: string, opt: string) {
   const arr = formData.value[fieldId] || []
   return arr.includes(opt)
+}
+
+// Vant 式单元格分组：相邻简单字段合并为一个圆角卡片
+const SIMPLE_INPUT_TYPES = ['text', 'phone', 'idcard', 'email', 'number', 'date', 'time', 'region', 'select']
+const PICKER_FIELD_TYPES = ['date', 'time', 'region', 'select']
+
+function isSimpleInput(type: string) {
+  return SIMPLE_INPUT_TYPES.includes(type)
+}
+function isPickerField(type: string) {
+  return PICKER_FIELD_TYPES.includes(type)
+}
+function placeholderOf(field: any) {
+  if (field.placeholder) return field.placeholder
+  if (field.type === 'select') return '请选择'
+  if (field.type === 'date') return '选择日期'
+  if (field.type === 'time') return '选择时间'
+  if (field.type === 'region') return '请选择地区'
+  return '请输入'
+}
+// 字段外层容器：中间简单字段之间不保留间距（合并进同一卡片）
+function wrapperClass(field: any, index: number) {
+  const display = ['divider', 'tip_text'].includes(field.type)
+  const classes: Record<string, boolean> = { 'field-wrapper--display': display }
+  if (isSimpleInput(field.type)) {
+    const fields = formConfig.value.fields || []
+    const nextIsSimple = index < fields.length - 1 && isSimpleInput(fields[index + 1]?.type)
+    if (nextIsSimple) classes['field-wrapper--compact'] = true
+  }
+  return classes
+}
+// 单元格圆角：组内第一个/最后一个分别圆上/下角
+function cellGroupClass(index: number) {
+  const fields = formConfig.value.fields || []
+  const prevIsSimple = index > 0 && isSimpleInput(fields[index - 1]?.type)
+  const nextIsSimple = index < fields.length - 1 && isSimpleInput(fields[index + 1]?.type)
+  return {
+    'field-cell--first': !prevIsSimple,
+    'field-cell--last': !nextIsSimple,
+  }
+}
+// 是否单元格分组内的最后一项（决定底部是否画分隔线）
+function isCellGroupLast(index: number) {
+  const fields = formConfig.value.fields || []
+  return !(index < fields.length - 1 && isSimpleInput(fields[index + 1]?.type))
+}
+// 选择类字段点击：统一分发到对应 picker
+function handleFieldClick(field: any) {
+  if (formReadonly.value) return
+  if (field.type === 'select') openPicker(field)
+  else if (field.type === 'date') openDatePicker(field)
+  else if (field.type === 'time') openTimePicker(field)
+  else if (field.type === 'region') {
+    showAreaPicker.value = true
+    currentAreaField.value = field.id
+  }
 }
 
 // 各选择器状态
@@ -693,7 +691,7 @@ onMounted(loadModule)
 
 /* ===== 表单头部 ===== */
 .form-body {
-  padding: 12px 12px calc(24px + env(safe-area-inset-bottom));
+  padding: 14px 14px calc(24px + env(safe-area-inset-bottom));
 }
 .form-header {
   position: relative;
@@ -701,7 +699,7 @@ onMounted(loadModule)
   background: var(--form-gradient);
   border-radius: 16px;
   padding: 28px 20px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   color: #fff;
   text-align: center;
 }
@@ -742,7 +740,7 @@ onMounted(loadModule)
 .form-desc {
   margin: 10px auto 0;
   max-width: 90%;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
   opacity: 0.92;
 }
@@ -752,12 +750,12 @@ onMounted(loadModule)
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  margin-bottom: 12px;
-  padding: 12px 14px;
+  margin-bottom: 14px;
+  padding: 13px 15px;
   border-radius: 12px;
   color: var(--form-primary);
   background: var(--form-primary-soft);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
 }
 .submitted-notice .van-icon {
@@ -767,7 +765,10 @@ onMounted(loadModule)
 
 /* ===== 字段卡片 ===== */
 .field-wrapper {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+}
+.field-wrapper--compact {
+  margin-bottom: 0;
 }
 .field-wrapper--display {
   padding: 0;
@@ -775,46 +776,83 @@ onMounted(loadModule)
 .field-card {
   background: #fff;
   border-radius: 14px;
-  padding: 16px 16px 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  padding: 18px 16px 12px;
+}
+
+/* ===== Vant 式单元格字段（简单字段横向分组） ===== */
+.field-cell {
+  background: #fff;
+  overflow: hidden;
+}
+.field-cell--first {
+  border-radius: 14px 14px 0 0;
+}
+.field-cell--last {
+  border-radius: 0 0 14px 14px;
+}
+.field-cell--first.field-cell--last {
+  border-radius: 14px;
+}
+.field-cell :deep(.van-field) {
+  background: transparent;
+}
+.field-cell :deep(.van-field__label) {
+  font-size: 16px;
+  font-weight: 500;
+  color: #323233;
+  min-width: 76px;
+  margin-right: 12px;
+}
+.field-cell :deep(.van-field__control) {
+  font-size: 16px;
+}
+.field-cell :deep(.van-field__control::placeholder) {
+  color: #c0c4cc;
+}
+.field-cell :deep(.van-field__control--readonly) {
+  color: #323233;
+  text-align: right;
+}
+.field-cell :deep(.van-field__right-icon) {
+  color: #c0c4cc;
 }
 .field-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
   padding: 0 2px;
 }
 .field-icon {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--form-primary);
   background: var(--form-primary-soft);
-  font-size: 14px;
+  font-size: 15px;
   flex-shrink: 0;
 }
 .field-label {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   color: #323233;
 }
 .required-mark {
   color: #ee0a24;
-  font-size: 14px;
+  font-size: 15px;
   margin-left: 2px;
 }
 
 /* 输入框 */
 .field-card :deep(.van-field) {
-  padding: 10px 2px;
+  padding: 6px 2px;
   background: transparent;
 }
 .field-card :deep(.van-field__control) {
-  font-size: 15px;
+  font-size: 16px;
 }
 .field-card :deep(.van-field__control::placeholder) {
   color: #c0c4cc;
@@ -828,14 +866,14 @@ onMounted(loadModule)
 .option-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 6px 2px 10px;
+  gap: 12px;
+  padding: 6px 2px 8px;
 }
 .option-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 13px 14px;
+  padding: 14px 14px;
   border-radius: 10px;
   border: 1.5px solid #ebeef5;
   background: #fafbfc;
@@ -846,7 +884,7 @@ onMounted(loadModule)
   background: var(--form-primary-light);
 }
 .option-text {
-  font-size: 15px;
+  font-size: 16px;
   color: #323233;
   flex: 1;
 }
@@ -893,8 +931,8 @@ onMounted(loadModule)
   align-items: center;
   gap: 12px;
   color: #969799;
-  font-size: 13px;
-  padding: 4px 8px;
+  font-size: 14px;
+  padding: 8px 8px;
 }
 .form-divider::before,
 .form-divider::after {
@@ -912,9 +950,9 @@ onMounted(loadModule)
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding: 12px 14px;
+  padding: 13px 15px;
   border-radius: 12px;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
 }
 .tip-icon {
@@ -958,7 +996,7 @@ onMounted(loadModule)
   border-color: var(--form-primary);
 }
 .agreement-text {
-  font-size: 13px;
+  font-size: 14px;
   color: #646566;
   line-height: 1.5;
   flex: 1;
@@ -988,7 +1026,7 @@ onMounted(loadModule)
   overflow-y: auto;
   padding: 16px;
   color: #646566;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.7;
   white-space: pre-wrap;
 }
@@ -1016,7 +1054,7 @@ onMounted(loadModule)
   padding: 4px 12px 0;
 }
 .transport-section-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: #646566;
   margin-bottom: 0;
@@ -1030,7 +1068,7 @@ onMounted(loadModule)
 }
 .transport-section :deep(.van-field) {
   background: transparent;
-  padding: 10px 2px;
+  padding: 6px 2px;
 }
 
 /* ===== 图片上传 ===== */
@@ -1044,7 +1082,7 @@ onMounted(loadModule)
 }
 .field-error {
   color: #ee0a24;
-  font-size: 12px;
+  font-size: 13px;
   padding: 6px 2px 8px;
 }
 
@@ -1059,12 +1097,12 @@ onMounted(loadModule)
 
 /* ===== 提交按钮 ===== */
 .submit-area {
-  margin-top: 24px;
+  margin-top: 28px;
   padding: 0 4px;
 }
 .submit-btn {
-  height: 48px;
-  font-size: 16px;
+  height: 50px;
+  font-size: 17px;
   font-weight: 600;
   letter-spacing: 2px;
   background: var(--form-gradient);
@@ -1080,7 +1118,7 @@ onMounted(loadModule)
 .submit-tip {
   text-align: center;
   color: #c0c4cc;
-  font-size: 12px;
+  font-size: 13px;
   margin-top: 12px;
 }
 
