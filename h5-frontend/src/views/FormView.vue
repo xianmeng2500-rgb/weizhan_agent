@@ -203,7 +203,7 @@
                 </span>
                 <span class="agreement-text">
                   <template v-if="field.props?.agreementContent">
-                    我已阅读并同意<text class="agreement-link" @click.stop="openAgreement(field)">《{{ field.placeholder || '相关协议' }}》</text>
+                    <text class="agreement-link" @click.stop="openAgreement(field)">《{{ field.placeholder || '相关协议' }}》</text>
                   </template>
                   <template v-else>{{ field.placeholder || '我已阅读并同意相关协议' }}</template>
                 </span>
@@ -379,7 +379,6 @@ const currentTransportOptions = ref<string[]>([])
 const showAgreementPopup = ref(false)
 const currentAgreementField = ref<string>('')
 const currentAgreementContent = ref('')
-const agreementConfirmed = ref(false)
 
 function goBack() {
   router.push(`/s/${code}`)
@@ -480,34 +479,30 @@ function onAgreementToggle(field: any) {
   if (formReadonly.value) return
   const checked = Boolean(formData.value[field.id])
   if (!checked && field.props?.agreementContent) {
-    // 未勾选且有协议正文 → 先弹窗展示正文，点击“同意”后生效
+    // 未勾选且有协议正文 → 弹窗展示正文，关闭弹窗即视为已读并勾选
     currentAgreementField.value = field.id
     currentAgreementContent.value = field.props.agreementContent
-    agreementConfirmed.value = false
     showAgreementPopup.value = true
   } else {
     formData.value[field.id] = !checked
   }
 }
-// 协议勾选：点击协议文字 → 仅查看正文
+// 协议勾选：点击协议文字 → 查看正文
 function openAgreement(field: any) {
   if (formReadonly.value) return
   if (!field.props?.agreementContent) return
   currentAgreementField.value = field.id
   currentAgreementContent.value = field.props.agreementContent
-  agreementConfirmed.value = Boolean(formData.value[field.id])
   showAgreementPopup.value = true
 }
-// 弹窗内点击“我已阅读并同意”
+// 弹窗内点击“我已阅读并同意”→ 关闭弹窗（关闭时统一勾选）
 function confirmAgreement() {
-  agreementConfirmed.value = true
-  formData.value[currentAgreementField.value] = true
   showAgreementPopup.value = false
 }
-// 弹窗关闭：未点同意则回退为未勾选
+// 弹窗关闭：已打开过即视为已读协议，自动勾选
 function onAgreementPopupClosed() {
-  if (currentAgreementField.value && !agreementConfirmed.value) {
-    formData.value[currentAgreementField.value] = false
+  if (currentAgreementField.value) {
+    formData.value[currentAgreementField.value] = true
   }
   currentAgreementField.value = ''
   currentAgreementContent.value = ''
