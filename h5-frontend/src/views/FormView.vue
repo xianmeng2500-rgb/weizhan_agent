@@ -196,15 +196,18 @@
           <!-- 协议勾选 -->
           <template v-else-if="field.type === 'agreement'">
             <div class="field-card agreement-block">
-              <div v-if="field.props?.agreementContent" class="agreement-content">{{ field.props.agreementContent }}</div>
-              <van-checkbox v-model="formData[field.id]" :name="field.id" :rules="getRules(field)" class="agreement-check">
-                <template #icon="{ checked }">
-                  <span class="agreement-box" :class="{ 'agreement-box--checked': checked }">
-                    <van-icon v-if="checked" name="checked" size="14" />
-                  </span>
-                </template>
-                <span class="agreement-text">{{ field.placeholder || '我已阅读并同意相关协议' }}</span>
-              </van-checkbox>
+              <div class="agreement-check" :class="{ 'agreement-check--checked': Boolean(formData[field.id]) }"
+                @click="onAgreementToggle(field)">
+                <span class="agreement-box" :class="{ 'agreement-box--checked': Boolean(formData[field.id]) }">
+                  <van-icon v-if="formData[field.id]" name="checked" size="14" />
+                </span>
+                <span class="agreement-text">
+                  <template v-if="field.props?.agreementContent">
+                    我已阅读并同意<text class="agreement-link" @click.stop="openAgreement(field)">《{{ field.placeholder || '相关协议' }}》</text>
+                  </template>
+                  <template v-else>{{ field.placeholder || '我已阅读并同意相关协议' }}</template>
+                </span>
+              </div>
             </div>
           </template>
 
@@ -286,6 +289,18 @@
       <van-picker title="选择交通方式" :columns="currentTransportOptions"
         @confirm="onTransportPickerConfirm" @cancel="showTransportPicker = false" />
     </van-popup>
+    <!-- 协议正文弹窗 -->
+    <van-popup v-model:show="showAgreementPopup" position="bottom" round teleport="body" @closed="onAgreementPopupClosed">
+      <div class="agreement-popup">
+        <div class="agreement-popup-title">协议内容</div>
+        <div class="agreement-popup-content">{{ currentAgreementContent }}</div>
+        <div class="agreement-popup-footer">
+          <van-button block round type="primary" class="agreement-popup-btn" @click="confirmAgreement">
+            我已阅读并同意
+          </van-button>
+        </div>
+      </div>
+    </van-popup>
   </div>
 </template>
 
@@ -360,6 +375,11 @@ const showTransportPicker = ref(false)
 const currentTransportFieldId = ref<string>('')
 const currentTransportSubKey = ref<string>('')
 const currentTransportOptions = ref<string[]>([])
+// 协议弹窗状态
+const showAgreementPopup = ref(false)
+const currentAgreementField = ref<string>('')
+const currentAgreementContent = ref('')
+const agreementConfirmed = ref(false)
 
 function goBack() {
   router.push(`/s/${code}`)
@@ -455,6 +475,44 @@ function onTransportPickerConfirm({ selectedOptions }: any) {
   showTransportPicker.value = false
 }
 
+// 协议勾选：点击勾选框
+function onAgreementToggle(field: any) {
+  if (formReadonly.value) return
+  const checked = Boolean(formData.value[field.id])
+  if (!checked && field.props?.agreementContent) {
+    // 未勾选且有协议正文 → 先弹窗展示正文，点击“同意”后生效
+    currentAgreementField.value = field.id
+    currentAgreementContent.value = field.props.agreementContent
+    agreementConfirmed.value = false
+    showAgreementPopup.value = true
+  } else {
+    formData.value[field.id] = !checked
+  }
+}
+// 协议勾选：点击协议文字 → 仅查看正文
+function openAgreement(field: any) {
+  if (formReadonly.value) return
+  if (!field.props?.agreementContent) return
+  currentAgreementField.value = field.id
+  currentAgreementContent.value = field.props.agreementContent
+  agreementConfirmed.value = Boolean(formData.value[field.id])
+  showAgreementPopup.value = true
+}
+// 弹窗内点击“我已阅读并同意”
+function confirmAgreement() {
+  agreementConfirmed.value = true
+  formData.value[currentAgreementField.value] = true
+  showAgreementPopup.value = false
+}
+// 弹窗关闭：未点同意则回退为未勾选
+function onAgreementPopupClosed() {
+  if (currentAgreementField.value && !agreementConfirmed.value) {
+    formData.value[currentAgreementField.value] = false
+  }
+  currentAgreementField.value = ''
+  currentAgreementContent.value = ''
+}
+
 // 图片上传（multipart）
 async function afterRead(fieldId: string, file: any) {
   const form = new FormData()
@@ -491,6 +549,11 @@ async function onSubmit() {
       const urls = collectImageUrls(field.id)
       if (urls.length === 0) { fieldError.value[field.id] = `请上传${field.title}`; valid = false }
       else { fieldError.value[field.id] = '' }
+    }
+    // 协议必填校验（自定义勾选，不走 van-checkbox rules）
+    if (field.type === 'agreement' && field.required && !formData.value[field.id]) {
+      showToast(`请先${field.placeholder || '同意相关协议'}`)
+      valid = false
     }
   }
   if (!valid) { showToast('请完善表单'); return }
@@ -871,18 +934,7 @@ onMounted(loadModule)
 .agreement-block {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-.agreement-content {
-  max-height: 180px;
-  overflow-y: auto;
-  padding: 12px;
-  color: #646566;
-  font-size: 13px;
-  line-height: 1.65;
-  white-space: pre-wrap;
-  border-radius: 10px;
-  background: #f7f8fa;
+  gap: 4px;
 }
 .agreement-check {
   display: flex;
@@ -891,10 +943,7 @@ onMounted(loadModule)
   padding: 4px 2px 10px;
   margin: 0;
   background: transparent;
-}
-.agreement-check :deep(.van-checkbox__label) {
-  margin-left: 10px;
-  flex: 1;
+  user-select: none;
 }
 .agreement-box {
   width: 22px;
@@ -918,6 +967,45 @@ onMounted(loadModule)
   color: #646566;
   line-height: 1.5;
   flex: 1;
+  margin-left: 10px;
+}
+.agreement-link {
+  color: var(--form-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* 协议正文弹窗 */
+.agreement-popup {
+  display: flex;
+  flex-direction: column;
+  height: 70vh;
+}
+.agreement-popup-title {
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #323233;
+  text-align: center;
+  border-bottom: 1px solid #f0f0f0;
+}
+.agreement-popup-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  color: #646566;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.agreement-popup-footer {
+  padding: 12px 16px;
+  padding-bottom: calc(12px + constant(safe-area-inset-bottom));
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  background: #fff;
+}
+.agreement-popup-btn {
+  background: var(--form-gradient);
+  border: none;
 }
 
 /* ===== 交通信息 ===== */
