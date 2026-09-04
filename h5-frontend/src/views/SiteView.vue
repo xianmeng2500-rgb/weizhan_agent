@@ -267,6 +267,8 @@ function handleClick(m: any) {
     router.push(`/s/${code}/schedule/${m.id}`)
   } else if (m.content_type === 'qrcode') {
     router.push(`/s/${code}/qrcode/${m.id}`)
+  } else if (m.content_type === 'file_attachment') {
+    router.push(`/s/${code}/files/${m.id}`)
   } else {
     router.push(`/s/${code}/module/${m.id}`)
   }

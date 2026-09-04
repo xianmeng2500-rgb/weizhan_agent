@@ -33,6 +33,11 @@ const routes = [
     component: () => import('@/views/QRCodeView.vue'),
   },
   {
+    path: '/s/:code/files/:moduleId',
+    name: 'FileAttachment',
+    component: () => import('@/views/FileAttachmentView.vue'),
+  },
+  {
     path: '/m/login',
     name: 'AdminLogin',
     component: () => import('@/views/admin/AdminLogin.vue'),

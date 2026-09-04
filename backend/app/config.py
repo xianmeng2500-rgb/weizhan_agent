@@ -40,9 +40,13 @@ class Settings(BaseSettings):
     OSS_CUSTOM_DOMAIN: str = ""
 
     # 上传配置
-    MAX_FILE_SIZE: int = 10485760  # 10MB
+    MAX_FILE_SIZE: int = 10485760  # 10MB（图片上传）
     ALLOWED_FILE_TYPES: str = "jpg,png,gif,webp,jpeg"
     UPLOAD_DIR: str = "uploads"
+
+    # 资料附件上传（资料附件表模块专用，独立于图片白名单与大小限制）
+    MAX_ATTACHMENT_SIZE: int = 52428800  # 50MB
+    ALLOWED_ATTACHMENT_TYPES: str = "pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif,webp"
 
     # CORS配置
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:5174"
@@ -67,6 +71,10 @@ class Settings(BaseSettings):
     @property
     def allowed_file_types_list(self) -> List[str]:
         return [t.strip().lower() for t in self.ALLOWED_FILE_TYPES.split(",") if t.strip()]
+
+    @property
+    def allowed_attachment_types_list(self) -> List[str]:
+        return [t.strip().lower() for t in self.ALLOWED_ATTACHMENT_TYPES.split(",") if t.strip()]
 
     @property
     def database_url(self) -> str:

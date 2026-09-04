@@ -79,6 +79,7 @@
             <el-radio value="registration_form">报名表单</el-radio>
             <el-radio value="schedule">日程安排</el-radio>
             <el-radio v-if="needCheckin" value="qrcode">我的二维码</el-radio>
+            <el-radio value="file_attachment">资料附件</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item v-if="editing.content_type === 'external_link'" label="外部链接">
@@ -129,6 +130,20 @@
             </div>
             <el-button type="primary" @click="qrcodeEditorVisible = true">
               编辑配置
+            </el-button>
+          </div>
+        </el-form-item>
+        <el-form-item v-if="editing.content_type === 'file_attachment'" label="资料附件">
+          <div class="form-designer-entry">
+            <div class="form-designer-entry__icon">
+              <el-icon><Files /></el-icon>
+            </div>
+            <div class="form-designer-entry__content">
+              <strong>资料附件</strong>
+              <span>已上传 {{ (editing.form_config as any)?.files?.length || 0 }} 个文件</span>
+            </div>
+            <el-button type="primary" @click="fileAttachmentEditorVisible = true">
+              {{ (editing.form_config as any)?.files?.length ? '编辑文件' : '上传文件' }}
             </el-button>
           </div>
         </el-form-item>
@@ -211,6 +226,29 @@
         <el-button type="primary" @click="confirmQRCodeDesign">完成配置</el-button>
       </template>
     </el-dialog>
+
+    <!-- 资料附件编辑器：独立全屏工作区 -->
+    <el-dialog
+      v-model="fileAttachmentEditorVisible"
+      class="form-designer-dialog"
+      title="资料附件编辑"
+      fullscreen
+      append-to-body
+      :close-on-click-modal="false"
+    >
+      <div class="form-designer-dialog__body">
+        <FileAttachmentEditor
+          ref="fileAttachmentEditorRef"
+          v-model="editing.form_config"
+          :site-id="Number(siteId)"
+          :module-id="editing.id || 0"
+        />
+      </div>
+      <template #footer>
+        <el-button @click="fileAttachmentEditorVisible = false">返回模块编辑</el-button>
+        <el-button type="primary" @click="confirmFileAttachmentDesign">完成编辑</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -218,12 +256,13 @@
 import { ref, reactive, shallowRef, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { EditPen, Grid, Plus, Calendar, PictureFilled } from '@element-plus/icons-vue'
+import { EditPen, Grid, Plus, Calendar, PictureFilled, Files } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/store/auth'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import FormDesigner from '@/components/FormDesigner'
 import ScheduleEditor from '@/components/ScheduleEditor'
 import QRCodeEditor from '@/components/QRCodeEditor'
+import FileAttachmentEditor from '@/components/FileAttachmentEditor.vue'
 import IconPicker from '@/components/IconPicker.vue'
 import api from '@/api'
 import dayjs from 'dayjs'
@@ -240,8 +279,10 @@ const dialogVisible = ref(false)
 const formDesignerVisible = ref(false)
 const scheduleEditorVisible = ref(false)
 const qrcodeEditorVisible = ref(false)
+const fileAttachmentEditorVisible = ref(false)
 const scheduleEditorRef = ref()
 const qrcodeEditorRef = ref()
+const fileAttachmentEditorRef = ref()
 const needCheckin = ref(false)
 
 // wangEditor
@@ -323,10 +364,17 @@ function openCreate() {
 function openEdit(row: any) {
   Object.assign(editing, {
     ...row,
-    form_config: row.form_config || { title: '', description: '', buttonText: '提交', allowEditAfterSubmit: false, fields: [] },
+    form_config: row.form_config || { files: [] },
     schedule_config: row.schedule_config || { items: [] },
     qrcode_config: row.qrcode_config || { hint: '', display_fields: [] },
   })
+  // 兼容老模块（form_config 是 registration_form 结构）
+  if (editing.content_type === 'file_attachment' && !Array.isArray((editing.form_config as any).files)) {
+    editing.form_config = { files: [] }
+  }
+  if (editing.content_type === 'registration_form' && !Array.isArray((editing.form_config as any).fields)) {
+    editing.form_config = { title: '', description: '', buttonText: '提交', allowEditAfterSubmit: false, fields: [] }
+  }
   dialogVisible.value = true
 }
 
@@ -337,6 +385,8 @@ function handleContentTypeChange(contentType: string | number | boolean | undefi
     scheduleEditorVisible.value = true
   } else if (contentType === 'qrcode') {
     qrcodeEditorVisible.value = true
+  } else if (contentType === 'file_attachment') {
+    fileAttachmentEditorVisible.value = true
   }
 }
 
@@ -362,6 +412,13 @@ function confirmQRCodeDesign() {
   if (cfg) editing.qrcode_config = cfg
   qrcodeEditorVisible.value = false
   ElMessage.success('二维码配置已保存到当前模块')
+}
+
+function confirmFileAttachmentDesign() {
+  const cfg = fileAttachmentEditorRef.value?.getConfig?.()
+  if (cfg) editing.form_config = cfg
+  fileAttachmentEditorVisible.value = false
+  ElMessage.success('资料附件已保存到当前模块')
 }
 
 async function saveModule() {
@@ -407,6 +464,17 @@ async function saveModule() {
       delete data.form_config
       delete data.schedule_config
     }
+    if (editing.content_type === 'file_attachment') {
+      // 资料附件复用 form_config 存 {files: []}，其他类型字段清理掉
+      delete data.rich_content
+      delete data.external_url
+      delete data.schedule_config
+      delete data.qrcode_config
+      // 没有字段时，form_config 默认为空对象
+      if (!data.form_config || !Array.isArray((data.form_config as any).files)) {
+        data.form_config = { files: [] }
+      }
+    }
     if (editing.id) {
       await api.put(`/sites/${siteId}/modules/${editing.id}`, data)
       ElMessage.success('更新成功')
@@ -428,6 +496,7 @@ function typeText(contentType: string) {
     registration_form: '报名表单',
     schedule: '日程安排',
     qrcode: '我的二维码',
+    file_attachment: '资料附件',
   }
   return map[contentType] || contentType
 }

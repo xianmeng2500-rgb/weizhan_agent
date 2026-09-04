@@ -8,6 +8,22 @@ H5_DIR="$ROOT_DIR/h5-frontend"
 PYTHON_BIN="${PYTHON_BIN:-/Users/simon/.workbuddy/binaries/python/versions/3.13.12/bin/python3}"
 VENV_DIR="$BACKEND_DIR/.venv"
 
+# 探测可用的 npm: 优先用环境变量 NPM_BIN 指定，否则按候选路径/PATH 查找
+if [[ -z "${NPM_BIN:-}" ]]; then
+  for candidate in \
+    /Users/simon/.workbuddy/binaries/node/versions/22.22.2-2/bin/npm \
+    "$(command -v npm || true)"; do
+    if [[ -n "$candidate" && -x "$candidate" ]]; then
+      NPM_BIN="$candidate"
+      break
+    fi
+  done
+fi
+if [[ -z "${NPM_BIN:-}" || ! -x "${NPM_BIN:-}" ]]; then
+  printf '未找到 npm，请通过 NPM_BIN 指定可用的 npm 路径。\n' >&2
+  exit 1
+fi
+
 PIDS=()
 
 print_banner() {
@@ -69,19 +85,19 @@ fi
 
 if [[ ! -d "$ADMIN_DIR/node_modules" ]]; then
   printf '[准备] 安装后台管理依赖...\n'
-  (cd "$ADMIN_DIR" && /Users/simon/.workbuddy/binaries/node/versions/22.22.2/bin/npm install)
+  (cd "$ADMIN_DIR" && "$NPM_BIN" install)
 fi
 
 if [[ ! -d "$H5_DIR/node_modules" ]]; then
   printf '[准备] 安装移动端依赖...\n'
-  (cd "$H5_DIR" && /Users/simon/.workbuddy/binaries/node/versions/22.22.2/bin/npm install)
+  (cd "$H5_DIR" && "$NPM_BIN" install)
 fi
 
 trap cleanup EXIT INT TERM
 
 start_service "后端 API" "$BACKEND_DIR" "$VENV_DIR/bin/python" -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-start_service "后台管理" "$ADMIN_DIR" /Users/simon/.workbuddy/binaries/node/versions/22.22.2/bin/npm run dev -- --host 0.0.0.0 --port 5173
-start_service "移动端 H5" "$H5_DIR" /Users/simon/.workbuddy/binaries/node/versions/22.22.2/bin/npm run dev -- --host 0.0.0.0 --port 5174
+start_service "后台管理" "$ADMIN_DIR" "$NPM_BIN" run dev -- --host 0.0.0.0 --port 5173
+start_service "移动端 H5" "$H5_DIR" "$NPM_BIN" run dev -- --host 0.0.0.0 --port 5174
 
 print_banner
 wait

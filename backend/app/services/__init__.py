@@ -109,6 +109,73 @@ async def upload_image_local(file: UploadFile, upload_dir: str = None) -> str:
     return f"/static/uploads/{rel_path}"
 
 
+async def upload_attachment(file: UploadFile) -> str:
+    """资料附件上传到OSS - 走附件白名单和 50MB 大小限制
+
+    Returns:
+        附件的可访问URL
+    """
+    ext = os.path.splitext(file.filename or "")[1].lower().lstrip(".")
+    if ext not in settings.allowed_attachment_types_list:
+        raise HTTPException(
+            status_code=400,
+            detail=f"不支持的附件类型: .{ext}，仅支持 {', '.join(settings.allowed_attachment_types_list)}",
+        )
+
+    content = await file.read()
+    if len(content) > settings.MAX_ATTACHMENT_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"附件大小超过限制({settings.MAX_ATTACHMENT_SIZE // 1024 // 1024}MB)",
+        )
+
+    # 路径前缀 attachments/ 与图片路径 weizhan/ 区分
+    now = datetime.now()
+    file_key = f"attachments/{now.strftime('%Y/%m/%d')}/{uuid.uuid4().hex}.{ext}"
+
+    storage_config = get_storage_config()
+    bucket = _get_oss_bucket(storage_config)
+    bucket.put_object(file_key, content)
+
+    if storage_config["custom_domain"]:
+        domain = storage_config["custom_domain"].rstrip("/")
+        if not domain.startswith("http://") and not domain.startswith("https://"):
+            domain = f"https://{domain}"
+        return f"{domain}/{file_key}"
+    return f"https://{storage_config['bucket_name']}.{storage_config['endpoint']}/{file_key}"
+
+
+async def upload_attachment_local(file: UploadFile, upload_dir: str = None) -> str:
+    """资料附件本地存储（OSS 未配置时）- 走附件白名单和 50MB 大小限制"""
+    if upload_dir is None:
+        upload_dir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            settings.UPLOAD_DIR,
+        )
+    ext = os.path.splitext(file.filename or "")[1].lower().lstrip(".")
+    if ext not in settings.allowed_attachment_types_list:
+        raise HTTPException(status_code=400, detail=f"不支持的附件类型: .{ext}")
+
+    content = await file.read()
+    if len(content) > settings.MAX_ATTACHMENT_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"附件大小超过限制({settings.MAX_ATTACHMENT_SIZE // 1024 // 1024}MB)",
+        )
+
+    now = datetime.now()
+    dir_path = os.path.join(upload_dir, "attachments", now.strftime("%Y/%m/%d"))
+    os.makedirs(dir_path, exist_ok=True)
+
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    file_path = os.path.join(dir_path, filename)
+    with open(file_path, "wb") as f:
+        f.write(content)
+
+    rel_path = os.path.relpath(file_path, upload_dir)
+    return f"/static/uploads/{rel_path}"
+
+
 def upload_image_bytes(content: bytes, ext: str = "png") -> str:
     """将字节内容直接落盘到 OSS（已配置时）或本地存储。
 
