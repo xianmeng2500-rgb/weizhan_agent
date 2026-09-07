@@ -1,4 +1,5 @@
 """阿里云OSS服务"""
+import asyncio
 import os
 import uuid
 from datetime import datetime
@@ -7,6 +8,10 @@ from fastapi import HTTPException, UploadFile
 from app.config import settings
 from app.database import SessionLocal
 from app.models.system_config import SystemConfig
+
+
+# OSS 上传硬超时（秒）：用 asyncio.wait_for 兜底，避免 oss2 内部挂起导致请求无限等待
+OSS_UPLOAD_TIMEOUT = 30.0
 
 
 def get_storage_config() -> dict[str, str]:
@@ -31,11 +36,19 @@ def oss_is_configured() -> bool:
 
 
 def _get_oss_bucket(storage_config: dict[str, str]):
-    """获取OSS Bucket实例(延迟初始化)"""
+    """获取OSS Bucket实例(10s 连接超时)
+
+    实际超时由调用处的 asyncio.wait_for(30s) 兜底，避免 oss2 内部挂起。
+    """
     import oss2
 
     auth = oss2.Auth(storage_config["access_key_id"], storage_config["access_key_secret"])
-    return oss2.Bucket(auth, storage_config["endpoint"], storage_config["bucket_name"] )
+    return oss2.Bucket(
+        auth,
+        storage_config["endpoint"],
+        storage_config["bucket_name"],
+        connect_timeout=10,
+    )
 
 
 async def upload_image(file: UploadFile) -> str:
@@ -61,7 +74,39 @@ async def upload_image(file: UploadFile) -> str:
     # 上传到OSS
     storage_config = get_storage_config()
     bucket = _get_oss_bucket(storage_config)
-    bucket.put_object(file_key, content)
+    try:
+        # 用 asyncio.to_thread 把阻塞的 oss2 调用丢到线程池，再用 wait_for 强制超时
+        # 避免 oss2 在某些网络场景下（如 DNS/TCP 假死）无限挂起导致整个请求卡死
+        result = await asyncio.wait_for(
+            asyncio.to_thread(bucket.put_object, file_key, content),
+            timeout=OSS_UPLOAD_TIMEOUT,
+        )
+        if result.status != 200:
+            raise HTTPException(
+                status_code=502,
+                detail=f"OSS 拒绝上传[status={result.status}]: {result.headers.get('x-oss-request-id', 'no-request-id')}",
+            )
+    except HTTPException:
+        raise
+    except asyncio.TimeoutError:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"OSS 图片上传超时({OSS_UPLOAD_TIMEOUT}s): key={file_key}")
+        raise HTTPException(
+            status_code=504,
+            detail=f"OSS 上传超时({OSS_UPLOAD_TIMEOUT}s)，请检查网络或 OSS 配置",
+        )
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        code = getattr(e, 'code', '')
+        status = getattr(e, 'status', '')
+        msg = str(e) or repr(e)
+        logger.error(f"OSS 图片上传失败: code={code} status={status} msg={msg[:200]}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"OSS 上传失败[code={code} status={status}]: {msg[:300]}",
+        )
 
     # 返回URL
     if storage_config["custom_domain"]:
@@ -135,7 +180,37 @@ async def upload_attachment(file: UploadFile) -> str:
 
     storage_config = get_storage_config()
     bucket = _get_oss_bucket(storage_config)
-    bucket.put_object(file_key, content)
+    try:
+        result = await asyncio.wait_for(
+            asyncio.to_thread(bucket.put_object, file_key, content),
+            timeout=OSS_UPLOAD_TIMEOUT,
+        )
+        if result.status != 200:
+            raise HTTPException(
+                status_code=502,
+                detail=f"OSS 拒绝上传[status={result.status}]: {result.headers.get('x-oss-request-id', 'no-request-id')}",
+            )
+    except HTTPException:
+        raise
+    except asyncio.TimeoutError:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"OSS 附件上传超时({OSS_UPLOAD_TIMEOUT}s): key={file_key}")
+        raise HTTPException(
+            status_code=504,
+            detail=f"OSS 上传超时({OSS_UPLOAD_TIMEOUT}s)，请检查网络或 OSS 配置",
+        )
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        code = getattr(e, 'code', '')
+        status = getattr(e, 'status', '')
+        msg = str(e) or repr(e)
+        logger.error(f"OSS 附件上传失败: code={code} status={status} msg={msg[:200]}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"OSS 上传失败[code={code} status={status}]: {msg[:300]}",
+        )
 
     if storage_config["custom_domain"]:
         domain = storage_config["custom_domain"].rstrip("/")

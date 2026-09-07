@@ -44,5 +44,5 @@ npm-debug.log*
 .workbuddy/memory/
 
 # Uploads (may contain large/user files)
-backend/uploads/*
-!backend/uploads/.gitkeep
+backend/app/uploads/*
+!backend/app/uploads/.gitkeep

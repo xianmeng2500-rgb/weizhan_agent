@@ -15,7 +15,12 @@ from app.utils.deps import get_optional_frontend_account
 from app.utils.checkin_code import generate_checkin_code
 from app.schemas.auth import FrontendLoginRequest, TokenResponse
 from app.schemas.module import ModuleOut
-from app.services import oss_is_configured, upload_image, upload_image_local
+from app.services import (
+    oss_is_configured,
+    upload_image, upload_image_local,
+    upload_attachment as upload_attachment_oss,
+    upload_attachment_local,
+)
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/p", tags=["公开接口"])
@@ -141,13 +146,11 @@ async def upload_attachment_public(
 ):
     """H5 - 公开资料附件下载（无需登录，供资料附件表模块的下载/预览使用）
 
-    走附件白名单（PDF/Office/图片）和 50MB 大小限制。
+    走附件白名单（PDF/Office/图片）和 50MB 大小限制。优先 OSS，未配置则存本地。
     注：H5 端实际上不主动上传资料，资料由后台编辑上传；此端点保留以备未来 H5 提交附件场景。
     """
-    from app.services import upload_attachment, upload_attachment_local
-
     if oss_is_configured():
-        url = await upload_attachment(file)
+        url = await upload_attachment_oss(file)
     else:
         url = await upload_attachment_local(file)
     return {"url": url, "original_name": file.filename}

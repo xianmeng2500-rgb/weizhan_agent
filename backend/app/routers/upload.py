@@ -1,12 +1,12 @@
 """文件上传路由"""
-import os
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile, File
 from app.models import User
 from app.utils.deps import get_current_admin
 from app.services import (
     oss_is_configured,
     upload_image, upload_image_local,
-    upload_attachment, upload_attachment_local,
+    upload_attachment as upload_attachment_oss,
+    upload_attachment_local,
 )
 
 router = APIRouter(prefix="/upload", tags=["文件上传"])
@@ -33,11 +33,13 @@ async def upload_attachment(
 ):
     """上传资料附件（资料附件表模块专用）- 走附件白名单（PDF/Office/图片）和 50MB 大小限制
 
-    优先OSS，未配置则存本地。文件按 attachments/yyyy/mm/dd/uuid.ext 路径存储。
+    优先 OSS，未配置则存本地。文件按 attachments/yyyy/mm/dd/uuid.ext 路径存储。
     文件大小由前端在保存模块配置时从 el-upload.file.size 记录，无需后端额外返回。
+    后端 asyncio.wait_for(30s) 兜底，前端 customUpload(35s) 兜底，双层超时保护避免
+    el-upload 默认 axios 无 timeout 时的"无限等待"问题。
     """
     if oss_is_configured():
-        url = await upload_attachment(file)
+        url = await upload_attachment_oss(file)
     else:
         url = await upload_attachment_local(file)
     return {"url": url, "original_name": file.filename}

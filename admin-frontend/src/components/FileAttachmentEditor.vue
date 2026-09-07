@@ -2,12 +2,9 @@
   <div class="file-attachment-editor">
     <div class="editor-toolbar">
       <el-upload
-        :action="uploadUrl"
-        :headers="uploadHeaders"
+        :http-request="customUpload"
         :show-file-list="false"
         :before-upload="beforeUpload"
-        :on-success="onUploadSuccess"
-        :on-error="onUploadError"
         :accept="acceptTypes"
         multiple
         drag
@@ -200,29 +197,51 @@ function beforeUpload(file: File) {
   return true
 }
 
-async function onUploadSuccess(res: any, uploadFile: any) {
+async function customUpload(option: any) {
+  // 自定义上传函数：走我们自己的 axios（30s timeout + 错误 toast + response interceptor）
+  // 替代 el-upload 默认的内部 axios（默认 timeout=0，浏览器会无限等待）
+  const { file, onProgress: _onProgress, onSuccess, onError } = option
+  try {
+    const form = new FormData()
+    form.append('file', file)
+    const res: any = await api.post('/upload/file', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 35000, // 比后端 30s 多 5s 缓冲
+    })
+    // 后端返回 {url, original_name}，组装成 el-upload 期望的格式
+    onSuccess({ url: res.url, original_name: res.original_name }, new XMLHttpRequest())
+    // 主动调一下我们自己文件状态更新逻辑
+    addUploadedFile({
+      url: res.url,
+      original_name: res.original_name,
+      name: file.name,
+      size: file.size,
+    })
+  } catch (err: any) {
+    // axios 拦截器会处理统一错误提示，这里只需把失败传给 el-upload
+    const xhr = new XMLHttpRequest()
+    onError(err, xhr)
+  }
+}
+
+function addUploadedFile(res: { url: string; original_name: string; name: string; size: number }) {
   if (!res?.url) {
     ElMessage.error('上传失败：未返回 URL')
     return
   }
-  const ext = (res.original_name || uploadFile.name).split('.').pop().toLowerCase()
+  const ext = (res.original_name || res.name).split('.').pop().toLowerCase()
   files.value.push({
     id: crypto.randomUUID(),
-    name: res.original_name || uploadFile.name,
-    title: (res.original_name || uploadFile.name).replace(/\.[^.]+$/, ''),
+    name: res.original_name || res.name,
+    title: (res.original_name || res.name).replace(/\.[^.]+$/, ''),
     url: res.url,
-    size: uploadFile.size,
+    size: res.size,
     ext,
     category: IMAGE_EXTS.has(ext) ? 'image' : 'document',
     uploaded_at: new Date().toISOString(),
   })
   syncToParent()
-  ElMessage.success(`${uploadFile.name} 上传成功`)
-}
-
-function onUploadError(err: any) {
-  const msg = err?.message || '上传失败'
-  ElMessage.error(msg)
+  ElMessage.success(`${res.original_name || res.name} 上传成功`)
 }
 
 function moveUp(index: number) {
