@@ -63,8 +63,10 @@ class SiteTemplateOut(BaseModel):
     status: str
     sort_order: int
     created_by: Optional[int] = None
-    created_at: datetime
-    updated_at: datetime
+    # 时间戳在库中可空（模型用的是 Python 端默认值，裸 SQL 插入会留 NULL），
+    # 这里设为可空，避免个别脏数据导致整个列表接口 500
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 

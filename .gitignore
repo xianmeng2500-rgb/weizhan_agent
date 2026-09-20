@@ -46,3 +46,10 @@ npm-debug.log*
 # Uploads (may contain large/user files)
 backend/app/uploads/*
 !backend/app/uploads/.gitkeep
+
+# Promo video workdir: keep only render script and final cut, ignore intermediates
+docs/promo-video/frames/
+docs/promo-video/tts/
+docs/promo-video/assets/
+docs/promo-video/audio.wav
+docs/promo-video/preview_*.jpg

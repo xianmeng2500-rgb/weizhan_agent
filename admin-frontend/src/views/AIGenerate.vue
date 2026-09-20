@@ -15,26 +15,48 @@
       <el-card shadow="never" class="panel form-panel">
         <template #header><div class="panel-title">生成参数</div></template>
         <el-form label-position="top" @submit.prevent>
-          <el-form-item label="提示词（描述你想生成的画面）">
-            <el-input
-              v-model="form.prompt"
-              type="textarea"
-              :rows="4"
-              :placeholder="promptPlaceholder"
-              maxlength="2000"
-              show-word-limit
-            />
-          </el-form-item>
+          <!-- 提示词 / 负面提示词 与 参考图 左右排列 -->
+          <div class="prompt-row">
+            <div class="prompt-col">
+              <el-form-item label="提示词（描述你想生成的画面）">
+                <el-input
+                  v-model="form.prompt"
+                  type="textarea"
+                  :rows="4"
+                  :placeholder="promptPlaceholder"
+                  maxlength="2000"
+                  show-word-limit
+                />
+              </el-form-item>
 
-          <el-form-item label="负面提示词（不希望出现的内容，可选）">
-            <el-input
-              v-model="form.negative_prompt"
-              type="textarea"
-              :rows="2"
-              placeholder="例如：文字，水印，低质量，模糊"
-              maxlength="2000"
-            />
-          </el-form-item>
+              <el-form-item label="负面提示词（不希望出现的内容，可选）">
+                <el-input
+                  v-model="form.negative_prompt"
+                  type="textarea"
+                  :rows="3"
+                  placeholder="例如：文字，水印，低质量，模糊"
+                  maxlength="2000"
+                />
+              </el-form-item>
+            </div>
+
+            <div class="ref-col" :class="{ 'ref-col--filled': !!refFile }">
+              <el-form-item label="参考图">
+                <el-upload
+                  :auto-upload="false"
+                  :limit="1"
+                  accept=".jpg,.jpeg,.png,.gif,.webp"
+                  :on-change="onRefChange"
+                  :on-remove="() => (refFile = null)"
+                  :on-exceed="() => ElMessage.warning('最多上传 1 张参考图')"
+                  list-type="picture-card"
+                >
+                  <el-icon><Plus /></el-icon>
+                </el-upload>
+              </el-form-item>
+              <div class="field-hint">可选，上传后走图生图，按其构图与风格生成 1 张</div>
+            </div>
+          </div>
 
           <el-form-item label="用途（决定图片尺寸与风格约束）">
             <el-radio-group v-model="form.use" class="use-radio-group">
@@ -57,21 +79,6 @@
               <div v-if="refFile" class="field-hint">图生图一次生成 1 张</div>
             </el-form-item>
           </div>
-
-          <el-form-item label="参考图（可选，上传后走图生图）">
-            <el-upload
-              :auto-upload="false"
-              :limit="1"
-              accept="image/*"
-              :on-change="onRefChange"
-              :on-remove="() => (refFile = null)"
-              :on-exceed="() => ElMessage.warning('最多上传 1 张参考图')"
-              list-type="picture-card"
-            >
-              <el-icon><Plus /></el-icon>
-            </el-upload>
-            <div class="field-hint">参考图用于保持参考图的构图/角色/风格，配合提示词生成新图。</div>
-          </el-form-item>
 
           <div v-if="aiConfig?.configured" class="fee-bar">
             <template v-if="aiConfig.is_free">
@@ -414,15 +421,32 @@ onMounted(() => {
 <style scoped>
 .ai-generate { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
 .config-alert { margin-bottom: 0; }
-.ai-layout { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 16px; align-items: start; }
+.ai-layout { display: grid; grid-template-columns: minmax(360px, 9fr) minmax(0, 11fr); gap: 16px; align-items: start; }
 .panel { border-radius: 4px; }
 .panel-title { font-size: 15px; font-weight: 600; color: #303133; display: flex; align-items: center; gap: 8px; }
 .form-panel :deep(.el-form-item__label) { font-size: 13px; }
+/* 提示词 / 负面提示词 与 参考图 左右排列 */
+.prompt-row { display: flex; align-items: flex-start; gap: 12px; }
+.prompt-col { flex: 1; min-width: 0; }
+.ref-col { width: 104px; flex-shrink: 0; }
+.ref-col :deep(.el-upload-list--picture-card) { display: flex; flex-wrap: wrap; }
+.ref-col :deep(.el-upload--picture-card),
+.ref-col :deep(.el-upload-list--picture-card .el-upload-list__item) {
+  width: 104px;
+  height: 104px;
+  margin: 0;
+  border-radius: 8px;
+}
+.ref-col :deep(.el-upload--picture-card) { line-height: 108px; }
+.ref-col :deep(.el-upload-list--picture-card .el-upload-list__item-thumbnail) { object-fit: cover; }
+/* 已有参考图时隐藏上传触发块，右侧始终只占一个方块 */
+.ref-col--filled :deep(.el-upload--picture-card) { display: none; }
+.ref-col .field-hint { margin-top: 6px; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
-.use-radio-group { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.use-radio-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; width: 100%; }
 .use-radio { height: auto; margin-right: 0; padding: 8px 12px; border: 1px solid #ebeef5; border-radius: 6px; width: 100%; }
 .use-radio :deep(.el-radio__label) { white-space: normal; }
-.use-radio-content { display: flex; align-items: center; gap: 8px; }
+.use-radio-content { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .use-radio-name { font-size: 13px; font-weight: 500; color: #303133; }
 .use-radio-desc { font-size: 12px; color: #909399; margin-top: 2px; line-height: 1.5; }
 .field-hint { font-size: 12px; color: #909399; line-height: 1.5; margin-top: 4px; }

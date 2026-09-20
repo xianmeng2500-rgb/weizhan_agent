@@ -25,14 +25,42 @@
         <span class="use-desc">{{ useInfo?.desc }}</span>
       </div>
 
-      <el-input
-        v-model="prompt"
-        type="textarea"
-        :rows="4"
-        :placeholder="promptPlaceholder"
-        maxlength="2000"
-        show-word-limit
-      />
+      <!-- 提示词 + 参考图并排（参考图走图生图：wan2.5-i2i-preview） -->
+      <div class="prompt-row">
+        <el-input
+          v-model="prompt"
+          type="textarea"
+          :rows="5"
+          :placeholder="promptPlaceholder"
+          maxlength="2000"
+          show-word-limit
+          class="prompt-input"
+        />
+        <div class="ref-side" :class="{ 'ref-side--filled': !!refFile }">
+          <div class="ref-label">参考图</div>
+          <el-upload
+            v-model:file-list="refFileList"
+            :auto-upload="false"
+            :limit="1"
+            accept=".jpg,.jpeg,.png,.gif,.webp"
+            list-type="picture-card"
+            :on-change="onRefChange"
+            :on-exceed="onRefExceed"
+          >
+            <el-icon><Plus /></el-icon>
+          </el-upload>
+        </div>
+      </div>
+
+      <div class="ref-foot">
+        <el-tag size="small" :type="refFile ? 'warning' : 'success'" effect="plain">
+          {{ refFile ? '图生图' : '文生图' }}
+        </el-tag>
+        <span class="ref-hint">
+          <template v-if="refFile">按参考图的构图与风格，配合提示词生成 1 张</template>
+          <template v-else>可选：上传参考图，按其构图与风格配合提示词生成</template>
+        </span>
+      </div>
 
       <div class="fee-bar">
         <template v-if="aiConfig?.is_free">
@@ -94,7 +122,7 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { CircleCheck } from '@element-plus/icons-vue'
+import { CircleCheck, Plus } from '@element-plus/icons-vue'
 import api from '@/api'
 
 interface AiUseInfo {
@@ -159,6 +187,38 @@ const prompt = ref('')
 const results = ref<GenerationRecord[]>([])
 const generating = ref(false)
 
+// 参考图：用 file-list 双向绑定，移除时状态才能被正确清空
+const refFileList = ref<any[]>([])
+const refFile = computed<File | null>(() => refFileList.value[0]?.raw || null)
+const MAX_REF_MB = 10
+// 与后端 settings.ALLOWED_FILE_TYPES / MAX_FILE_SIZE 保持一致
+const REF_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+
+function rejectRef(file: any, msg: string) {
+  ElMessage.warning(msg)
+  if (typeof file?.url === 'string' && file.url.startsWith('blob:')) {
+    URL.revokeObjectURL(file.url)
+  }
+  refFileList.value = []
+}
+
+function onRefChange(file: any) {
+  const raw: File | undefined = file?.raw
+  if (!raw) return
+  const ext = (raw.name.split('.').pop() || '').toLowerCase()
+  if (!REF_EXT.includes(ext)) {
+    rejectRef(file, `参考图仅支持 ${REF_EXT.join(' / ')} 格式`)
+    return
+  }
+  if (raw.size > MAX_REF_MB * 1024 * 1024) {
+    rejectRef(file, `参考图不能超过 ${MAX_REF_MB}MB，当前 ${(raw.size / 1024 / 1024).toFixed(1)}MB`)
+  }
+}
+
+function onRefExceed() {
+  ElMessage.warning('最多上传 1 张参考图，请先移除已选图片')
+}
+
 // 生成计时动画
 const elapsedSeconds = ref(0)
 let timer: ReturnType<typeof setInterval> | null = null
@@ -219,6 +279,8 @@ async function generate() {
     fd.append('prompt', prompt.value.trim())
     fd.append('use', props.use)
     fd.append('n', '1')
+    // 有参考图则走后端图生图（wan2.5-i2i-preview），输出仍按用途预设尺寸
+    if (refFile.value) fd.append('reference_image', refFile.value)
 
     const res: any = await api.post('/ai/generate', fd, { timeout: 180000 })
     results.value = res.items || []
@@ -248,6 +310,7 @@ watch(
     if (v) {
       prompt.value = ''
       results.value = []
+      refFileList.value = []
       elapsedSeconds.value = 0
       loadAiConfig()
     }
@@ -260,6 +323,27 @@ watch(
 .use-info { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 .use-label { font-size: 14px; font-weight: 600; color: #303133; }
 .use-desc { font-size: 12px; color: #909399; line-height: 1.5; }
+/* 提示词 + 参考图并排 */
+.prompt-row { display: flex; align-items: flex-start; gap: 12px; }
+.prompt-input { flex: 1; min-width: 0; }
+.ref-side { width: 84px; flex-shrink: 0; }
+.ref-label { font-size: 12px; color: #909399; line-height: 1; text-align: center; margin-bottom: 6px; }
+.ref-side :deep(.el-upload-list--picture-card) { display: flex; flex-wrap: wrap; }
+.ref-side :deep(.el-upload--picture-card),
+.ref-side :deep(.el-upload-list--picture-card .el-upload-list__item) {
+  width: 84px;
+  height: 84px;
+  margin: 0;
+  border-radius: 8px;
+}
+.ref-side :deep(.el-upload--picture-card) { line-height: 88px; }
+.ref-side :deep(.el-upload-list--picture-card .el-upload-list__item-thumbnail) {
+  object-fit: cover;
+}
+/* 已有参考图时隐藏上传触发块，右侧始终只占一个方块 */
+.ref-side--filled :deep(.el-upload--picture-card) { display: none; }
+.ref-foot { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.ref-hint { font-size: 12px; color: #909399; line-height: 1.5; }
 .fee-bar {
   display: flex; align-items: center; justify-content: center;
   padding: 8px 0; margin-top: 12px;
@@ -285,11 +369,12 @@ watch(
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.7; transform: scale(1.15); }
 }
-.result-section { margin-top: 16px; border-top: 1px solid #ebeef5; padding-top: 12px; }
-.result-title { font-size: 14px; font-weight: 600; color: #303133; margin-bottom: 10px; }
+.result-section { margin-top: 14px; border-top: 1px solid #ebeef5; padding-top: 10px; }
+.result-title { font-size: 13px; font-weight: 600; color: #303133; margin-bottom: 8px; }
 .result-time { font-size: 12px; font-weight: 400; color: #909399; }
-.result-grid { display: grid; grid-template-columns: 1fr; gap: 12px; max-height: 420px; overflow-y: auto; }
-.result-item { border: 1px solid #ebeef5; border-radius: 8px; overflow: hidden; padding: 8px; }
-.result-img { width: 100%; height: auto; display: block; border-radius: 4px; }
-.use-btn { width: 100%; margin-top: 8px; }
+/* 结果用小缩略图横排，避免纵向撑高弹窗 */
+.result-grid { display: flex; flex-wrap: wrap; gap: 10px; max-height: 220px; overflow-y: auto; }
+.result-item { width: 136px; padding: 6px; border: 1px solid #ebeef5; border-radius: 8px; }
+.result-img { display: block; width: 100%; height: 88px; border-radius: 4px; background: #f5f7fa; }
+.use-btn { width: 100%; margin-top: 6px; }
 </style>
