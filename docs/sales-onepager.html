@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微站系统 · 活动微站搭建服务</title>
+<style>
+:root{
+  --primary:#4F46E5; --primary-dark:#3730A3; --primary-light:#EEF2FF;
+  --teal:#0F766E; --teal-light:#F0FDFA;
+  --amber:#B45309; --amber-light:#FFFBEB;
+  --bg:#F8FAFC; --card:#FFFFFF; --border:#E2E8F0;
+  --text:#0F172A; --text-2:#475569; --text-3:#94A3B8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.75;font-size:15px;}
+.wrap{max-width:1000px;margin:0 auto;padding:0 24px;}
+header.hero{background:linear-gradient(135deg,#312E81 0%,#4F46E5 52%,#0EA5E9 100%);color:#fff;padding:60px 0 68px;position:relative;overflow:hidden;}
+header.hero::after{content:"";position:absolute;right:-140px;top:-140px;width:460px;height:460px;border-radius:50%;background:rgba(255,255,255,.08);}
+header.hero .wrap{position:relative;z-index:1;}
+.tagline{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:5px 16px;font-size:13px;margin-bottom:20px;letter-spacing:.5px;}
+header.hero h1{font-size:42px;font-weight:600;line-height:1.35;margin-bottom:16px;letter-spacing:.5px;}
+header.hero h1 em{font-style:normal;color:#FDE68A;}
+header.hero p.sub{font-size:17px;color:rgba(255,255,255,.9);max-width:720px;}
+.hero-points{display:flex;gap:32px;margin-top:30px;flex-wrap:wrap;}
+.hero-points div{font-size:14px;color:rgba(255,255,255,.82);}
+.hero-points div b{display:block;color:#fff;font-size:22px;font-weight:600;margin-bottom:2px;}
+main{padding:56px 0 40px;}
+section{margin-bottom:56px;}
+h2{font-size:25px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+h2 .num{width:36px;height:36px;border-radius:10px;background:var(--primary);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+h3{font-size:18px;font-weight:600;margin:26px 0 12px;color:var(--primary-dark);}
+p{margin-bottom:12px;color:var(--text-2);}
+p b,li b{color:var(--text);font-weight:500;}
+.sec-tip{font-size:13.5px;color:var(--text-3);margin-bottom:20px;}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px 24px;}
+.card h4{font-size:16px;font-weight:600;margin-bottom:8px;}
+.card p{font-size:14px;margin:0;}
+.ico{width:38px;height:38px;border-radius:10px;background:var(--primary-light);color:var(--primary-dark);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;margin-bottom:12px;}
+.pain{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 24px;display:flex;gap:14px;align-items:flex-start;}
+.pain .mark{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#FEF2F2;color:#B91C1C;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;margin-top:3px;}
+.pain p{margin:0;font-size:14.5px;}
+.pain .fix{color:var(--teal);font-weight:500;}
+.table-box{overflow-x:auto;margin:14px 0 20px;border:1px solid var(--border);border-radius:12px;background:var(--card);}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:540px;}
+th{background:#F1F5F9;color:var(--text);font-weight:600;text-align:left;padding:12px 16px;border-bottom:1px solid var(--border);}
+td{padding:12px 16px;border-bottom:1px solid #F1F5F9;color:var(--text-2);vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+.price-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-top:18px;}
+.plan{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px 22px;position:relative;display:flex;flex-direction:column;}
+.plan.hot{border:2px solid var(--primary);box-shadow:0 8px 28px rgba(79,70,229,.12);}
+.plan .flag{position:absolute;top:-12px;left:22px;background:var(--primary);color:#fff;font-size:12px;padding:3px 12px;border-radius:999px;}
+.plan h4{font-size:17px;font-weight:600;margin-bottom:6px;}
+.plan .price{font-size:30px;font-weight:600;color:var(--primary-dark);margin:6px 0 2px;}
+.plan .price small{font-size:14px;font-weight:400;color:var(--text-3);}
+.plan .note{font-size:13px;color:var(--text-3);margin-bottom:14px;}
+.plan ul{list-style:none;margin:0 0 4px;flex:1;}
+.plan ul li{font-size:13.5px;color:var(--text-2);padding-left:20px;position:relative;margin-bottom:7px;}
+.plan ul li::before{content:"";position:absolute;left:0;top:8px;width:7px;height:7px;border-radius:50%;background:var(--primary);}
+.talk{background:var(--primary-light);border-left:3px solid var(--primary);border-radius:8px;padding:12px 16px;font-size:14px;color:var(--primary-dark);margin:12px 0;}
+.callout{border-radius:10px;padding:14px 18px;margin:16px 0;font-size:14px;}
+.callout.tip{background:var(--teal-light);border-left:4px solid var(--teal);color:#134E4A;}
+.callout.warn{background:var(--amber-light);border-left:4px solid var(--amber);color:#78350F;}
+.cta{background:linear-gradient(135deg,#312E81 0%,#4F46E5 100%);border-radius:18px;padding:36px 36px;color:#fff;display:grid;grid-template-columns:1fr 200px;gap:32px;align-items:center;}
+.cta h3{color:#fff;font-size:24px;margin:0 0 10px;}
+.cta p{color:rgba(255,255,255,.85);margin:0 0 6px;font-size:14.5px;}
+.cta .qr{background:#fff;border-radius:14px;padding:14px;text-align:center;}
+.cta .qr img{width:100%;display:block;border-radius:6px;}
+.cta .qr span{display:block;font-size:12.5px;color:#475569;margin-top:8px;}
+.contact{display:flex;gap:28px;flex-wrap:wrap;margin-top:6px;}
+.contact div{font-size:14px;color:var(--text-2);}
+.contact div b{color:var(--text);}
+.faq{margin-top:8px;}
+.faq .q{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.faq .a{font-size:14px;color:var(--text-2);margin-bottom:18px;}
+footer{border-top:1px solid var(--border);padding:26px 0 44px;color:var(--text-3);font-size:13px;text-align:center;}
+@media(max-width:700px){
+  header.hero h1{font-size:30px;}
+  .cta{grid-template-columns:1fr;padding:26px;}
+  .cta .qr{max-width:200px;}
+}
+@media print{
+  body{font-size:12px;}
+  header.hero,.cta{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  section{margin-bottom:28px;page-break-inside:avoid;}
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="tagline">活动微站搭建服务 · 无需开发</span>
+    <h1>一场活动一个微站，<em>3 分钟搭好</em><br>报名、签到、数据全在手机上</h1>
+    <p class="sub">电子请柬、活动介绍、在线报名、现场扫码签到、实时数据看板——不用找开发、不用等排期、不用会代码。给我们需求，当天就能上线。</p>
+    <div class="hero-points">
+      <div><b>3 分钟</b>搭好一个活动微站</div>
+      <div><b>0 开发</b>不需要技术人员</div>
+      <div><b>当天</b>即可发布上线</div>
+      <div><b>AI</b> 一键生成主视觉</div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section>
+  <h2><span class="num">01</span>你是否也遇到过这些事</h2>
+  <p class="sec-tip">办活动最耗人的不是创意，是这些琐事。</p>
+  <div class="grid2">
+    <div class="pain"><div class="mark">!</div><p>想做个活动页面，找开发问价要几千，<b>排期还要等两周</b>，活动就快到了。</p></div>
+    <div class="pain"><div class="mark">!</div><p>报名信息散在微信群里，<b>要一个个抄进表格</b>，还总漏人。</p></div>
+    <div class="pain"><div class="mark">!</div><p>现场签到用纸质表，<b>排队、字迹认不出、还有人代签</b>。</p></div>
+    <div class="pain"><div class="mark">!</div><p>做一张活动海报找设计师，<b>改三稿还要加钱</b>。</p></div>
+    <div class="pain"><div class="mark">!</div><p>活动结束老板问「效果怎么样」，<b>你答不出具体数据</b>。</p></div>
+    <div class="pain"><div class="mark">!</div><p>每次办活动都要重新折腾一遍，<b>没有任何东西沉淀下来</b>。</p></div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">02</span>微站系统怎么解决</h2>
+  <p class="sec-tip">一件事做完，上面所有问题都不用再操心。</p>
+  <div class="grid3">
+    <div class="card"><div class="ico">1</div><h4>选个模板，当天上线</h4><p>多套成品模板一键套用，改文案改图片就能发布，不需要任何技术能力。</p></div>
+    <div class="card"><div class="ico">2</div><h4>AI 帮你出主视觉</h4><p>编辑器里内置 AI 生图，一句话生成活动主视觉、背景图、分享图、模块图标，省下设计费。</p></div>
+    <div class="card"><div class="ico">3</div><h4>报名自动汇总</h4><p>自定义报名表单，填完自动进名单，随时一键导出表格，不用再抄微信。</p></div>
+    <div class="card"><div class="ico">4</div><h4>现场扫码签到</h4><p>手机扫码 2 秒核销进场，不排队、不怕代签，临时来了还能补签。</p></div>
+    <div class="card"><div class="ico">5</div><h4>数据手机上看</h4><p>多少人浏览、多少人报名、签到情况如何，手机打开就能看，汇报有依据。</p></div>
+    <div class="card"><div class="ico">6</div><h4>自动化管理</h4><p>报名到点自动开放、活动结束自动关闭；不同的人看到不同内容，用权限精细控制。</p></div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">03</span>适合这些场景</h2>
+  <div class="grid3">
+    <div class="card">
+      <h4>婚礼 / 宴会</h4>
+      <p>电子请柬、喜宴流程、宾客在线报名、现场扫码签到、座位与伴手礼登记。</p>
+    </div>
+    <div class="card">
+      <h4>培训 / 招生</h4>
+      <p>课程介绍、招生报名页、试听预约、开课签到、家长答疑与资料领取。</p>
+    </div>
+    <div class="card">
+      <h4>发布会 / 年会</h4>
+      <p>活动介绍、嘉宾与议程、参会报名、签到核销、现场互动与数据看板。</p>
+    </div>
+    <div class="card">
+      <h4>论坛 / 峰会 / 展会</h4>
+      <p>会议通知、分场次议程、报名审核、证件核销、参会数据统计。</p>
+    </div>
+    <div class="card">
+      <h4>门店 / 品牌活动</h4>
+      <p>周年庆、会员日、新品预热，活动页 + 报名 + 到店核销一条龙。</p>
+    </div>
+    <div class="card">
+      <h4>商会 / 协会 / 校友会</h4>
+      <p>年会与换届大会通知、会员报名、现场签到、活动回顾留存。</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">04</span>服务与价格</h2>
+  <p class="sec-tip">先小成本跑通一场，觉得好用再按年使用。</p>
+  <div class="price-grid">
+    <div class="plan">
+      <h4>单场体验版</h4>
+      <div class="price">199<small> 元 / 场</small></div>
+      <div class="note">适合第一次尝试</div>
+      <ul>
+        <li>1 个活动微站</li>
+        <li>报名表单 + 数据导出</li>
+        <li>扫码签到</li>
+        <li>上线后 30 天在线</li>
+      </ul>
+    </div>
+    <div class="plan hot">
+      <span class="flag">最受欢迎</span>
+      <h4>年度会员</h4>
+      <div class="price">499<small> 元 / 年</small></div>
+      <div class="note">适合经常办活动</div>
+      <ul>
+        <li>会员期内反复建站</li>
+        <li>全部模板 + 全部功能</li>
+        <li>AI 生图不限次</li>
+        <li>数据统计看板</li>
+        <li>微信随时答疑</li>
+      </ul>
+    </div>
+    <div class="plan">
+      <h4>机构版</h4>
+      <div class="price">1980<small> 元 / 年</small></div>
+      <div class="note">适合婚庆 / 培训 / 活动公司</div>
+      <ul>
+        <li>不限场次建站</li>
+        <li>3 个子账号协同</li>
+        <li>会员与权限管理</li>
+        <li>分销返佣功能</li>
+        <li>优先响应支持</li>
+      </ul>
+    </div>
+    <div class="plan">
+      <h4>代搭建服务</h4>
+      <div class="price">699<small> 元 / 场</small></div>
+      <div class="note">不想自己动手就选这个</div>
+      <ul>
+        <li>我们帮你搭好整场微站</li>
+        <li>文案整理 + 图片处理</li>
+        <li>主视觉 AI 生成</li>
+        <li>改到满意为止</li>
+        <li>交付即可用</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout tip"><b>首次合作福利：</b>前 5 家客户可申请<b>免费搭建体验一场</b>（含代搭建），只需允许我们将成品作为案例展示并给一句使用评价。名额有限，先到先得。</div>
+</section>
+
+<section>
+  <h2><span class="num">05</span>交付流程与保障</h2>
+  <div class="table-box">
+    <table>
+      <thead><tr><th>步骤</th><th>做什么</th><th>你要配合的</th><th>时间</th></tr></thead>
+      <tbody>
+        <tr><td>① 沟通需求</td><td>了解活动类型、人数、需要哪些功能</td><td>微信说清基本信息</td><td>10 分钟</td></tr>
+        <tr><td>② 搭建微站</td><td>套用模板、整理文案图片、生成主视觉</td><td>提供活动文案与图片（没有我们来写）</td><td>当天完成</td></tr>
+        <tr><td>③ 你确认</td><td>发链接给你预览，按你的意见修改</td><td>提出修改意见</td><td>1-2 轮</td></tr>
+        <tr><td>④ 上线使用</td><td>正式发布，生成二维码分享给宾客/学员</td><td>转发链接或二维码</td><td>即刻</td></tr>
+        <tr><td>⑤ 活动支持</td><td>期间随时答疑，数据可随时导出</td><td>—</td><td>全程</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h4>我们的保障</h4>
+      <ul>
+        <li>系统部署在阿里云，稳定运行</li>
+        <li>报名数据你可以随时自行导出，数据在你手里</li>
+        <li>独立账号，互不干扰</li>
+        <li>服务期内微信随时找得到人</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>说明（避免误会）</h4>
+      <ul>
+        <li>提供的是在线搭建服务，不含源码交付</li>
+        <li>不含第三方系统定制对接</li>
+        <li>如需超出标准功能的范围，另行沟通报价</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">06</span>常见问题</h2>
+  <div class="faq">
+    <div class="q">我不会用电脑，能自己操作吗？</div>
+    <div class="a">不需要你会操作。你只需要微信告诉我们要改什么，我们帮你改。如果你希望自己动手，编辑器也很简单，和改朋友圈差不多。</div>
+
+    <div class="q">多久能做好？活动马上就要开始了。</div>
+    <div class="a">资料齐全的情况下，代搭建服务当天可以交付；纯自己操作的话，3 分钟就能搭出一个可用版本。紧急情况直接联系我们，优先处理。</div>
+
+    <div class="q">数据安全吗？报名信息会不会泄露？</div>
+    <div class="a">系统部署在阿里云，账号独立，数据只有你能看到，并且支持随时导出。我们不会把客户数据用于其他用途。</div>
+
+    <div class="q">活动结束之后微站还在吗？</div>
+    <div class="a">在。单场版保留 30 天在线，年度会员期内一直保留，随时能回看数据、导出名单，也可以作为活动存档展示。</div>
+
+    <div class="q">可以开票吗？</div>
+    <div class="a">可以。建议走机构版或对公合作，规范便捷。</div>
+
+    <div class="q">和问卷、表单工具有什么区别？</div>
+    <div class="a">问卷只能收集信息，不能展示活动内容、不能签到、也没有风格。微站是「展示 + 报名 + 签到 + 数据」一整套，宾客打开就看到完整的活动页。</div>
+
+    <div class="q">能不能先看看效果再决定？</div>
+    <div class="a">当然。扫描下方二维码可以直接体验一个真实的成品微站，不需要注册。也可以让我们免费帮你做一场试试。</div>
+  </div>
+</section>
+
+<section>
+  <div class="cta">
+    <div>
+      <h3>下一个活动，就用微站系统</h3>
+      <p>扫码先体验一个成品微站，看看是不是你要的效果。</p>
+      <p>确定要用，微信联系我，最快当天上线。</p>
+      <div class="contact">
+        <div><b>微信 / 电话：</b>请替换为你的联系方式</div>
+        <div><b>体验链接：</b>wm.meetotour.com/s/demo-festival</div>
+      </div>
+    </div>
+    <div class="qr">
+      <img src="data:image/png;base64,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" alt="扫码体验微站">
+      <span>扫码体验成品微站</span>
+    </div>
+  </div>
+  <div class="callout warn"><b>提醒：</b>发布前请把上方「微信 / 电话」替换为你的真实联系方式，并把二维码替换为你的专属推广码（如果需要统计来源）。</div>
+</section>
+
+</main>
+<footer>
+  <div class="wrap">微站系统 · 活动微站搭建服务 · 让活动搭建更简单</div>
+</footer>
+</body>
+</html>

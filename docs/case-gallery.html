@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微站系统 · 案例集</title>
+<style>
+:root{
+  --primary:#4F46E5; --primary-dark:#3730A3; --primary-light:#EEF2FF;
+  --bg:#F8FAFC; --card:#FFFFFF; --border:#E2E8F0;
+  --text:#0F172A; --text-2:#475569; --text-3:#94A3B8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.75;font-size:15px;}
+.wrap{max-width:1060px;margin:0 auto;padding:0 24px;}
+header.hero{background:linear-gradient(135deg,#312E81 0%,#4F46E5 52%,#0EA5E9 100%);color:#fff;padding:56px 0 64px;position:relative;overflow:hidden;}
+header.hero::after{content:"";position:absolute;right:-140px;top:-140px;width:440px;height:440px;border-radius:50%;background:rgba(255,255,255,.08);}
+header.hero .wrap{position:relative;z-index:1;}
+.tagline{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:5px 16px;font-size:13px;margin-bottom:18px;}
+header.hero h1{font-size:38px;font-weight:600;margin-bottom:12px;}
+header.hero p.sub{font-size:16.5px;color:rgba(255,255,255,.88);max-width:720px;}
+main{padding:48px 0 64px;}
+.tip{background:var(--primary-light);border-left:4px solid var(--primary);border-radius:10px;padding:13px 18px;font-size:14px;color:var(--primary-dark);margin-bottom:28px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:18px;}
+.case{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;gap:20px;transition:.18s;}
+.case:hover{border-color:var(--primary);box-shadow:0 10px 30px rgba(79,70,229,.10);}
+.case-main{flex:1;min-width:0;}
+.case-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+.industry{flex-shrink:0;background:var(--primary);color:#fff;font-size:12px;padding:3px 10px;border-radius:999px;letter-spacing:.5px;}
+.case h3{font-size:18px;font-weight:600;}
+.desc{font-size:14px;color:var(--text-2);margin-bottom:12px;}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:500;}
+.pill.p{background:var(--primary-light);color:var(--primary-dark);}
+.pill.n{background:#F1F5F9;color:#475569;}
+.pill.g{background:#F0FDF4;color:#15803D;}
+.pill.a{background:#FFFBEB;color:#B45309;}
+.access{margin-bottom:10px;}
+.login{margin-top:8px;font-size:13px;color:var(--text-2);}
+code{background:#F1F5F9;padding:1px 7px;border-radius:5px;font-size:12.5px;color:#334155;}
+.link{display:inline-block;font-size:13.5px;color:var(--primary);text-decoration:none;font-weight:500;}
+.link:hover{text-decoration:underline;}
+.case-qr{flex-shrink:0;width:118px;text-align:center;}
+.case-qr img{width:118px;height:118px;border:1px solid var(--border);border-radius:10px;display:block;}
+.case-qr span{display:block;font-size:12px;color:var(--text-3);margin-top:6px;}
+.cta{margin-top:36px;background:linear-gradient(135deg,#312E81,#4F46E5);border-radius:16px;padding:30px 34px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;}
+.cta h3{font-size:21px;margin-bottom:6px;}
+.cta p{font-size:14px;color:rgba(255,255,255,.85);margin:0;}
+footer{border-top:1px solid var(--border);padding:24px 0 44px;color:var(--text-3);font-size:13px;text-align:center;}
+@media(max-width:1080px){.grid{grid-template-columns:1fr;}}
+@media(max-width:640px){.case{flex-direction:column;}.case-qr{width:100%;}.case-qr img{margin:0 auto;}}
+@media print{header.hero,.cta{-webkit-print-color-adjust:exact;print-color-adjust:exact;}.case{page-break-inside:avoid;}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <span class="tagline">微站系统 · 案例集</span>
+    <h1>一场活动一个微站</h1>
+    <p class="sub">以下均为真实可访问的演示站点，覆盖婚庆、培训、峰会、年会、门店、商协会等场景。扫描二维码或点击链接即可体验，公开站点无需登录。</p>
+  </div>
+</header>
+<main class="wrap">
+  <div class="tip"><b>体验说明：</b>标注「公开访问」的案例，扫码即可直接查看；标注「需登录」的案例使用页面下方给出的演示账号登录（用于演示签到与模块权限功能）。</div>
+  <div class="grid">
+    <div class="case">
+      <div class="case-main">
+        <div class="case-head">
+          <span class="industry">婚庆宴会</span>
+          <h3>张伟 & 李娜 婚礼邀请</h3>
+        </div>
+        <p class="desc">电子请柬 + 宾客回执 + 婚礼流程 + 席位指引，一份请柬搞定宾客沟通</p>
+        <div class="tags"><span class="pill n">共 9 个模块</span><span class="pill p">公开访问</span><span class="pill p">宾客回执</span><span class="pill p">自定义表单</span></div>
+        <div class="access"><span class="pill g">公开访问 · 扫码即看</span></div>
+        <a class="link" href="https://wm.meetotour.com/s/demo-wedding" target="_blank">wm.meetotour.com/s/demo-wedding →</a>
+      </div>
+      <div class="case-qr">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQgAAAEICAIAAAAslP2oAAAE6ElEQVR4nO3dQW4bNxiAUbvIAbTsHXr/o/QOXeoG6qKrtt8UmYIESem9XQJjpDj6QGN+c/j9er2+gL/75R9/BoQBzYoBQRgQhAFBGBCEAUEYEIQBQRgQhAFBGBCEAUEYEIQB4cfXTY9ff/s6wfOP34e8/7vXufr6K6Ous9v1d3P332vFgCAMCMKAIAwIwoAgDAjCgBFzjCuj7ovfNWouMer6d+cGu80TRs09nod8Hq5YMSAIA4IwIAgDgjAgCAOCMGDmHGP2feVV9/tHzT3uzgdOnyec8nm4YsWAIAwIwoAgDAjCgCAMCMKAFXOM3bzr/odR199t7rGKFQOCMCAIA4IwIAgDgjAgCAPCx80x3vV8iVHngfAXKwYEYUAQBgRhQBAGBGFAEAasmGPs9vv9s8/55qzPwxUrBgRhQBAGBGFAEAYEYUAQBsycY5x+X3/UORWjvv6U51C96+fBigFBGBCEAUEYEIQBQRgQhAHh+/V61d9/nNn33VfNGU45V3s3VgwIwoAgDAjCgCAMCMKAIAwYsR9j9v6EUe/nyqjXnT03WDVX2e388seiz5sVA4IwIAgDgjAgCAOCMCAIA97xuVKrnnc0ez5z16r7/Y/D5y1XrBgQhAFBGBCEAUEYEIQBQRgwc45x937zqvvfs+/Tz55vzJ6TjHr/z0XPuRp1fSsGBGFAEAYEYUAQBgRhQBAGzJxj3LXbvoXTz7sYdV9/1eteGTU/ucuKAUEYEIQBQRgQhAFBGBCEASec833Kffp3fb7W7H/v85D9JFYMCMKAIAwIwoAgDAjCgCAMWHE+xqj5w27zjVHX2e288N3O/bjifAxYwI9SEIQBQRgQhAFBGBCEASPmGKPui981ez5w9zyNVfsQZs8TdptXXHE+BizgRykIwoAgDAjCgCAMCMKAmc+VWrVfYpRT5i2nv+4p8xMrBgRhQBAGBGFAEAYEYUAQBszcj7Hqfvbs5wud/n6uOB/jv1kxIAgDgjAgCAOCMCAIA4IwYMU537P3Odx93VXPpzplf8goz0O+D1esGBCEAUEYEIQBQRgQhAFBGLDifIzZc4B3nT+ccj7GY/J5Kav2w1gxIAgDgjAgCAOEAT/HigFBGLDTfoxV84rdzmdYtW/krufkeYLzMeAAfpSCIAwIwoAgDAjCgCAMOGE/xm7X2W2esGr+8Jj8/nfbV2PFgCAMCMKAIAwIwoAgDAjCgBX7MXbj3In/9/15bvbcrdnzDSsGBGFAEAYEYUAQBgRhQBAGrNiPscrd+9a7PTdp1LkTs5/X9Bj0up4rBQfwoxQEYUAQBgRhQBAGBGHAiDnGKedLrPo9/t3ONb97nXf9f7/LigFBGBCEAUEYEIQBQRgQhAEz5xifdr989vvZ7ZyNx2bnY8z+/lgxIAgDgjAgCAOCMCAIA4IwYMUc4xSzz39YtV/iyin7QB6L5khWDAjCgCAMCMKAIAwIwoAgDAgfN8fY7TlUd616btVsu71PKwYEYUAQBgRhQBAGBGFAEAaE79fr9XXHqvv3q97Pbtcf9fWneC76XFkxIAgDgjAgCAOCMCAIA4IwYOZ+jFPul4/aj7Hq+qc8P+r061sxIAgDgjAgCAOCMCAIA4IwYMR+DPgEVgwIwoAgDAjCgCAMCMKAIAwIwoAgDAjCgCAMCMKAIAwIwoAgDPj6tz8BHAAo1iZ51zEAAAAASUVORK5CYII=" alt="张伟 & 李娜 婚礼邀请 二维码">
+        <span>扫码体验</span>
+      </div>
+    </div>
+    <div class="case">
+      <div class="case-main">
+        <div class="case-head">
+          <span class="industry">培训教育</span>
+          <h3>少儿编程秋季班招生</h3>
+        </div>
+        <p class="desc">课程体系 + 开班时间表 + 免费试听预约，招生线索自动汇总成表</p>
+        <div class="tags"><span class="pill n">共 10 个模块</span><span class="pill p">公开访问</span><span class="pill p">试听预约</span><span class="pill p">开班日程</span></div>
+        <div class="access"><span class="pill g">公开访问 · 扫码即看</span></div>
+        <a class="link" href="https://wm.meetotour.com/s/demo-course" target="_blank">wm.meetotour.com/s/demo-course →</a>
+      </div>
+      <div class="case-qr">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQgAAAEICAIAAAAslP2oAAAE90lEQVR4nO3dwW0cNxiA0XWQAvaYHtJ/Kekhx+lgc8gp8TdBBiBBUnrvZkBYreX9QGF+k/zx+XxewD/98q8/A8KAZsWAIAwIwoAgDAjCgCAMCMKAIAwIwoAgDAjCgCAMCMKA8Ovrofdvv79OcP35x6P3//TrZ3/fUWZ/3/fhn4c7VgwIwoAgDAjCgCAMCMKAIAwYMce4M/t5/J1Rc4anX7/b8/tR72fU3OM65PNwx4oBQRgQhAFBGBCEAUEYEIQBM+cYs58rz94/MGpeMXu+MXtu890+D3esGBCEAUEYEIQBQRgQhAFBGLBijrGb2ec+jZp7rJrb7Db3WMWKAUEYEIQBQRgQhAFBGBCEAeHbzTHujJpXzD6HavZchb9ZMSAIA4IwIAgDgjAgCAOCMGDFHGO3/98/av6w6p6NVfeFj3LK+7RiQBAGBGFAEAYEYUAQBgRhwMw5hv/3/98/h1Oe3686X2s3VgwIwoAgDAjCgCAMCMKAIAwYMcc45Xn8nVX3TuzmlPu2V7FiQBAGBGFAEAYEYUAQBgRhwIg5xqpzmZ6+nzujzoMa9X6evs6on9vsezzek/d1zP68WTEgCAOCMCAIA4IwIAgDgjDgK54rtep5/Kr3P2puc8r5Udfkf987VgwIwoAgDAjCgCAMCMKAIAyYOceYfY/1bLP3dYwy+/vudq/5qte3YkAQBgRhQBAGBGFAEAYEYUD48fl8Xl9xP8bp5x3N3ncx6nWuRfOK2awYEIQBQRgQhAFBGBCEAUEYsNN+jN2el58ynzllvnH6fhIrBgRhQBAGBGFAEAYEYUAQBqy453v2/QynnGe1233hT7/+WrQv4o77MWABv0pBEAYEYUAQBgRhQBAGjJhjjJpLrNpf8dQp916f8vqjuB8DFvCrFARhQBAGBGFAEAYEYcCK/RhPX+epU86b2m1us+q8qffk/R6jXseKAUEYEIQBQRgQhAFBGBCEASPu+Z79HPqU+7BXvf7s7zt7HnW5HwPO5VcpCMKAIAwIwoAgDAjCgBFzjFV2u7dht/OvTpmrPDV7vnTHigFBGBCEAUEYEIQBQRgQhAEzz5UaZdR+gNn7E2bfX75qbjN7P8Z7s/0hd6wYEIQBQRgQhAHCgP/HigFBGLBiP8Zu5yntdj7VbnObr3re1FNWDAjCgCAMCMKAIAwIwoAgDFixH2P2+UKrntOfYtT84b3o3vTZ+17uWDEgCAOCMCAIA4IwIAgDgjDg5PsxRjnl3KdV50qt+ns9NXu+YcWAIAwIwoAgDAjCgCAMCMKAE+7HGGXVOUirfj6nzz2uzfbDWDEgCAOCMCAIA4IwIAgDgjBgxBxjt+fQs+cPu92nMXs/yVPXZvOHUawYEIQBQRgQhAFBGBCEAUEYMHOOcfrz8tnzja+63+P0/SR3rBgQhAFBGBCEAUEYEIQBQRiwYo5xitnP0WfPPUa9n932gbwXzTesGBCEAUEYEIQBQRgQhAFBGBC+3Rxj1Hxg1fP12fdbr9rvcW32Pq0YEIQBQRgQhAFBGBCEAUEYEH58Pp/Xyef/rHp+P3uecGf2PR67uZwrBfvwqxQEYUAQBgRhQBAGBGHAzP0Ypzwv3+28ptlWnR91+utbMSAIA4IwIAgDgjAgCAOCMGDEfgz4DqwYEIQBQRgQhAFBGBCEAUEYEIQBQRgQhAFBGBCEAUEYEIQBQRjw+tlfvkcL1bjjhcoAAAAASUVORK5CYII=" alt="少儿编程秋季班招生 二维码">
+        <span>扫码体验</span>
+      </div>
+    </div>
+    <div class="case">
+      <div class="case-main">
+        <div class="case-head">
+          <span class="industry">峰会论坛</span>
+          <h3>2026 数字零售行业峰会</h3>
+        </div>
+        <p class="desc">主论坛 + 双分论坛议程、嘉宾阵容、分场次签到，800 人大会全流程管理</p>
+        <div class="tags"><span class="pill n">共 11 个模块</span><span class="pill p">需登录</span><span class="pill p">分场次签到</span><span class="pill p">账号权限</span></div>
+        <div class="access"><span class="pill a">需登录 · 演示账号见下</span><div class="login">演示账号：<code>vip001（全部可见）/ guest001（仅部分模块）</code><br>密码：<code>Demo@123456</code></div></div>
+        <a class="link" href="https://wm.meetotour.com/s/demo-summit" target="_blank">wm.meetotour.com/s/demo-summit →</a>
+      </div>
+      <div class="case-qr">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQgAAAEICAIAAAAslP2oAAAE50lEQVR4nO3dwW3kNhiA0XGwBcwxPaT/UtLDHqeDySGnZD8FEUCCpOe92wKGLHv9gYZ+U/x6v98P4J9++9e/AWFAs2JAEAYEYUAQBgRhQBAGBGFAEAYEYUAQBgRhQBAGBGFA+PG46fn7H48TvH7+eev+73783c975e793LXq+ru5+/VaMSAIA4IwIAgDgjAgCAOCMGDEHOPKqOfid42aM8yeV4y6zuy5wai5x+uQn4crVgwIwoAgDAjCgCAMCMKAIAyYOceY/Vx51f6B2fs6Vn38Ks/Nfh6uWDEgCAOCMCAIA4IwIAgDgjBgxRxjN6e892mUu/e/29xjFSsGBGFAEAYEYUAQBgRhQBAGhI+bY8yeV+z2fqpTzq/YjRUDgjAgCAOCMCAIA4IwIAgDVswxdvv7/lHP9WfPPU5/f9SVU+7TigFBGBCEAUEYEIQBQRgQhAEz5xin/93/p51Tsdu+lN1YMSAIA4IwIAgDgjAgCAOCMGDEHOOU5/Gr5hWj7me20+9/NisGBGFAEAYEYUAQBgRhQBAGjJhj7LY/YdV5FHev/13v87u+d8uKAUEYEIQBQRgQhAFBGBCEAeHr/X4/Rvi0v++f/fWuuv4p55o/J39eKwYEYUAQBgRhQBAGBGFAEAbsdM731XPo2ecqrNrncMr1R803XpvNZ+6yYkAQBgRhQBAGBGFAEAYEYcAJ+zGuzH4f0Wy7vWfpivND/mbFgCAMCMKAIAwIwoAgDAjCgJ3Oxxhl1XP9u/dz+r6I1yHnfjgfAybyqxQEYUAQBgRhQBAGBGHAiDnGqvcFfdr5D6vmNrvtY7kyez5mxYAgDAjCgCAMCMKAIAwIwoCZ+zGuzH6+Psqqucennb8xivMxYAG/SkEQBgRhQBAGBGFAEAbMPOd71PPv3d53dHe+sdvcY7fv23Pyfo9R17FiQBAGBGFAEAYEYUAQBgRhwMw5xiqz35u0aj4zm/du/TcrBgRhQBAGBGFAEAYEYUAQBoSv9/v9mGnVuRmjzpGY/fGzrbqf12bzn7v3Y8WAIAwIwoAgDAjCgCAMCMKAnc7HGGW3czZWzWFGmf1erOfkn59R/79WDAjCgCAMCMIAYcD/Y8WAIAxYsR/jlP0SV06/zm77YU45X9yKAUEYEIQBQRgQhAFBGBCEASv2Y4yy6v1Op5zbPfv+n5O/rlVzqitWDAjCgCAMCMKAIAwIwoAgDNhpP8Yqs/cn7LZ/467Zn/d5yPffigFBGBCEAUEYEIQBQRgQhAEn78e46+5z61HP6Vedq3363OPlvVKwP79KQRAGBGFAEAYEYUAQBoyYY+z2HHrUe6JmzwFGzTdm7/e467XZ/GEUKwYEYUAQBgRhQBAGBGFAEAbMnGN81+flq+YGq/Z1XHl+0/0kV6wYEIQBQRgQhAFBGBCEAUEYsGKOcYpV+yVWnau96ryO56L9J3dZMSAIA4IwIAgDgjAgCAOCMCB83Bzj9P0Mq84Xn223+7RiQBAGBGFAEAYEYUAQBgRhQPh6v9+Pk9//s9v9zDZqv8cpXt4rBfvwqxQEYUAQBgRhQBAGBGHAzP0YpzwvHzUHGPV8fdX54qvu53nI9a0YEIQBQRgQhAFBGBCEAUEYMGI/BnwCKwYEYUAQBgRhQBAGBGFAEAYEYUAQBgRhQBAGBGFAEAYEYUAQBjx+9RdpwxiQq8q4ggAAAABJRU5ErkJggg==" alt="2026 数字零售行业峰会 二维码">
+        <span>扫码体验</span>
+      </div>
+    </div>
+    <div class="case">
+      <div class="case-main">
+        <div class="case-head">
+          <span class="industry">企业年会</span>
+          <h3>同心同行 · 2026 公司年会</h3>
+        </div>
+        <p class="desc">年会通知、出席回执、抽奖入口、入场扫码核销，行政省一半心</p>
+        <div class="tags"><span class="pill n">共 10 个模块</span><span class="pill p">需登录</span><span class="pill p">出席回执</span><span class="pill p">扫码核销</span></div>
+        <div class="access"><span class="pill a">需登录 · 演示账号见下</span><div class="login">演示账号：<code>vip001（全部可见）/ staff001（不含神秘节目单）</code><br>密码：<code>Demo@123456</code></div></div>
+        <a class="link" href="https://wm.meetotour.com/s/demo-annual" target="_blank">wm.meetotour.com/s/demo-annual →</a>
+      </div>
+      <div class="case-qr">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQgAAAEICAIAAAAslP2oAAAE/ElEQVR4nO3dzY3rNhhAUU+QArRMD+m/lNdDlu5AWSe5AiKABCn7nN17GHg0Pxc0xKG+n/M8X8A//favfwPCgGbFgCAMCMKAIAwIwoAgDAjCgCAMCMKAIAwIwoAgDAjCgPD766bjjz9fT/D+69et65/98bu5uv67jg/9eq0YEIQBQRgQhAFBGBCEAUEYMGIfY/Z98dn30e9e56r9jVWvM+rn+H7I78MVKwYEYUAQBgRhQBAGBGFAEAbM3MeYfV95t/vis/dDRu2T7HZe4njI74MVA4IwIAgDgjAgCAOCMCAIA1bsY+xm1H303Z43tercxaeyYkAQBgRhQBAGBGFAEAYEYUD4un2M2Wbvb+x2vuJTWTEgCAOCMCAIA4IwIAgDgjBgxT7G0//uf/b+w27Py7ryfvjcjLusGBCEAUEYEIQBQRgQhAFBGDBzH+Pp5wRmz/N++sd/2++DFQOCMCAIA4IwIAgDgjAgCAPCz3mer28ye870qnMXq+ZvfCorBgRhQBAGBGFAEAYEYUAQBow4jzH7Pv1T5mfvtn8y6nWurvNYdL7i7tc76vfTigFBGBCEAUEYEIQBQRgQhAErzmOs2mf4tv2Nu3Z7DtVs9jFgAG+lIAgDgjAgCAOCMCAIA2aex1h1v3zV9Xzqfs7T53kfg77PVgwIwoAgDAjCgCAMCMKAIAyYOed79n3uUc8X2m2/YtXnfcocj/eicyBWDAjCgCAMCMKAIAwIwoAgDJi5jzH7PMCq+RJ37/ePuv5R+wxPuZ5RRr2+FQOCMCAIA4IwIAgDgjAgCANmzsdYNVdh1fmBUfshozz9OU6zmY8BA3grBUEYEIQBQRgQhAFBGPDk50qNmo+x2zmNUa8/yqrPe9fs/TErBgRhQBAGBGFAEAYEYUAQBsyc873b84Jm72+Mev1Rz3e6a9XP63jI+RYrBgRhQBAGBGFAEAYEYUAQBux0HmO351PNvi8+e/737HkXh/kYgLdSEIQBQRgQhAFBGBCEASv2MVbNhZh9buTuc652O28w+/vwnjz3fdT1XLFiQBAGBGFAEAYEYUAQBgRhwIh9jKc8P2rVffQru83x+NR9icN8DJjHWykIwoAgDBAG/D9WDAjCgE+c873qPMaVUdcze27Gqrkcx6D56OZjwALeSkEQBgRhQBAGBGFAEAbMnPP9lP2KUdc/ez9klFXPszomnwNxHgMW8FYKgjAgCAOCMCAIA4IwIPyc5/n6JrvN6xj1+ldWfd4rq+aWmI8BA3grBUEYEIQBQRgQhAFBGLDiPMYqu83xWDXXYrZj0Vzz2T9fKwYEYUAQBgRhQBAGBGFAEAbMnI+x6jlLq55z9ZQ5HrudD1n1/LG7rBgQhAFBGBCEAUEYEIQBQRiwYs73bvfLR+17rJrb/ZT9ort2+3qtGBCEAUEYEIQBQRgQhAFBGLBiH2M3s88nzN4nmb1/ctd70T7D7PMtVgwIwoAgDAjCgCAMCMKAIAwIX7ePsdvzl2bve9y1aj/k2GzuihUDgjAgCAOCMCAIA4IwIAgDVuxjrPp7/VFW3ddfZfbznY7N9m2uWDEgCAOCMCAIA4IwIAgDgjBg5j7GU+7rj7pP/6lzuO8+z2qUVfPCr1gxIAgDgjAgCAOCMCAIA4IwIPyc51n/D1/NigFBGBCEAUEYEIQBQRgQhAFBGBCEAUEYEIQBQRgQhAFBGBCEAa//+hvnBg47iZCIrgAAAABJRU5ErkJggg==" alt="同心同行 · 2026 公司年会 二维码">
+        <span>扫码体验</span>
+      </div>
+    </div>
+    <div class="case">
+      <div class="case-main">
+        <div class="case-head">
+          <span class="industry">门店品牌</span>
+          <h3>星空咖啡 · 会员日</h3>
+        </div>
+        <p class="desc">活动日历 + 会员招募 + 门店导航，活动窗口到期自动开放 / 关闭</p>
+        <div class="tags"><span class="pill n">共 9 个模块</span><span class="pill p">公开访问</span><span class="pill p">定时开关</span><span class="pill p">会员招募</span></div>
+        <div class="access"><span class="pill g">公开访问 · 扫码即看</span></div>
+        <a class="link" href="https://wm.meetotour.com/s/demo-store" target="_blank">wm.meetotour.com/s/demo-store →</a>
+      </div>
+      <div class="case-qr">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQgAAAEICAIAAAAslP2oAAAFB0lEQVR4nO3dQY4jNRiA0W7EAWrJHbj/UbgDy9wgLFgBXyEK2bI9eW83o1E6yfQnR/Wn7O/3+/0F/NVPf/szIAxoVgwIwoAgDAjCgCAMCMKAIAwIwoAgDAjCgCAMCMKAIAwIP389dP3y69cJXr//9uj53/37UZ6+b6Oez+zXex3++3DHigFBGBCEAUEYEIQBQRgQhAEj5hh3Zs8BZs8HRl3vf/o4o+YAsx/n9fB9OOX34Y4VA4IwIAgDgjAgCAOCMCAIA2bOMWZfV151/8DT6/qr5iS7zRNO+X24Y8WAIAwIwoAgDAjCgCAMCMKAFXOM3ex2P8Zso+Ywn8aKAUEYEIQBQRgQhAFBGBCEAeHj5hh3Ru37NHvuMfv+Df5kxYAgDAjCgCAMCMKAIAwIwoAVc4zdvt+/23nbox5nt/f5zinP04oBQRgQhAFBGBCEAUEYEIQBM+cYp3/vf9R+U6vO+R5l1Tkeu7FiQBAGBGFAEAYEYUAQBgRhQPh+v9/19x9n1bxi9n5Wp5yrvRsrBgRhQBAGBGFAEAYEYUAQBoy4H2P29ftRz+fO7PsKZs8NTnn8a9G56aN+rhUDgjAgCAOCMCAIA4IwIAgDTt5XatV+TafMZ1Zd778m/7+v2o/LigFBGBCEAUEYEIQBQRgQhAErzvke5fR9k1Zd739q1Hzjtdl86SkrBgRhQBAGBGFAEAYEYUAQBsycY4y6rvz0Ovqq+x+eWnVuxuxzNl6bzZdG/T5YMSAIA4IwIAgDgjAgCAOCMGDEOd+rrouPej6n2+2+i2vy+SRPOR8DJvJRCoIwIAgDgjAgCAOCMGDEHOOp2edIjPq5p89DTtnH6XXI+e5WDAjCgCAMCMKAIAwIwoAgDBixr9Ts7/HvNmeYPW/Zbf6z6vU+5XwMWMBHKQjCgCAMCMKAIAwIwoARc4xR17ln7zc1yux5y6rXNfv5XzePM/v/1/kYMJGPUhCEAUEYEIQBQRgQhAEzz/k+fT4w6nr8KZyP8e+sGBCEAUEYEIQBQRgQhAFBGDDzfIxV+0StOvd69n0Fu51r8dQp78MdKwYEYUAQBgRhQBAGBGFAEAbMPB/jqVHzgVPOzdhtbrPqdV2T76sZ9T5bMSAIA4IwIAgDhAH/jRUDgjBg5v0Yu50LPvtxRpl9H8iq+cl1yDkhd6wYEIQBQRgQhAFBGBCEAUEYMGKOcfq5EHdm7x81+/zs3fZxGmXV+2DFgCAMCMKAIAwIwoAgDAjCgBH7Su32vflV1+lXzRNWvf+vRXOSVeeWWDEgCAOCMCAIA4IwIAgDgjBgp/MxZpu939Tdv191/8aqucc16OfuNh+zYkAQBgRhQBAGBGFAEAYEYcCIOcad3c6XuDPqHInd5hs/6rnjd+wrBQv4KAVBGBCEAUEYEIQBQRgwc45xx/Xy/2f2ud1PXZN/7tO5hH2lYAEfpSAIA4IwIAgDgjAgCANWzDF+VKuu649yyn0g16L9sqwYEIQBQRgQhAFBGBCEAUEYED5ujnHKfODp4++239RTuz1PKwYEYUAQBgRhQBAGBGFAEAaE7/f7/XXC9+PvrLp+f8rrPeVc9t3eZysGBGFAEAYEYUAQBgRhQBAGzLwf45Tr5aectz3q+v1uz+c65PGtGBCEAUEYEIQBQRgQhAFBGDDifgz4BFYMCMKAIAwIwoAgDAjCgCAMCMKAIAwIwoAgDAjCgCAMCMKAIAz4+qc/AFjNH4Nm0inQAAAAAElFTkSuQmCC" alt="星空咖啡 · 会员日 二维码">
+        <span>扫码体验</span>
+      </div>
+    </div>
+    <div class="case">
+      <div class="case-main">
+        <div class="case-head">
+          <span class="industry">商协会</span>
+          <h3>青年企业家协会换届大会</h3>
+        </div>
+        <p class="desc">会议通知 + 参会回执 + 章程资料下载 + 会员扫码签到，秘书处一页搞定</p>
+        <div class="tags"><span class="pill n">共 10 个模块</span><span class="pill p">需登录</span><span class="pill p">资料附件</span><span class="pill p">会员签到</span></div>
+        <div class="access"><span class="pill a">需登录 · 演示账号见下</span><div class="login">演示账号：<code>member001（全部可见）/ observer001（观察员视角）</code><br>密码：<code>Demo@123456</code></div></div>
+        <a class="link" href="https://wm.meetotour.com/s/demo-chamber" target="_blank">wm.meetotour.com/s/demo-chamber →</a>
+      </div>
+      <div class="case-qr">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQgAAAEICAIAAAAslP2oAAAE90lEQVR4nO3dwY0bNxiA0d3ABeiYHtJ/Kekhx+lAPif5JgiBIUha791sLNYjeT9wMb84/H6/31/A3/32jz8DwoBmxYAgDAjCgCAMCMKAIAwIwoAgDAjCgCAMCMKAIAwIwoDw42vQ6/c/vk5w/fXn0PXfff2q92f29ez2emcbfb1WDAjCgCAMCMKAIAwIwoAgDHhijnHnqfviu91HH50DjL4Po9c/+vWr5jnX4T8PVgwIwoAgDAjCgCAMCMKAIAyYOcc4ZX/CbvsWzBn2/HmwYkAQBgRhQBAGBGFAEAYEYcCKOcZuRucGu3lqP8bo978W7a9YxYoBQRgQhAFBGBCEAUEYEIQB4ePmGE/NK1Y93+mpr7/zafOKO1YMCMKAIAwIwoAgDAjCgCAMWDHH2O2++On7E1Y9h+opu13PHSsGBGFAEAYEYUAQBgRhQBAGzJxjnP5cplXnYMz+/qvO5Xgd8vNwx4oBQRgQhAFBGBCEAUEYEIQB4fv9ftfff5zZz4ka/T6sZcWAIAwIwoAgDAjCgCAMCMKAJ/Zj+Lz+fztl38Kq52u9Jp/vcWf0Oq0YEIQBQRgQhAFBGBCEAUEYMHM/xuz78afsWzj9fv+q+cy12f4WKwYEYUAQBgRhQBAGBGFAEAbM3I8x+/70buct7LbvYvb5G6N2218xyooBQRgQhAFBGBCEAUEYEIQBM8/5nn1u9Cq73XefPUeavS/iWnS+uOdKwQP8KgVBGBCEAUEYEIQBQRjwxBxj1X3xp8y+/lXPR5o9F7oGX9fo+7PbXMuKAUEYEIQBQRgQhAFBGBCEATPPx7iz2/3+U65n1Ko5wGuz533dsR8DHuBXKQjCgCAMCMKAIAwIwoCZz5Uatds50Ls91+jOKed8X5OfozX7fbBiQBAGBGFAEAYEYUAQBgRhwMxzvlftB5i9/2H2fOOU9/+16H1bxYoBQRgQhAFBGBCEAUEYEIQBK54rtdvznWY/J+opp+wPuTP7vJHZrBgQhAFBGBCEAUEYEIQBQRiwYj/GrzqvOGUestu5HK/Nzie5Y8WAIAwIwoAgDAjCgCAMCMKAJ/Zj7HYOwynzhN3O81613+O12Tnud6wYEIQBQRgQhAHCgP/HigFBGLDTHOP0++V3TrlPP9vrkP+vO1YMCMKAIAwIwoAgDAjCgCAMWDHHeOq+9en7OladF77qPPJVPFcKJvKrFARhQBAGBGFAEAYEYcAT52M8dZ/49Oc7zd4XMXteNHqd12avazYrBgRhQBAGBGFAEAYEYUAQBsw853s3s+9/r9pnsuo5Tqc/52qUFQOCMCAIA4IwIAgDgjAgCAOemGP8qvsrdjuv487o99/t+V2nnBNixYAgDAjCgCAMCMKAIAwIwoCZc4zd5gyrrn/VvGL2ORivyfOQ0dc1+/2xYkAQBgRhQBAGBGFAEAYEYcCKOcan2e1c7VP2Y+zGigFBGBCEAUEYEIQBQRgQhAHh4+YYsz/Hv9u+lFXX/5p8TvlsVgwIwoAgDAjCgCAMCMKAIAxYMcc45fP6s+/3r5qf3Fn1714PzStmzz2sGBCEAUEYEIQBQRgQhAFBGDBzjrHqc/OjnrpfPvr1p78/10NzmFXv/ygrBgRhQBAGBGFAEAYEYUAQBoTv9/tdfw8fzYoBQRgQhAFBGBCEAUEYEIQBQRgQhAFBGBCEAUEYEIQBQRgQhAFf//YT4Jcb8laYESQAAAAASUVORK5CYII=" alt="青年企业家协会换届大会 二维码">
+        <span>扫码体验</span>
+      </div>
+    </div>
+    <div class="case">
+      <div class="case-main">
+        <div class="case-head">
+          <span class="industry">发布会</span>
+          <h3>2026 新品发布会</h3>
+        </div>
+        <p class="desc">报名提交后可修改、大会议程、现场多场次签到，标准发布会全流程</p>
+        <div class="tags"><span class="pill n">共 5 个模块</span><span class="pill p">需登录</span><span class="pill p">提交后可改</span><span class="pill p">模块权限</span></div>
+        <div class="access"><span class="pill a">需登录 · 演示账号见下</span><div class="login">演示账号：<code>zhangsan（全部可见）/ lisi（仅部分模块）</code><br>密码：<code>Demo@123456</code></div></div>
+        <a class="link" href="https://wm.meetotour.com/s/demo-launch" target="_blank">wm.meetotour.com/s/demo-launch →</a>
+      </div>
+      <div class="case-qr">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQgAAAEICAIAAAAslP2oAAAFA0lEQVR4nO3dQW7jNhiAUafoAbzsHXr/o/QOXeoG7rrtp6ICSJBM3tvNYOAonnygoT8Uvz6fzwv4u1/+8WdAGNCsGBCEAUEYEIQBQRgQhAFBGBCEAUEYEIQBQRgQhAFBGBB+fT30/u331wmuP/94dP13/37V+/D0eu6M+n6/68/DHSsGBGFAEAYEYUAQBgRhQBAGjJhj3Bl1X3z2ffRR84pVr/P09Ue9zvXwOk/5ebhjxYAgDAjCgCAMCMKAIAwIwoCZc4zZ95VX7U9YdT9+lN2u/73Zz8MdKwYEYUAQBgRhQBAGBGFAEAasmGN81+dNzd7/cGf2PpDd5h6rWDEgCAOCMCAIA4IwIAgDgjAg/Lg5xp1Rz00aNQ+ZfT38NysGBGFAEAYEYUAQBgRhQBAGrJhj7Pb7/bvd19/tnI3ZrkOu04oBQRgQhAFBGBCEAUEYEIQBM+cYu80HTnne1G5zidnnmp/CigFBGBCEAUEYEIQBQRgQhAHh6/P51N+zqVXneFyH7KMYxYoBQRgQhAFBGBCEAUEYEIQBI/ZjrDr/4en13Bl1v3/V/oRR79uq88uvyc/RGvV1rRgQhAFBGBCEAUEYEIQBQRiw4rlSs+9br9qHsOr1Z89tdnt+1LXo/HIrBgRhQBAGBGFAEAYEYUAQBqw453u3ucTs5zLNfv7S7NcfNd+4Npv/PGXFgCAMCMKAIAwIwoAgDAjCgBVzjN3ObZj9e/yj5h6nPHfr2uz/d9T7ZsWAIAwIwoAgDAjCgCAMCMKAFXOM3Z6zNMrs+cnsecgp54o85XwMmMhHKQjCgCAMCMKAIAwIwoCZc4xV53zvth9g9vf71Kj5ybXo+u84HwMW8FEKgjAgCAOCMCAIA4Iw4IT9GKOeX7Tq9/5H/ftVdptX3HE+BizgoxQEYUAQBgRhQBAGBGFA+Pp8Pq8T5g+j5hWzn4O02/uw6lzz92bPm3rKigFBGBCEAUEYEIQBQRgQhAEj9mOsOu951PWseg7VbvsxTpkLPeV8DJjIRykIwoAgDAjCgCAMCMKAmfsxnlq1L2LU64/6urOtmqtcm72fT6/HigFBGBCEAUEYEIQBQRgQhAEz92PcebovYtX1rLpffmfVuR+z50XvzeZXd6wYEIQBQRgQhAHCgP/HigFBGLBiP8bsOcNu+w1OOX/jqeuQ/TCjWDEgCAOCMCAIA4IwIAgDgjBgp/0YT19/t/Okd5urzH7/35udczJ7v4oVA4IwIAgDgjAgCAOCMCAIA3Y6H2OV0/cznHJO9p1V56k7HwMG8FEKgjAgCAOCMCAIA4IwYMV+jFVWzQ1O2c+w29e9PFcK9uejFARhQBAGBGFAEAYEYcCIOcZu96Fnn7+x27nUs+ctT12bzR9GsWJAEAYEYUAQBgRhQBAGBGHAzDnGd71fvup5Sruds/H+pvtJ7lgxIAgDgjAgCAOCMCAIA4IwYMUc47t6et999j6Q05+7tdt8w4oBQRgQhAFBGBCEAUEYEIQB4cfNMU45Z3rV11213+Pa7DqtGBCEAUEYEIQBQRgQhAFBGBC+Pp/P6+Tn/8y+ntnzgdmvc8q57Hc8Vwo24qMUBGFAEAYEYUAQBgRhwMz9GKfcL5/9PKjTz/c4ZS40+/WtGBCEAUEYEIQBQRgQhAFBGDBiPwb8BFYMCMKAIAwIwoAgDAjCgCAMCMKAIAwIwoAgDAjCgCAMCMKAIAx4/dtf4SEePSj1DbMAAAAASUVORK5CYII=" alt="2026 新品发布会 二维码">
+        <span>扫码体验</span>
+      </div>
+    </div>
+    <div class="case">
+      <div class="case-main">
+        <div class="case-head">
+          <span class="industry">庆典活动</span>
+          <h3>中秋品牌盛典</h3>
+        </div>
+        <p class="desc">公开访问、预约报名、三日活动日程，到访客户扫码即看</p>
+        <div class="tags"><span class="pill n">共 4 个模块</span><span class="pill p">公开访问</span><span class="pill p">预约报名</span><span class="pill p">多日日程</span></div>
+        <div class="access"><span class="pill g">公开访问 · 扫码即看</span></div>
+        <a class="link" href="https://wm.meetotour.com/s/demo-festival" target="_blank">wm.meetotour.com/s/demo-festival →</a>
+      </div>
+      <div class="case-qr">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQgAAAEICAIAAAAslP2oAAAE7ElEQVR4nO3dwW0rNxRAUTtIAVqmh/RfSnrIUh0oi6ySXAEZgMTjWOfs/ocxkgVdcDA0ye/X6/UF/NMv//o3IAxoRgwIwoAgDAjCgCAMCMKAIAwIwoAgDAjCgCAMCMKAIAwIv35d9Pjt9687eP75x5L3P3Wddz9/1dT1T3P19zViQBAGBGFAEAYEYUAQBgRhwIp5jHdWPRe/avd8wtV5gFXvZ2o+YdW8x/Mm34d3jBgQhAFBGBCEAUEYEIQBQRiwcx5j93Pl09YnXP29Vs2H3GU+4S7fh3eMGBCEAUEYEIQBQRgQhAFBGDAxj3GaqXmDqfUeV69/2rzHFCMGBGFAEAYEYUAQBgRhQBAGhI+bx9g9v7F7X6nd60b4mxEDgjAgCAOCMCAIA4IwIAgDJuYxTvv7/t37Sk2txzjtc37nLu/TiAFBGBCEAUEYEIQBQRgQhAE75zE+7e/+p9Zv7DZ1fshpjBgQhAFBGBCEAUEYEIQBQRgQvl+vV/3/x5lapzF1nZ+6jmIVIwYEYUAQBgRhQBAGBGFAEAasWI9x2j5Iu8+j+Kl2rw95HLZ/19XXNWJAEAYEYUAQBgRhQBAGBGHAinmM3fsp7f75u+93tGre5rT1Hu9M7cdlxIAgDAjCgCAMCMKAIAwIwoA77yu1e93F7v2XTtvfaWo+5DH0OVuPAQu4lYIgDAjCgCAMCMKAIAw4aR5jar+gqXUIp61Luft8xW5GDAjCgCAMCMKAIAwIwoAgDNh5PsbUc+jdz+l3O23dwtR1VrEeAzZyKwVBGBCEAUEYEIQBQRiwYh7jqqvPuXc/Xz/tXI7T5nmm3udVzseAAW6lIAgDgjAgCAOCMCAIAybmMXbv+zS1z9LVn7/L+eKnzVdMfc5GDAjCgCAMCMKAIAwIwoAgDDhpPca759BT50i8M/W6u03tN/XY/Pmsuo4RA4IwIAgDgjAgCAOCMCAIA1ac8z11bvSq9/PO1OuuMrX+5OF8DPgcbqUgCAOCMCAIA4IwIAgDVsxjXHXaPMNpz/vvcs731LqIqe+PEQOCMCAIA4IwIAgDgjAgCANW7Cs19fx71etOrSc5bd+kVdd/DJ3jvur67xgxIAgDgjAgCAOEAf+PEQOCMGBiPcZp7n5uxmnrOu6y39RVRgwIwoAgDAjCgCAMCMKAIAy4w/kYu+1+Xn7a/lRX3f3cj6dzvmEft1IQhAFBGBCEAUEYEIQBwXqMm82H3P11H0PnfjgfAxZwKwVBGBCEAUEYEIQBQRhwh/MxVpnap2jq87n7vMfTvlJwPrdSEIQBQRgQhAFBGBCEASvmMe4+b7BqH6ep/bV2n7Nx1fOw+Qf7SsFGbqUgCAOCMCAIA4IwIAgDds5j/NTn5bvnH3a/7iqPza87dW76O0YMCMKAIAwIwoAgDAjCgCAMmJjH+DRT8x5XTZ0v/ti8/sT5GLCRWykIwoAgDAjCgCAMCMKA8HHzGKvWRex+jj71/H5qvcfzsPdpxIAgDAjCgCAMCMKAIAwIwoCJeYyfen7Cqufou+crpvaDuurq77X7e2XEgCAMCMKAIAwIwoAgDAjCgJ3zGFN/x3+X8zp2n+dwl/f5uMn1jRgQhAFBGBCEAUEYEIQBQRgQvl+vV/0/fDQjBgRhQBAGBGFAEAYEYUAQBgRhQBAGBGFAEAYEYUAQBgRhQBAGfP3XX8ulMiNKJAvYAAAAAElFTkSuQmCC" alt="中秋品牌盛典 二维码">
+        <span>扫码体验</span>
+      </div>
+    </div></div>
+  <div class="cta">
+    <div>
+      <h3>下一个活动，就用微站系统</h3>
+      <p>3 分钟搭好 · 报名 · 签到 · 数据看板一站式。联系我们，最快当天上线。</p>
+      <p style="margin-top:6px;"><b>微信 / 电话：</b>请替换为你的联系方式</p>
+    </div>
+  </div>
+</main>
+<footer>微站系统 · 案例集 · 2026-09-20 生成</footer>
+</body>
+</html>

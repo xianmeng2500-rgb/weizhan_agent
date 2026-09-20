@@ -181,7 +181,6 @@ onMounted(loadSite)
 /* KV 区域 */
 .kv-area {
   width: 100vw;
-  margin-left: calc(50% - 50vw);
   max-height: 42vh;
   overflow: hidden;
   border-bottom-left-radius: 28px;

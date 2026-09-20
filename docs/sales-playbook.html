@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微站系统 · 销售作战手册</title>
+<style>
+:root{
+  --primary:#4F46E5; --primary-dark:#3730A3; --primary-light:#EEF2FF;
+  --teal:#0F766E; --teal-light:#F0FDFA;
+  --amber:#B45309; --amber-light:#FFFBEB;
+  --red:#B91C1C; --red-light:#FEF2F2;
+  --bg:#F8FAFC; --card:#FFFFFF; --border:#E2E8F0;
+  --text:#0F172A; --text-2:#475569; --text-3:#94A3B8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.75;font-size:15px;}
+.wrap{max-width:1100px;margin:0 auto;padding:0 24px;}
+header.top{background:linear-gradient(135deg,#312E81 0%,#4F46E5 55%,#0EA5E9 100%);color:#fff;padding:56px 0 72px;position:relative;overflow:hidden;}
+header.top::after{content:"";position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;background:rgba(255,255,255,.08);}
+header.top .wrap{position:relative;z-index:1;}
+.badge{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:999px;padding:4px 14px;font-size:13px;margin-bottom:18px;letter-spacing:.5px;}
+header.top h1{font-size:40px;font-weight:600;letter-spacing:1px;margin-bottom:12px;}
+header.top p.desc{font-size:17px;color:rgba(255,255,255,.88);max-width:820px;line-height:1.8;}
+.meta{display:flex;gap:24px;margin-top:28px;flex-wrap:wrap;}
+.meta span{font-size:13px;color:rgba(255,255,255,.78);}
+.meta span b{color:#fff;font-weight:500;}
+nav.toc{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);}
+nav.toc .wrap{display:flex;align-items:center;gap:4px;overflow-x:auto;white-space:nowrap;}
+nav.toc a{display:inline-block;padding:14px 12px;font-size:14px;color:var(--text-2);text-decoration:none;border-bottom:2px solid transparent;transition:.15s;}
+nav.toc a:hover{color:var(--primary);}
+nav.toc .logo{font-weight:600;color:var(--primary);font-size:15px;margin-right:12px;}
+main{padding:56px 0 80px;}
+section{margin-bottom:64px;scroll-margin-top:56px;}
+h2.sec{font-size:26px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+h2.sec .num{width:38px;height:38px;border-radius:10px;background:var(--primary);color:#fff;font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+h3{font-size:19px;font-weight:600;margin:32px 0 14px;color:var(--primary-dark);}
+h4{font-size:16px;font-weight:600;margin:22px 0 10px;}
+p{margin-bottom:12px;color:var(--text-2);}
+p b,li b{color:var(--text);font-weight:500;}
+ul,ol{margin:0 0 14px 1.4em;color:var(--text-2);}
+li{margin-bottom:6px;}
+.sec-tip{font-size:13.5px;color:var(--text-3);margin-bottom:22px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px 28px;margin-bottom:16px;}
+.card h4{margin-top:0;}
+.callout{border-radius:10px;padding:14px 18px;margin:16px 0;font-size:14px;}
+.callout.tip{background:var(--teal-light);border-left:4px solid var(--teal);color:#134E4A;}
+.callout.warn{background:var(--amber-light);border-left:4px solid var(--amber);color:#78350F;}
+.callout.alert{background:var(--red-light);border-left:4px solid var(--red);color:#7F1D1D;}
+.callout.info{background:var(--primary-light);border-left:4px solid var(--primary);color:#3730A3;}
+.callout b{font-weight:600;}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;}
+.feat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 22px;}
+.feat h5{font-size:15px;font-weight:600;margin-bottom:8px;color:var(--text);}
+.feat p{font-size:13.5px;color:var(--text-2);margin:0;}
+.steps{counter-reset:step;margin:18px 0;}
+.step{position:relative;padding:0 0 26px 56px;border-left:2px solid var(--border);margin-left:19px;}
+.step:last-child{border-left-color:transparent;padding-bottom:0;}
+.step::before{counter-increment:step;content:counter(step);position:absolute;left:-21px;top:0;width:40px;height:40px;border-radius:50%;background:var(--primary);color:#fff;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 6px var(--bg);}
+.step h5{font-size:16px;font-weight:600;margin-bottom:6px;}
+.step p,.step li{font-size:14px;}
+.step .talk{margin-top:10px;background:var(--primary-light);border-left:3px solid var(--primary);border-radius:8px;padding:10px 14px;font-size:13.5px;color:var(--primary-dark);}
+.table-box{overflow-x:auto;margin:14px 0 20px;border:1px solid var(--border);border-radius:12px;background:var(--card);}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:560px;}
+th{background:#F1F5F9;color:var(--text);font-weight:600;text-align:left;padding:12px 16px;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:11px 16px;border-bottom:1px solid #F1F5F9;color:var(--text-2);vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+td code{background:#F1F5F9;padding:1px 7px;border-radius:5px;font-size:12.5px;color:#334155;}
+.pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap;}
+.pill.p{background:var(--primary-light);color:var(--primary-dark);}
+.pill.t{background:var(--teal-light);color:var(--teal);}
+.pill.a{background:var(--amber-light);color:var(--amber);}
+.pill.r{background:var(--red-light);color:var(--red);}
+.pill.g{background:#F0FDF4;color:#15803D;}
+.pill.gray{background:#F1F5F9;color:#475569;}
+.chk{list-style:none;margin-left:0;}
+.chk li{position:relative;padding-left:30px;margin-bottom:9px;}
+.chk li::before{content:"";position:absolute;left:0;top:4px;width:17px;height:17px;border:1.5px solid var(--border);border-radius:5px;background:#fff;}
+.quote{background:#F8FAFC;border:1px dashed var(--border);border-radius:10px;padding:12px 16px;font-size:13.5px;color:var(--text-2);margin:10px 0;}
+.quote b{color:var(--primary-dark);}
+kbd{background:#1E293B;color:#E2E8F0;border-radius:5px;padding:1px 7px;font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+footer{border-top:1px solid var(--border);padding:28px 0 48px;color:var(--text-3);font-size:13px;text-align:center;}
+@media print{nav.toc{display:none;} header.top{background:#312E81 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;} body{font-size:12px;}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <span class="badge">内部资料 · 不要外发</span>
+    <h1>微站系统 · 销售作战手册</h1>
+    <p class="desc">产品做完了卖不出去，90% 不是产品问题，也不是你不会卖——是<strong>卖错了对象、缺了信任、没有人替你说</strong>。这份手册给你的是一套可以照着一周一周执行的打法，不是鸡汤。</p>
+    <div class="meta">
+      <span>适用：<b>微站系统（wm.meetotour.com）</b></span>
+      <span>目标：<b>90 天跑通付费闭环</b></span>
+      <span>版本：<b>v1.0</b></span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrap">
+    <span class="logo">微站系统</span>
+    <a href="#s1">01 为什么难卖</a>
+    <a href="#s2">02 卖给谁</a>
+    <a href="#s3">03 四层漏斗</a>
+    <a href="#s4">04 90 天路线</a>
+    <a href="#s5">05 渠道打法</a>
+    <a href="#s6">06 话术库</a>
+    <a href="#s7">07 定价</a>
+    <a href="#s8">08 每周动作</a>
+    <a href="#s9">09 数据指标</a>
+    <a href="#s10">10 待补物料</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="s1">
+  <h2 class="sec"><span class="num">01</span>先看清：难卖的真实原因</h2>
+  <p class="sec-tip">这五条几乎覆盖了所有「独立开发者做完了卖不掉」的场景，对号入座。</p>
+  <div class="grid2">
+    <div class="feat">
+      <h5>① 你在卖工具，客户买的是结果</h5>
+      <p>客户不关心「模块化配置、AI 生图、模板体系」。他只关心：这场活动的报名别乱、签到别排队、领导觉得专业。功能要翻译成结果再讲。</p>
+    </div>
+    <div class="feat">
+      <h5>② 你的客户不会重复买</h5>
+      <p>零散主办方一年办一场，成交一次就断。真正的基本盘是「每个月都要办活动」的机构——婚庆、培训、活动执行公司。</p>
+    </div>
+    <div class="feat">
+      <h5>③ 决策人不在你的微信里</h5>
+      <p>不是你不行，是你的通讯录里没有「要办活动的人」。渠道问题的本质是这个，不是「找不到流量」。</p>
+    </div>
+    <div class="feat">
+      <h5>④ 缺信任凭证</h5>
+      <p>第一次听说你的人，看不到案例、看不到别人用过、看不到你是谁。没人愿意当第一个付费的小白鼠。</p>
+    </div>
+    <div class="feat">
+      <h5>⑤ 客单价撑不起投入</h5>
+      <p>199 一单，还要你手工交付，一个月做 20 单也才 4000 元。把力气花在年费机构和渠道上，才有复利。</p>
+    </div>
+    <div class="feat">
+      <h5>⑥ 你在等客户来找你</h5>
+      <p>没有主动触达动作的销售，等于没有销售。冷启动期必须每天有「加微信、发内容、报价」的动作。</p>
+    </div>
+  </div>
+  <div class="callout info"><b>一句话结论：</b>别急着找流量。先换客户类型（从散客换成机构），再用「免费换案例」破冰，最后用渠道合伙人放大。这三步走完，销量自然起来。</div>
+</section>
+
+<section id="s2">
+  <h2 class="sec"><span class="num">02</span>客户定位：卖给谁，先放弃谁</h2>
+  <p class="sec-tip">定位决定话术、定价和渠道。这一节比后面所有技巧都重要。</p>
+  <h3>主攻客户（有钱、反复买、能转介绍）</h3>
+  <div class="table-box">
+    <table>
+      <thead><tr><th>客户类型</th><th>为什么好卖</th><th>年需求量</th><th>建议客单</th></tr></thead>
+      <tbody>
+        <tr><td><b>婚礼策划 / 婚庆公司</b></td><td>每场婚礼都要电子请柬 + 报名 + 签到，需求刚性，还能加价打包卖给新人</td><td>30-200 场</td><td>年费 1980-4980</td></tr>
+        <tr><td><b>培训机构 / 教培机构</b></td><td>招生页、体验课报名、开班签到，月月有活动，复购最快</td><td>12-100 场</td><td>年费 1980-3980</td></tr>
+        <tr><td><b>活动执行 / 会展 / 公关公司</b></td><td>单场预算高，愿意买年费，且能把系统带进自己的客户项目里</td><td>10-60 场</td><td>年费 2980-6980</td></tr>
+        <tr><td><b>商会 / 协会 / 校友会</b></td><td>年会、论坛、换届大会，主办方有预算，秘书处对接人明确</td><td>2-10 场</td><td>按场 500-1500</td></tr>
+        <tr><td><b>连锁门店 / 品牌方</b></td><td>发布会、周年庆、会员活动，一次谈成长期用</td><td>4-20 场</td><td>年费 1980+</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>暂不主推（消耗你大量时间，赚不到钱）</h3>
+  <ul>
+    <li><b>一次性个人主办方</b>（同学会、生日宴、宝宝宴）：只在闲鱼按标准价接，绝不做定制开发、不做上门沟通。</li>
+    <li><b>大型政企项目</b>：要资质、要招投标、要驻场，你一个人扛不住，现阶段直接放弃。</li>
+    <li><b>要求"私有化部署 + 源码"的客户</b>：一句话回「不做源码交付」，别陷进去。</li>
+  </ul>
+  <div class="callout tip"><b>一句话定位：</b>给「每个月都要办活动」的机构，一套随取随用的活动微站。<br>对外统一说这句，不要再说「我做了一个 SaaS 系统」。</div>
+</section>
+
+<section id="s3">
+  <h2 class="sec"><span class="num">03</span>四层漏斗：每层做什么、看什么数</h2>
+  <p class="sec-tip">你的漏斗哪一层最薄，业绩就卡在哪一层。先补最薄的那一层，不要全面开花。</p>
+  <div class="table-box">
+    <table>
+      <thead><tr><th>层</th><th>核心动作</th><th>主渠道</th><th>本周目标</th><th>健康指标</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="pill p">① 触达</span></td>
+          <td>主动加精准微信，说明你是谁、能帮他做什么</td>
+          <td>本地婚庆/培训机构直连、同城短视频、异业互推</td>
+          <td>+50 个精准微信</td>
+          <td>好友通过率 40%+</td>
+        </tr>
+        <tr>
+          <td><span class="pill p">② 体验</span></td>
+          <td>发演示链接让他自己点，不靠嘴讲功能</td>
+          <td>免登录试用、成品演示微站、65 秒宣传片</td>
+          <td>15 人点开体验</td>
+          <td>体验率 30%+</td>
+        </tr>
+        <tr>
+          <td><span class="pill p">③ 成交</span></td>
+          <td>报价 + 给一个"立刻能开始"的动作</td>
+          <td>一对一微信沟通、报价单页</td>
+          <td>2 次正式报价</td>
+          <td>报价成交率 15-25%</td>
+        </tr>
+        <tr>
+          <td><span class="pill t">④ 复购</span></td>
+          <td>让已成交客户继续用 + 帮你介绍</td>
+          <td>渠道合伙人（分销返佣）、续费、老客转介绍</td>
+          <td>签 1 个合伙人</td>
+          <td>合伙人月出单 1-3 单</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout warn"><b>常见误区：</b>一上来就投广告、做官网 SEO、上各种平台。冷启动期这些都是在第四层还没建立时烧钱。前 30 天只做两件事：<b>直连 B 端客户 + 免费换案例</b>。</div>
+</section>
+
+<section id="s4">
+  <h2 class="sec"><span class="num">04</span>冷启动 90 天路线</h2>
+  <p class="sec-tip">三个阶段，每个阶段只有一个核心目标。别跳步。</p>
+
+  <div class="steps">
+    <div class="step">
+      <h5>第 1-2 周 · 目标：拿到 5 个真实案例</h5>
+      <p>这个阶段不赚钱，只赚「可展示的东西」。没有案例，后面所有话术都是空的。</p>
+      <ul>
+        <li>列出本地 30 个目标客户（婚庆公司、培训机构、活动执行公司），逐个加微信</li>
+        <li>话术核心：<b>免费帮你做一场，不要钱，只要允许我把成品当案例展示</b></li>
+        <li>目标：5 家接受，用他们真实的活动把微站搭出来（模板 + AI 生图 + 报名 + 签到全流程）</li>
+        <li>交付时做三件事：① 截图/录屏留档 ② 请客户说一句评价（文字即可）③ 请他转介绍 1 个同行</li>
+      </ul>
+      <div class="talk"><b>破冰话术：</b>「张总您好，我是做活动微站的，专门给婚庆公司用。我最近在做案例收集，可以免费帮您做一场——电子请柬、在线报名、现场扫码签到都有。您不用花钱，只要允许我把成品当案例展示就行。您最近有在办的场次吗？」</div>
+    </div>
+    <div class="step">
+      <h5>第 3-6 周 · 目标：跑通付费闭环，出前 10 单</h5>
+      <p>有案例之后，把案例变成内容，内容带来源源不断的咨询。</p>
+      <ul>
+        <li>把 65 秒宣传片拆成 5-6 条 15 秒短视频；再拍 3 条「3 分钟做出婚礼请柬」的实操录屏</li>
+        <li>小红书 / 视频号 / 抖音三端同步发，每周 3 条，晚 8-10 点发</li>
+        <li>闲鱼挂 3 个 SKU 验证定价（199 单场 / 499 年费 / 699 代搭建），主要目的是练成交话术</li>
+        <li>每天固定动作：加 10 个微信 + 私聊 3 个老客户 + 跟 1 个意向</li>
+        <li>目标：10 单成交，其中至少 2 单是年费</li>
+      </ul>
+    </div>
+    <div class="step">
+      <h5>第 7-12 周 · 目标：建渠道，转向机构年费</h5>
+      <p>你一个人跑客户有上限，渠道合伙人才是放大器。</p>
+      <ul>
+        <li>签 5-10 个渠道合伙人：婚庆司仪、婚礼摄影、花艺婚车、酒店宴会销售、活动物料商、会议设备租赁</li>
+        <li>给 30% 返佣（先用你现在已有的分销系统做追踪，推广码 + 返佣记录）</li>
+        <li>把重心从散单转机构年费，散单只在闲鱼标准价接</li>
+        <li>目标：月流水 5000-15000，其中渠道贡献 ≥ 30%</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="s5">
+  <h2 class="sec"><span class="num">05</span>渠道打法（按见效速度排序）</h2>
+  <p class="sec-tip">四个渠道的作用不同，不要混着做。第 1 个渠道第 1 周就能开跑。</p>
+
+  <h3>渠道一 · 本地 B 端直连 <span class="pill t">最快回款</span></h3>
+  <div class="card">
+    <h4>怎么找到他们</h4>
+    <ul>
+      <li>微信「搜一搜」：<code>城市 + 婚庆</code>、<code>城市 + 婚礼策划</code>、<code>城市 + 培训</code>、<code>城市 + 活动执行</code></li>
+      <li>抖音 / 小红书搜同城，看谁在发活动内容，直接私信</li>
+      <li>高德地图、大众点评搜「婚庆公司」「会展服务」，按名单打电话或在网上找企业微信</li>
+      <li>本地会展中心 / 酒店的官网，找近期办展办会的名单</li>
+    </ul>
+    <h4>加谁的微信</h4>
+    <p>只加<b>老板、市场负责人、项目经理</b>。不要加前台、不要发到公司群——找不对人等于白干。</p>
+    <h4>每天动作（固定 40 分钟）</h4>
+    <ul class="chk">
+      <li>加 10 个精准微信，备注带上行业（例：婚庆-王经理-来源抖音）</li>
+      <li>通过后发一条：自我介绍 + 一条效果视频（不要一上来报价）</li>
+      <li>约 1 个沟通，目标不是成交，是「发演示链接给他看」</li>
+    </ul>
+    <div class="callout warn"><b>关键动作：先免费做一场。</b>B 端客户不会为「没听过的东西」掏钱，但几乎不会拒绝「免费帮我做一场」。免费换来的案例 + 评价，比你花 1000 块广告费值钱。</div>
+  </div>
+
+  <h3>渠道二 · 内容获客 <span class="pill p">第 2-4 周起效</span></h3>
+  <div class="card">
+    <h4>内容公式（不需要创意，照着套）</h4>
+    <ul>
+      <li><b>开头 3 秒</b>：直接放结果。例：「这是我给一家婚庆公司 3 分钟做出来的电子请柬」</li>
+      <li><b>中间</b>：录屏操作。选模板 → 套用 → AI 生成主视觉 → 报名表单 → 签到码，全流程不超过 15 秒</li>
+      <li><b>结尾</b>：一句 CTA。「需要同款的私信我」/「评论区扣 1」</li>
+    </ul>
+    <h4>可复用的选题（你有素材，直接能出）</h4>
+    <ol>
+      <li>3 分钟做出一份婚礼电子请柬（婚礼人群，最容易爆）</li>
+      <li>培训招生页怎么做，报名数据自动汇总到表格</li>
+      <li>年会签到不用排队：手机扫码 2 秒核销</li>
+      <li>活动报名人数实时看板，老板随时看手机</li>
+      <li>不找设计师，AI 一句话生成活动主视觉</li>
+    </ol>
+    <h4>私信话术（不要报价）</h4>
+    <div class="quote"><b>你：</b>您好，看到您在做活动～ 您大概什么时候办、预计多少人参加？我把一个做好的同类案例发您看看，免费体验不用注册。<br><b>不要说的：</b>「我们价格 199 起」「要不要买一套」——第一句报价，客户就跑了。</div>
+  </div>
+
+  <h3>渠道三 · 异业互推 + 渠道合伙人 <span class="pill g">最有杠杆</span></h3>
+  <div class="card">
+    <h4>合伙人从哪里来</h4>
+    <p>婚庆司仪、婚礼摄影师、花艺/婚车、酒店宴会销售、活动物料/喷绘制作、会议平板租赁、签到机租赁、会展搭建。<b>他们的共同点：天天接触要办活动的人，但自己卖不了这类服务。</b></p>
+    <h4>他们为什么愿意干</h4>
+    <p>给 30% 返佣，他们不需要干活、零成本、白赚一笔，而且能给自己客户多提供一个增值服务。这是纯赚的买卖。</p>
+    <div class="talk"><b>招募话术：</b>「您客户经常要报名、要签到吧？我这边有一套现成的活动微站系统，客户自己就能填报名、扫码签到。您把链接给客户，客户付钱，您拿 30%。您啥都不用做，我这边全程搭。您手上有没有最近要办活动的客户？」</div>
+    <h4>怎么追踪（别手工记账）</h4>
+    <ul>
+      <li>合伙人在系统里开子账号，系统自动生成<b>专属推广码</b></li>
+      <li>客户开号时填推广码即完成绑定，成交后系统自动记返佣</li>
+      <li>返佣走钱包余额结算，透明可查——这也是你产品的一个卖点，展示给合伙人看能提高签约率</li>
+    </ul>
+  </div>
+
+  <h3>渠道四 · 闲鱼 <span class="pill a">只用来验证和练手</span></h3>
+  <div class="card">
+    <ul>
+      <li><b>作用</b>：验证定价、练成交话术、出前几单拿评价。不要当主战场，客群杂、比价严重、售后磨人。</li>
+      <li><b>不要做 39.9 引流款</b>：会把你的价格锚点钉死，而且低价客户要求最多、最难伺候。</li>
+      <li><b>建议 SKU</b>：199 单场体验 / 499 年度会员 / 699 代搭建服务（代搭建最好卖，客户买的是省事）。</li>
+      <li>图片用已经做好的 9 张卖点图，视频用 65 秒宣传片剪 30 秒版本。</li>
+    </ul>
+  </div>
+</section>
+
+<section id="s6">
+  <h2 class="sec"><span class="num">06</span>成交话术库</h2>
+  <p class="sec-tip">核心原则：讲结果不讲功能，讲场景不讲参数。</p>
+
+  <h3>功能翻译表（左边是你能做的，右边是客户听得懂的）</h3>
+  <div class="table-box">
+    <table>
+      <thead><tr><th>你的功能</th><th>对客户说</th></tr></thead>
+      <tbody>
+        <tr><td>模板体系 + 一键套用</td><td>不用设计、不用开发，选个模板换个字就能用，当天就能上线</td></tr>
+        <tr><td>AI 一键生图</td><td>不用找设计师做主视觉，一句话生成，省下几百到几千的设计费</td></tr>
+        <tr><td>报名表单 + 数据导出</td><td>报名自动汇总，随时导出 Excel，不用一个个抄微信</td></tr>
+        <tr><td>扫码签到 + 补签</td><td>现场扫码 2 秒进场，不排队、不手写签到表、不怕代签</td></tr>
+        <tr><td>模块级权限</td><td>不同的人看到不同的内容，VIP 客户能看到普通客户看不到的模块</td></tr>
+        <tr><td>实时数据统计</td><td>多少人看了、多少人报名，手机随时能看，汇报有数据</td></tr>
+        <tr><td>开放/关闭时间控制</td><td>到点自动开放报名、到点自动关闭，不用熬夜手动开关</td></tr>
+        <tr><td>分销返佣</td><td>帮你介绍客户的人能自动拿到佣金，你多一条销售渠道</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>报价话术（按场景报，不要先报底价）</h3>
+  <div class="quote">
+    <b>单场客户：</b>「您这一场，我建议先用单场版本，199，包含微站搭建、报名、签到，活动结束还能留着做资料。您先跑通一场，觉得好用再按年买，年费 499 一年内可以反复用，更划算。」<br><br>
+    <b>机构客户：</b>「您一年几十场，单场买不划算。机构版 1980 一年，不限场次，还能开 3 个子账号给同事一起用，平均一场不到几十块。先免费给您做一场看看效果？」
+  </div>
+
+  <h3>异议处理（八条最常见）</h3>
+  <div class="table-box">
+    <table>
+      <thead><tr><th>客户说</th><th>你怎么回</th></tr></thead>
+      <tbody>
+        <tr><td>太贵了</td><td>「单看 199 不便宜，但这一场你能省掉设计和开发的时间。要不我先免费帮您做一场，您看完再决定值不值？」</td></tr>
+        <tr><td>我自己用问卷/表单也能做</td><td>「问卷能收数据，但没有风格、没有签到、报名人数还要自己数。您把问卷链接和成品放一起看，差别挺明显，要不要我发您对比一下？」</td></tr>
+        <tr><td>我再想想</td><td>「可以，您想的这段时间要不要我先按您的活动做个草稿？反正是免费的，做出来您看着想更具体。」（用"给结果"替代"等回复"）</td></tr>
+        <tr><td>能不能免费先用</td><td>「可以，前几家的试用期我都是免费的，我可以先帮您搭好整场，您体验完觉得合适再付费；如果不用，我删掉就行。」（限定名额 + 明确边界）</td></tr>
+        <tr><td>能开发票吗</td><td>「可以开，但需要开发票的情况我建议走机构年费，对公更规范。」（把需求转化成更高客单）</td></tr>
+        <tr><td>你小作坊会不会跑路</td><td>「系统部署在阿里云，域名 wm.meetotour.com 已经稳定运行；而且我给您开的是独立账号，报名数据您可以随时自己导出，数据在您手里。」</td></tr>
+        <tr><td>我不太会用电脑</td><td>「不用您操作，我全程帮您搭好，您只需要微信告诉我要改哪里。这也是我的服务内容。」</td></tr>
+        <tr><td>别家更便宜</td><td>「便宜的多半是做一个静态页，不含报名和签到。您要的是活动全程能用的，不是一张网页。我把功能清单发您对比一下。」</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>逼单的三个安全动作（不要催，要推进）</h3>
+  <ol>
+    <li><b>给下一步，不给压力</b>：「我先帮您把第一版搭出来，您看着改」——降低对方的决策成本。</li>
+    <li><b>给时间锚</b>：「您这场是 15 号，我们最好这周定下来，留几天您验收和改文案。」——用真实时间点推进。</li>
+    <li><b>给稀缺</b>：「本月还有 3 个免费案例名额（含代搭建）」——只在你真的有名额时用，别撒谎。</li>
+  </ol>
+  <div class="callout alert"><b>红线：</b>不要承诺你做不到的功能（定制开发、对接第三方系统、私有化部署、源码交付）。宁可说「这个暂时不做」，也不要先答应再交付不了——口碑在小城市是致命的。</div>
+</section>
+
+<section id="s7">
+  <h2 class="sec"><span class="num">07</span>定价与套餐建议</h2>
+  <p class="sec-tip">定价不只是数字，它决定了你吸引什么客户。</p>
+  <div class="table-box">
+    <table>
+      <thead><tr><th>套餐</th><th>价格</th><th>包含</th><th>面向</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><b>单场体验版</b></td><td>199 / 场</td><td>1 个微站、报名 + 签到、30 天在线</td><td>零散主办方、第一次尝试的客户</td><td>低门槛试用，积累信任</td></tr>
+        <tr><td><b>年度会员</b> <span class="pill p">主推</span></td><td>499 / 年</td><td>会员期内建站，含全部功能</td><td>小机构、个人工作室</td><td>现金流 + 复购</td></tr>
+        <tr><td><b>机构版</b> <span class="pill g">建议新增</span></td><td>1980 / 年</td><td>3 个子账号、不限场次、优先支持</td><td>婚庆公司、培训机构、活动公司</td><td>真正的利润来源</td></tr>
+        <tr><td><b>代搭建服务</b> <span class="pill t">最好卖</span></td><td>699 / 场</td><td>你帮他把整场微站搭好、改到位</td><td>不想自己动手的客户</td><td>客户买的是省事，不是软件</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout warn"><b>不建议做 39.9 引流款。</b>原因：① 拉低价格锚点，后面再涨价客户不接受；② 吸引来的是价格敏感型客户，要求多、复购低、售后磨人；③ 你的交付是有边际成本的（要花时间），低价单会吃掉你所有精力。</div>
+  <div class="callout tip"><b>首单策略：</b>前 5 家免费（写入条件：允许展示案例 + 提供一句评价 + 介绍 1 个同行）。这不是亏本，这是买案例和口碑——冷启动期最贵的不是你的人工，是信任。</div>
+</section>
+
+<section id="s8">
+  <h2 class="sec"><span class="num">08</span>每周动作清单（照做）</h2>
+  <p class="sec-tip">销售不需要灵感，需要重复。把它当成每天 1 小时的固定动作。</p>
+  <div class="grid2">
+    <div class="card">
+      <h4>每天（约 60 分钟）</h4>
+      <ul class="chk">
+        <li>加 10 个精准微信（婚庆 / 培训 / 活动执行）</li>
+        <li>跟进 3 个已加好友，发案例或演示链接</li>
+        <li>跟 1 个意向客户推进（报价或约时间）</li>
+        <li>记录今天的数据（加了几人、几人回复）</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>每周（约 3 小时）</h4>
+      <ul class="chk">
+        <li>发 3 条短视频 / 图文（小红书 + 视频号 + 抖音同发）</li>
+        <li>完成 2 次正式报价</li>
+        <li>联系 2 个潜在渠道合伙人</li>
+        <li>整理 1 个新案例（截图 + 客户评价）</li>
+        <li>复盘：哪句话客户有反应，哪句话冷场</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>每月</h4>
+      <ul class="chk">
+        <li>新增 ≥1 个可展示案例</li>
+        <li>签 1-2 个渠道合伙人</li>
+        <li>复盘定价与转化率，调整话术</li>
+        <li>检查续费客户，提前 15 天提醒</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>不要做的事</h4>
+      <ul>
+        <li>不要在群里刷广告（会被踢，转化极低）</li>
+        <li>不要一上来报价（先讲场景）</li>
+        <li>不要接超范围的定制需求</li>
+        <li>不要同时开所有渠道（先跑通一个）</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="s9">
+  <h2 class="sec"><span class="num">09</span>数据指标：用数字判断问题出在哪</h2>
+  <p class="sec-tip">每周记一次，连续记 4 周就能看出卡点。</p>
+  <div class="table-box">
+    <table>
+      <thead><tr><th>环节</th><th>健康值</th><th>低于这个值说明</th><th>怎么改</th></tr></thead>
+      <tbody>
+        <tr><td>加好友 → 通过</td><td>40%+</td><td>名单不精准，或加的是前台不是决策人</td><td>换渠道找老板/负责人，备注写清来源和身份</td></tr>
+        <tr><td>好友 → 体验</td><td>30%+</td><td>开场话术太重、没给到「立刻能看的东西」</td><td>改成一上来就发演示链接和案例视频</td></tr>
+        <tr><td>体验 → 报价</td><td>25%+</td><td>案例不够贴合他的场景，或没主动推进</td><td>用同行业的案例；体验后 24 小时内必须跟进</td></tr>
+        <tr><td>报价 → 成交</td><td>15-25%</td><td>价格锚点问题，或信任不足</td><td>加免费首单、加代搭建服务、给退出兜底</td></tr>
+        <tr><td>成交 → 转介绍</td><td>20%+</td><td>交付体验一般，或没主动要</td><td>交付当天主动请客户转介绍 + 给返佣机制</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout info"><b>用法：</b>每周只看一个最薄的环节，只改这一件事。同时改五个环节等于没改。</div>
+</section>
+
+<section id="s10">
+  <h2 class="sec"><span class="num">10</span>现在立刻要补的物料</h2>
+  <p class="sec-tip">销售现场缺物料，等于上战场没带枪。</p>
+  <div class="grid3">
+    <div class="feat">
+      <h5>① 对外报价单页 <span class="pill g">已生成</span></h5>
+      <p><code>docs/sales-onepager.html</code>，可以直接发客户、发朋友圈、贴在闲鱼详情里。改一版你的联系方式即可。</p>
+    </div>
+    <div class="feat">
+      <h5>② 免登录试用入口 <span class="pill a">产品侧改造</span></h5>
+      <p>现在客户要登录 demo 账号才能看到后台，门槛太高，这是转化率最大的一处漏点。建议做「游客试用」模式。</p>
+    </div>
+    <div class="feat">
+      <h5>③ 案例页 / 客户见证 <span class="pill a">等 5 单之后</span></h5>
+      <p>免费做完前 5 单后，把截图 + 客户评价做成一页案例集，这是你后续所有沟通里最有力的东西。</p>
+    </div>
+  </div>
+  <h3>产品侧建议：把「免登录试用」做出来</h3>
+  <p>这是你投入产出比最高的一次改造。现在的流程是：客户感兴趣 → 需要我给他 demo 账号密码 → 他要输账号 → 他可能就不点了。<b>每多一步，流失一半。</b></p>
+  <div class="table-box">
+    <table>
+      <thead><tr><th>建议</th><th>做法</th><th>限制</th></tr></thead>
+      <tbody>
+        <tr><td>游客试用链接</td><td>生成一次性试用账号，点链接直接进后台编辑器（免账号密码）</td><td>有效期 30 分钟、自动清理数据</td></tr>
+        <tr><td>只改不发布</td><td>可以体验选模板、改文案、AI 生图</td><td>不能发布上线，引导到付费</td></tr>
+        <tr><td>底部转化条</td><td>试用页面常驻「保存并发布 → 开通会员」按钮</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout warn"><b>提醒：</b>涉及排期、开发资源、上线范围的决策，建议先跟对应负责人确认后再动手，避免占用了正式需求的开发窗口。</div>
+</section>
+
+<section>
+  <h2 class="sec"><span class="num">✓</span>90 天目标自查</h2>
+  <div class="grid2">
+    <div class="card">
+      <h4>硬指标</h4>
+      <ul class="chk">
+        <li>5 个可展示的真实案例（含客户评价）</li>
+        <li>10 个付费客户，其中 ≥3 个年费机构</li>
+        <li>5-10 个活跃渠道合伙人</li>
+        <li>月流水 5000-15000 元</li>
+        <li>闲鱼店铺有 5 条以上真实好评</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>软指标（更长期）</h4>
+      <ul class="chk">
+        <li>客户提问从「这是什么」变成「多少钱」</li>
+        <li>有客户主动介绍同行给你</li>
+        <li>能一句话说清定位，不需要解释三分钟</li>
+        <li>每周有稳定的新咨询进来</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout tip"><b>最后一句：</b>从「产品思维」切到「销售思维」——不是等客户说需要什么，而是主动告诉 5 个人「我能帮你解决这个」。第一个单子永远最慢，第二单会快很多。</div>
+</section>
+
+</main>
+<footer>
+  <div class="wrap">微站系统 · 销售作战手册 v1.0 · 内部资料请勿外发</div>
+</footer>
+
+<script>
+document.querySelectorAll('nav.toc a').forEach(function(a){
+  a.addEventListener('click',function(e){
+    document.querySelectorAll('nav.toc a').forEach(function(x){x.classList.remove('on');});
+    this.classList.add('on');
+  });
+});
+var secs=document.querySelectorAll('section[id]');
+var links=document.querySelectorAll('nav.toc a');
+function onScroll(){
+  var y=window.scrollY+120, cur=null;
+  secs.forEach(function(s){ if(s.offsetTop<=y) cur=s.id; });
+  links.forEach(function(a){ a.classList.toggle('on', a.getAttribute('href')==='#'+cur); });
+}
+window.addEventListener('scroll',onScroll); onScroll();
+</script>
+</body>
+</html>

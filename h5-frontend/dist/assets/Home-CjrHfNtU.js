@@ -1,0 +1,1 @@
+import"./base-CBb9iHiX.js";import{E as o}from"./index-Kvi0OKSS.js";import{_ as t,j as c,c as s,e as r}from"./index-uTPwd7TY.js";import"./use-id-D_VoiA1S.js";const a={},n={class:"home"};function _(m,p){const e=o;return c(),s("div",n,[r(e,{description:"请扫描二维码或通过链接访问微站"})])}const h=t(a,[["render",_],["__scopeId","data-v-ef83080a"]]);export{h as default};
