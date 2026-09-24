@@ -13,29 +13,31 @@ import qrcode
 
 BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT = os.path.join(BASE, "docs", "case-gallery.html")
+KV_DIR = os.path.join(BASE, "backend", "seed_assets", "demo")
 DOMAIN = "https://wm.meetotour.com"
 LOGIN_PWD = "Demo@123456"
+KV_W, KV_H = 500, 227          # 卡片横幅内嵌尺寸（JPEG 压缩，控制文件体积）
 
 CASES = [
-    dict(code="demo-wedding", industry="婚庆宴会", title="张伟 & 李娜 婚礼邀请", modules=9,
-         desc="电子请柬 + 宾客回执 + 婚礼流程 + 席位指引，一份请柬搞定宾客沟通",
+    dict(code="demo-wedding", kv="kv_wedding.png", industry="婚庆宴会", title="张伟 & 李娜 婚礼邀请", modules=12,
+         desc="邀请函 + 流程与菜单 + 宾客回执 + 席位 / 交通 / 住宿，一份请柬搞定全部宾客沟通",
          tags=["公开访问", "宾客回执", "自定义表单"], access="public"),
-    dict(code="demo-course", industry="培训教育", title="少儿编程秋季班招生", modules=10,
-         desc="课程体系 + 开班时间表 + 免费试听预约，招生线索自动汇总成表",
+    dict(code="demo-course", kv="kv_course.png", industry="培训教育", title="少儿编程秋季班招生", modules=13,
+         desc="课程体系 + 进阶路径 + 开班时间表 + 免费试听预约 + 师资与学员成果，招生线索自动汇总成表",
          tags=["公开访问", "试听预约", "开班日程"], access="public"),
-    dict(code="demo-summit", industry="峰会论坛", title="2026 数字零售行业峰会", modules=11,
-         desc="主论坛 + 双分论坛议程、嘉宾阵容、分场次签到，800 人大会全流程管理",
+    dict(code="demo-summit", kv="kv_summit.png", industry="峰会论坛", title="2026 数字零售行业峰会", modules=13,
+         desc="主论坛 + 双分论坛议程、嘉宾阵容、交通住宿餐饮、分场次签到，800 人大会全流程管理",
          tags=["需登录", "分场次签到", "账号权限"], access="login",
          accounts="vip001（全部可见）/ guest001（仅部分模块）"),
-    dict(code="demo-annual", industry="企业年会", title="同心同行 · 2026 公司年会", modules=10,
-         desc="年会通知、出席回执、抽奖入口、入场扫码核销，行政省一半心",
+    dict(code="demo-annual", kv="kv_annual.png", industry="企业年会", title="同心同行 · 2026 公司年会", modules=12,
+         desc="年会通知、出席回执、奖项与节目征集、桌位安排、入场扫码核销，行政省一半心",
          tags=["需登录", "出席回执", "扫码核销"], access="login",
          accounts="vip001（全部可见）/ staff001（不含神秘节目单）"),
-    dict(code="demo-store", industry="门店品牌", title="星空咖啡 · 会员日", modules=9,
-         desc="活动日历 + 会员招募 + 门店导航，活动窗口到期自动开放 / 关闭",
+    dict(code="demo-store", kv="bg_store.png", kv_crop=(0, 500, 750, 840), industry="门店品牌", title="星空咖啡 · 会员日", modules=12,
+         desc="会员日福利 + 活动日历 + 会员等级权益 + 门店导航，活动窗口到期自动开放 / 关闭",
          tags=["公开访问", "定时开关", "会员招募"], access="public"),
-    dict(code="demo-chamber", industry="商协会", title="青年企业家协会换届大会", modules=10,
-         desc="会议通知 + 参会回执 + 章程资料下载 + 会员扫码签到，秘书处一页搞定",
+    dict(code="demo-chamber", kv="kv_chamber.png", industry="商协会", title="青年企业家协会换届大会", modules=13,
+         desc="会议通知 + 组织架构 + 选举办法 + 参会回执 + 章程资料下载 + 住宿交通，秘书处一页搞定",
          tags=["需登录", "资料附件", "会员签到"], access="login",
          accounts="member001（全部可见）/ observer001（观察员视角）"),
     dict(code="demo-launch", industry="发布会", title="2026 新品发布会", modules=5,
@@ -46,6 +48,21 @@ CASES = [
          desc="公开访问、预约报名、三日活动日程，到访客户扫码即看",
          tags=["公开访问", "预约报名", "多日日程"], access="public"),
 ]
+
+
+def kv_b64(filename: str, crop=None) -> str | None:
+    """把 seed_assets/demo 下的 KV 压成 JPEG 内嵌；竖向背景图用 crop 取横向条带"""
+    path = os.path.join(KV_DIR, filename)
+    if not os.path.exists(path):
+        return None
+    from PIL import Image
+    img = Image.open(path).convert("RGB")
+    if crop:
+        img = img.crop(tuple(crop))
+    img = img.resize((KV_W, KV_H), Image.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=82, optimize=True)
+    return base64.b64encode(buf.getvalue()).decode()
 
 
 def qr_b64(url: str) -> str:
@@ -70,21 +87,31 @@ def build_card(c: dict) -> str:
                       f'<br>密码：<code>{LOGIN_PWD}</code></div>')
     tags = "".join(f'<span class="pill p">{t}</span>' for t in c["tags"])
     cnt = f'<span class="pill n">共 {c["modules"]} 个模块</span>' if c.get("modules") else ""
+    kv = kv_b64(c["kv"], c.get("kv_crop")) if c.get("kv") else None
+    if kv:
+        kv_html = f'<div class="case-kv"><img src="data:image/jpeg;base64,{kv}" alt="{c["title"]} 主视觉"></div>'
+        body_cls = "case-body"
+    else:
+        kv_html = ""
+        body_cls = "case-body case-body--flush"
     return f"""
     <div class="case">
-      <div class="case-main">
-        <div class="case-head">
-          <span class="industry">{c['industry']}</span>
-          <h3>{c['title']}</h3>
+      {kv_html}
+      <div class="{body_cls}">
+        <div class="case-main">
+          <div class="case-head">
+            <span class="industry">{c['industry']}</span>
+            <h3>{c['title']}</h3>
+          </div>
+          <p class="desc">{c['desc']}</p>
+          <div class="tags">{cnt}{tags}</div>
+          <div class="access">{access_html}{login_html}</div>
+          <a class="link" href="{url}" target="_blank">{url.replace('https://', '')} →</a>
         </div>
-        <p class="desc">{c['desc']}</p>
-        <div class="tags">{cnt}{tags}</div>
-        <div class="access">{access_html}{login_html}</div>
-        <a class="link" href="{url}" target="_blank">{url.replace('https://', '')} →</a>
-      </div>
-      <div class="case-qr">
-        <img src="data:image/png;base64,{qr}" alt="{c['title']} 二维码">
-        <span>扫码体验</span>
+        <div class="case-qr">
+          <img src="data:image/png;base64,{qr}" alt="{c['title']} 二维码">
+          <span>扫码体验</span>
+        </div>
       </div>
     </div>"""
 
@@ -113,8 +140,12 @@ header.hero p.sub{font-size:16.5px;color:rgba(255,255,255,.88);max-width:720px;}
 main{padding:48px 0 64px;}
 .tip{background:var(--primary-light);border-left:4px solid var(--primary);border-radius:10px;padding:13px 18px;font-size:14px;color:var(--primary-dark);margin-bottom:28px;}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:18px;}
-.case{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;gap:20px;transition:.18s;}
+.case{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:0;display:flex;flex-direction:column;transition:.18s;overflow:hidden;}
 .case:hover{border-color:var(--primary);box-shadow:0 10px 30px rgba(79,70,229,.10);}
+.case-kv{height:120px;flex-shrink:0;}
+.case-kv img{width:100%;height:100%;object-fit:cover;display:block;}
+.case-body{display:flex;gap:20px;padding:20px 24px;flex:1;min-width:0;}
+.case-body--flush{padding-top:22px;}
 .case-main{flex:1;min-width:0;}
 .case-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
 .industry{flex-shrink:0;background:var(--primary);color:#fff;font-size:12px;padding:3px 10px;border-radius:999px;letter-spacing:.5px;}
@@ -131,7 +162,7 @@ main{padding:48px 0 64px;}
 code{background:#F1F5F9;padding:1px 7px;border-radius:5px;font-size:12.5px;color:#334155;}
 .link{display:inline-block;font-size:13.5px;color:var(--primary);text-decoration:none;font-weight:500;}
 .link:hover{text-decoration:underline;}
-.case-qr{flex-shrink:0;width:118px;text-align:center;}
+.case-qr{flex-shrink:0;width:118px;text-align:center;align-self:center;}
 .case-qr img{width:118px;height:118px;border:1px solid var(--border);border-radius:10px;display:block;}
 .case-qr span{display:block;font-size:12px;color:var(--text-3);margin-top:6px;}
 .cta{margin-top:36px;background:linear-gradient(135deg,#312E81,#4F46E5);border-radius:16px;padding:30px 34px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;}

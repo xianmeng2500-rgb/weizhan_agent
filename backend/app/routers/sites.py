@@ -5,7 +5,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, Site, SiteTemplate, Module
-from app.utils.deps import get_current_admin, assert_site_access, ROLE_SUPER_ADMIN
+from app.utils.deps import (
+    get_current_admin,
+    assert_site_access,
+    ROLE_SUPER_ADMIN,
+)
 from app.services.billing_service import assert_active_membership, consume_credit_for_site_online
 from app.schemas.site import (
     SiteCreate, SiteUpdate, SiteStatusUpdate,
@@ -251,12 +255,14 @@ def update_site(
     assert_site_access(site, current)
     # 商业化: 校验会员状态（过期后微站只读）
     assert_active_membership(db, current)
+
+    payload = req.model_dump(exclude_unset=True)
     if req.code and req.code != site.code:
         if site.status == "online":
             raise HTTPException(status_code=400, detail="微站已上线，访问码不可修改")
         if db.query(Site).filter(Site.code == req.code).first():
             raise HTTPException(status_code=400, detail="微站唯一码已存在")
-    for field, value in req.model_dump(exclude_unset=True).items():
+    for field, value in payload.items():
         if field in ("customer_service_config", "login_form_config", "title_config"):
             value = json.dumps(value, ensure_ascii=False) if value else None
         elif field == "login_fields_config":

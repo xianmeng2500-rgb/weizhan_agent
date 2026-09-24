@@ -1,4 +1,5 @@
 """依赖注入: 认证、数据库等"""
+from datetime import datetime, timezone
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
@@ -17,6 +18,11 @@ ROLE_SUB_ADMIN = "sub_admin"
 ACCOUNT_MANAGER_ROLES = {ROLE_SUPER_ADMIN, ROLE_ADMIN}
 
 
+def utcnow() -> datetime:
+    """统一使用无时区的 UTC（与库内 DateTime 列保持一致）"""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 def get_current_admin(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
     db: Session = Depends(get_db),
@@ -29,7 +35,13 @@ def get_current_admin(
             headers={"WWW-Authenticate": "Bearer"},
         )
     payload = decode_access_token(credentials.credentials)
-    if payload is None or payload.get("type") != "admin":
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="登录已过期",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if payload.get("type") != "admin":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="登录已过期",
@@ -74,7 +86,7 @@ def can_manage_target_role(current: User, target_role: str) -> bool:
     return False
 
 
-def assert_site_access(site, current: User):
+def assert_site_access(site, current):
     """校验当前用户是否有权访问该微站
 
     - 超级管理员: 可访问所有微站
@@ -110,3 +122,4 @@ def get_optional_frontend_account(
     if account and site_id and account.site_id == int(site_id):
         return account
     return None
+

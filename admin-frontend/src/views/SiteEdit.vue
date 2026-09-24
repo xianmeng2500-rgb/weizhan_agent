@@ -70,7 +70,12 @@
                       <el-input v-model="form.name" placeholder="请输入名称" @input="markDirty" />
                     </el-form-item>
                     <el-form-item label="访问码" required>
-                      <el-input v-model="form.code" placeholder="英文+数字" :disabled="isCodeLocked" @input="markDirty">
+                      <el-input
+                        v-model="form.code"
+                        placeholder="英文+数字"
+                        :disabled="isCodeLocked"
+                        @input="markDirty"
+                      >
                         <template #append>
                           <div class="code-actions">
                             <el-button text :disabled="isCodeLocked" @click="generateCode">随机</el-button>

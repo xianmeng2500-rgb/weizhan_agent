@@ -45,8 +45,11 @@ const router = createRouter({
 
 router.beforeEach((to, _from, next) => {
   const auth = useAuthStore()
-  const token = auth.token
-  if (to.name !== 'Login' && !token) {
+
+  if (to.meta.public) {
+    return next()
+  }
+  if (to.name !== 'Login' && !auth.token) {
     next({ name: 'Login' })
   } else if (to.meta.requiresSuperAdmin && auth.role && !auth.isSuperAdmin) {
     next({ name: 'Dashboard' })

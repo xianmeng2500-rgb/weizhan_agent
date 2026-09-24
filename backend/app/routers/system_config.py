@@ -58,7 +58,7 @@ def read_runtime_config(
     db: Session = Depends(get_db),
     current: User = Depends(get_current_admin),
 ):
-    """供后台编辑器读取的非敏感运行时配置。"""
+    """供后台编辑器读取的非敏感运行时配置（h5_domain 与本地图标库）。"""
     config = get_config(db)
     try:
         icons = json.loads(config.local_icon_library) if config.local_icon_library else []

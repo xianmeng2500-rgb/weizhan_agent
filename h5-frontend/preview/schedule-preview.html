@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>日程日期按钮条 - 三主题预览</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+    background: #eceef3;
+    padding: 24px 16px 40px;
+  }
+  h2 { font-size: 15px; color: #555; margin: 24px 0 8px; font-weight: 600; }
+  h2:first-child { margin-top: 0; }
+
+  .phone {
+    width: 375px;
+    max-width: 100%;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+  }
+  .navbar {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    font-size: 15px;
+    font-weight: 600;
+    background: #fff;
+    color: #1a1a1a;
+  }
+  .strip {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 16px 14px 12px;
+    scrollbar-width: none;
+  }
+  .strip::-webkit-scrollbar { display: none; }
+
+  .date-btn {
+    flex-shrink: 0;
+    min-width: 72px;
+    padding: 9px 14px;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .db-day { font-size: 14px; font-weight: 600; color: #333; line-height: 1.2; white-space: nowrap; }
+  .db-week { font-size: 11px; color: #999; line-height: 1.2; white-space: nowrap; }
+
+  .is-past .db-day { color: #b5b5b5; }
+  .is-past .db-week { color: #c4c4c4; }
+  .is-today:not(.is-active) { border-color: var(--schedule-accent); }
+  .is-today:not(.is-active) .db-day { color: var(--schedule-accent); }
+
+  .date-btn.is-active {
+    background: var(--schedule-accent);
+    border-color: var(--schedule-accent);
+  }
+  /* 选中态文字（放最后，覆盖主题基础色与过期灰） */
+  .date-btn.is-active .db-day,
+  .date-btn.is-active .db-week { color: var(--schedule-active-text, #fff); }
+
+  .card {
+    margin: 0 14px 10px;
+    display: flex;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  }
+  .bar { width: 4px; background: #667eea; }
+  .card-body { flex: 1; padding: 14px 16px; }
+  .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .time {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 13px; font-weight: 500;
+    color: var(--schedule-accent);
+    background: var(--schedule-accent-light);
+    padding: 3px 10px; border-radius: 20px;
+  }
+  .tag {
+    font-size: 11px; padding: 1px 6px; border-radius: 2px;
+    color: var(--schedule-accent); border: 1px solid var(--schedule-accent);
+  }
+  .topic { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+
+  /* ===== 主题 ===== */
+  .tpl-classic {
+    --schedule-accent: #667eea;
+    --schedule-accent-light: #eef0fd;
+    --schedule-active-text: #fff;
+    background: #f5f7fa;
+  }
+  .tpl-dark {
+    --schedule-accent: #5dcaa5;
+    --schedule-accent-light: rgba(93, 202, 165, 0.15);
+    --schedule-active-text: #0d2b23;
+    background: #0f0f1a;
+    color: #e0e0e0;
+  }
+  .tpl-dark .navbar { background: #1a1a2e; color: #e0e0e0; }
+  .tpl-dark .date-btn { background: #1a1a2e; border-color: #2a2a3e; }
+  .tpl-dark .db-day { color: #e0e0e0; }
+  .tpl-dark .db-week { color: #888; }
+  .tpl-dark .is-past .db-day { color: #5a5a6e; }
+  .tpl-dark .is-past .db-week { color: #4a4a5e; }
+  .tpl-dark .card { background: #1a1a2e; box-shadow: 0 1px 6px rgba(0,0,0,0.25); }
+  .tpl-dark .topic { color: #e8e8e8; }
+  .tpl-festive {
+    --schedule-accent: #e74c3c;
+    --schedule-accent-light: rgba(231, 76, 60, 0.1);
+    --schedule-active-text: #fff;
+    background: #f5f7fa;
+  }
+  .note { font-size: 12px; color: #888; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<h2>classic（经典紫蓝）</h2>
+<div class="phone tpl-classic">
+  <div class="navbar">日程安排</div>
+  <div class="strip">
+    <div class="date-btn is-past"><span class="db-day">9月21日</span><span class="db-week">周一</span></div>
+    <div class="date-btn is-past"><span class="db-day">9月22日</span><span class="db-week">周二</span></div>
+    <div class="date-btn is-today is-active"><span class="db-day">9月23日</span><span class="db-week">今天</span></div>
+    <div class="date-btn"><span class="db-day">9月24日</span><span class="db-week">周四</span></div>
+    <div class="date-btn"><span class="db-day">9月25日</span><span class="db-week">周五</span></div>
+  </div>
+  <div class="card"><div class="bar"></div><div class="card-body">
+    <div class="row"><span class="time">09:00</span><span class="tag">张三</span></div>
+    <div class="topic">开幕式致辞</div>
+  </div></div>
+</div>
+<div class="note">选中态：主题色底 + 白字；已过日期灰显</div>
+
+<h2>dark（暗夜青绿）</h2>
+<div class="phone tpl-dark">
+  <div class="navbar">日程安排</div>
+  <div class="strip">
+    <div class="date-btn is-past"><span class="db-day">9月21日</span><span class="db-week">周一</span></div>
+    <div class="date-btn is-past is-active"><span class="db-day">9月22日</span><span class="db-week">周二</span></div>
+    <div class="date-btn is-today"><span class="db-day">9月23日</span><span class="db-week">今天</span></div>
+    <div class="date-btn"><span class="db-day">9月24日</span><span class="db-week">周四</span></div>
+    <div class="date-btn"><span class="db-day">9月25日</span><span class="db-week">周五</span></div>
+  </div>
+  <div class="card"><div class="bar" style="background:#67c23a"></div><div class="card-body">
+    <div class="row"><span class="time">10:30</span><span class="tag">李四</span></div>
+    <div class="topic">主题论坛</div>
+  </div></div>
+</div>
+<div class="note">选中态（含已过日期选中）：亮青底 + 深绿文字，保证对比度</div>
+
+<h2>festive（节日红）</h2>
+<div class="phone tpl-festive">
+  <div class="navbar">日程安排</div>
+  <div class="strip">
+    <div class="date-btn is-past"><span class="db-day">9月21日</span><span class="db-week">周一</span></div>
+    <div class="date-btn is-past"><span class="db-day">9月22日</span><span class="db-week">周二</span></div>
+    <div class="date-btn is-today is-active"><span class="db-day">9月23日</span><span class="db-week">今天</span></div>
+    <div class="date-btn"><span class="db-day">9月24日</span><span class="db-week">周四</span></div>
+    <div class="date-btn"><span class="db-day">9月25日</span><span class="db-week">周五</span></div>
+  </div>
+  <div class="card"><div class="bar" style="background:#e6a23c"></div><div class="card-body">
+    <div class="row"><span class="time">14:00</span><span class="tag">王五</span></div>
+    <div class="topic">颁奖晚宴</div>
+  </div></div>
+</div>
+<div class="note">选中态：红底 + 白字；负责人标签同步红色主题</div>
+
+</body>
+</html>

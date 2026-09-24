@@ -1,5 +1,8 @@
 """文件上传路由"""
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from sqlalchemy.orm import Session
+
+from app.database import get_db
 from app.models import User
 from app.utils.deps import get_current_admin
 from app.services import (
@@ -15,6 +18,7 @@ router = APIRouter(prefix="/upload", tags=["文件上传"])
 @router.post("/image")
 async def upload_file(
     file: UploadFile = File(...),
+    db: Session = Depends(get_db),
     current: User = Depends(get_current_admin),
 ):
     """上传图片 - 优先OSS，未配置则存本地"""
@@ -23,6 +27,7 @@ async def upload_file(
         url = await upload_image(file)
     else:
         url = await upload_image_local(file)
+
     return {"url": url, "original_name": file.filename}
 
 

@@ -53,3 +53,7 @@ docs/promo-video/tts/
 docs/promo-video/assets/
 docs/promo-video/audio.wav
 docs/promo-video/preview_*.jpg
+
+# Seed asset intermediates (AI raw output / PIL backups, regenerable)
+backend/seed_assets/**/_ai_raw/
+backend/seed_assets/**/_pil_backup/

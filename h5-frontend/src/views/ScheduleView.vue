@@ -13,49 +13,32 @@
     <!-- 空状态 -->
     <van-empty v-else-if="!rawItems.length" description="暂无日程安排" />
 
-    <!-- 日历主体 -->
-    <div v-else class="calendar-container">
-      <!-- 月切换 -->
-      <div class="month-nav">
-        <div class="month-nav-btn" @click="prevMonth">
-          <van-icon name="arrow-left" size="18" />
-        </div>
-        <div class="month-label">{{ currentYear }}年 {{ currentMonth }}月</div>
-        <div class="month-nav-btn" @click="nextMonth">
-          <van-icon name="arrow" size="18" />
-        </div>
-      </div>
-
-      <!-- 星期头 -->
-      <div class="weekday-row">
-        <span v-for="w in weekNames" :key="w" class="weekday-cell" :class="{ weekend: w === '六' || w === '日' }">{{ w }}</span>
-      </div>
-
-      <!-- 日期网格 -->
-      <div class="date-grid">
+    <div v-else class="schedule-container">
+      <!-- 日期按钮条（横向滚动，仅展示有日程的日期） -->
+      <div ref="tabStrip" class="date-strip">
         <div
-          v-for="(cell, idx) in calendarCells"
-          :key="idx"
-          class="date-cell"
+          v-for="tab in dateTabs"
+          :key="tab.date"
+          class="date-btn"
           :class="{
-            'is-other-month': !cell.isCurrentMonth,
-            'is-today': cell.isToday,
-            'is-selected': cell.date === selectedDate,
-            'has-schedule': cell.hasSchedule,
+            'is-active': tab.date === selectedDate,
+            'is-today': tab.isToday,
+            'is-past': tab.isPast,
           }"
-          @click="onDateClick(cell)"
+          @click="selectDate(tab.date)"
         >
-          <span class="date-num">{{ cell.day }}</span>
-          <span v-if="cell.hasSchedule" class="date-dot"></span>
+          <span class="db-day">{{ tab.dayLabel }}</span>
+          <span class="db-week">{{ tab.weekLabel }}</span>
         </div>
       </div>
 
-      <!-- 选中日期分隔线 -->
-      <div v-if="selectedDate" class="section-divider">
-        <span class="divider-label">{{ formatSelectedLabel() }}</span>
+      <!-- 选中日期标题 -->
+      <div v-if="selectedDate" class="section-title">
+        <span class="section-title-text">{{ selectedLabel }}</span>
+        <span class="section-count">共 {{ selectedSchedules.length }} 项</span>
       </div>
 
-      <!-- 下方卡片列表 -->
+      <!-- 日程卡片列表 -->
       <div v-if="selectedSchedules.length" class="card-list">
         <div
           v-for="(item, idx) in selectedSchedules"
@@ -100,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import api from '@/api'
@@ -115,73 +98,57 @@ const moduleTitle = ref('')
 const siteTheme = ref('classic')
 const rawItems = ref<any[]>([])
 
-const weekNames = ['日', '一', '二', '三', '四', '五', '六']
-
-// 当前显示的月份
-const now = new Date()
-const currentYear = ref(now.getFullYear())
-const currentMonth = ref(now.getMonth() + 1)
+const weekNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 
 // 选中的日期 YYYY-MM-DD
 const selectedDate = ref('')
-
-interface CalendarCell {
-  date: string         // YYYY-MM-DD
-  day: number
-  isCurrentMonth: boolean
-  isToday: boolean
-  hasSchedule: boolean
-}
-
-// 快速查询某天是否有日程
-const scheduleDateSet = computed(() => {
-  const s = new Set<string>()
-  for (const item of rawItems.value) {
-    if (item.date) s.add(item.date)
-  }
-  return s
-})
+const tabStrip = ref<HTMLElement | null>(null)
 
 const todayStr = computed(() => {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 })
 
-const calendarCells = computed<CalendarCell[]>(() => {
-  const y = currentYear.value
-  const m = currentMonth.value
+interface DateTab {
+  date: string      // YYYY-MM-DD
+  dayLabel: string  // 9月23日
+  weekLabel: string // 周三 / 今天
+  isToday: boolean
+  isPast: boolean
+  count: number
+}
 
-  const firstDay = new Date(y, m - 1, 1)
-  const lastDay = new Date(y, m, 0)
-  const daysInMonth = lastDay.getDate()
-  const startDow = firstDay.getDay() // 0=日
-
-  const cells: CalendarCell[] = []
-
-  // 上月填充
-  const prevLastDay = new Date(y, m - 1, 0).getDate()
-  for (let i = startDow - 1; i >= 0; i--) {
-    const d = prevLastDay - i
-    const ds = formatDate(y, m - 1, d)
-    cells.push({ date: ds, day: d, isCurrentMonth: false, isToday: ds === todayStr.value, hasSchedule: scheduleDateSet.value.has(ds) })
+// 只取有日程的日期，按升序排列
+const dateTabs = computed<DateTab[]>(() => {
+  const map = new Map<string, number>()
+  for (const item of rawItems.value) {
+    if (!item.date) continue
+    map.set(item.date, (map.get(item.date) || 0) + 1)
   }
 
-  // 本月
-  for (let d = 1; d <= daysInMonth; d++) {
-    const ds = formatDate(y, m, d)
-    cells.push({ date: ds, day: d, isCurrentMonth: true, isToday: ds === todayStr.value, hasSchedule: scheduleDateSet.value.has(ds) })
-  }
+  const today = todayStr.value
+  return Array.from(map.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, count]) => {
+      const d = new Date(date.replace(/-/g, '/'))
+      const isToday = date === today
+      return {
+        date,
+        dayLabel: `${d.getMonth() + 1}月${d.getDate()}日`,
+        weekLabel: isToday ? '今天' : weekNames[d.getDay()],
+        isToday,
+        isPast: date < today,
+        count,
+      }
+    })
+})
 
-  // 下月填充（补满 6 行 × 7 列 = 42）
-  const remaining = 42 - cells.length
-  for (let d = 1; d <= remaining; d++) {
-    const mon = m === 12 ? 1 : m + 1
-    const yr = m === 12 ? y + 1 : y
-    const ds = formatDate(yr, mon, d)
-    cells.push({ date: ds, day: d, isCurrentMonth: false, isToday: ds === todayStr.value, hasSchedule: scheduleDateSet.value.has(ds) })
-  }
+const selectedTab = computed(() => dateTabs.value.find((t) => t.date === selectedDate.value) || null)
 
-  return cells
+const selectedLabel = computed(() => {
+  const tab = selectedTab.value
+  if (!tab) return ''
+  return `${tab.dayLabel} ${weekNames[new Date(tab.date.replace(/-/g, '/')).getDay()]}`
 })
 
 const selectedSchedules = computed(() => {
@@ -191,10 +158,6 @@ const selectedSchedules = computed(() => {
     .sort((a: any, b: any) => (a.time || '').localeCompare(b.time || ''))
 })
 
-function formatDate(y: number, m: number, d: number) {
-  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-}
-
 const navBarStyle = computed(() => {
   if (siteTheme.value === 'dark') {
     return { '--van-nav-bar-background': '#1a1a2e', '--van-nav-bar-text-color': '#e0e0e0', '--van-nav-bar-icon-color': '#e0e0e0' }
@@ -202,45 +165,31 @@ const navBarStyle = computed(() => {
   return {}
 })
 
-function prevMonth() {
-  if (currentMonth.value === 1) {
-    currentMonth.value = 12
-    currentYear.value--
-  } else {
-    currentMonth.value--
-  }
+// 默认高亮：距离当前时间最近的日期（优先今天及之后最近的一天；若全部已过，则取最靠近今天的那天）
+function pickNearestDate() {
+  const tabs = dateTabs.value
+  if (!tabs.length) return ''
+  const today = todayStr.value
+  const upcoming = tabs.find((t) => t.date >= today)
+  return upcoming ? upcoming.date : tabs[tabs.length - 1].date
 }
 
-function nextMonth() {
-  if (currentMonth.value === 12) {
-    currentMonth.value = 1
-    currentYear.value++
-  } else {
-    currentMonth.value++
-  }
+function selectDate(date: string) {
+  if (selectedDate.value === date) return
+  selectedDate.value = date
+  scrollActiveIntoView()
 }
 
-function onDateClick(cell: CalendarCell) {
-  if (cell.date === selectedDate.value) {
-    selectedDate.value = '' // 取消选中
-  } else {
-    selectedDate.value = cell.date
-    // 如果点击的日期不在当前月，跳过去
-    if (!cell.isCurrentMonth) {
-      const parts = cell.date.split('-')
-      currentYear.value = parseInt(parts[0])
-      currentMonth.value = parseInt(parts[1])
-    }
-  }
-}
-
-function formatSelectedLabel() {
-  if (!selectedDate.value) return ''
-  const d = new Date(selectedDate.value.replace(/-/g, '/'))
-  const m = d.getMonth() + 1
-  const day = d.getDate()
-  const w = weekNames[d.getDay()]
-  return `${m}月${day}日 ${w}`
+// 让高亮按钮自动居中
+function scrollActiveIntoView() {
+  nextTick(() => {
+    const strip = tabStrip.value
+    if (!strip) return
+    const el = strip.querySelector('.is-active') as HTMLElement | null
+    if (!el) return
+    const target = el.offsetLeft - strip.clientWidth / 2 + el.offsetWidth / 2
+    strip.scrollTo({ left: Math.max(target, 0), behavior: 'smooth' })
+  })
 }
 
 async function loadData() {
@@ -259,8 +208,8 @@ async function loadData() {
       rawItems.value = config.items
     }
 
-    // 默认选中今天
-    selectedDate.value = todayStr.value
+    selectedDate.value = pickNearestDate()
+    scrollActiveIntoView()
   } catch (err: any) {
     showToast(err.response?.data?.detail || '加载失败')
   } finally {
@@ -279,14 +228,20 @@ onMounted(loadData)
 .schedule-page {
   min-height: 100vh;
   background: #f5f7fa;
+  /* ===== 主题变量（基类兜底 = classic 配色，未知模板 key 也能正常显示） ===== */
+  /* --schedule-active-text: 选中态按钮文字色（深色主题强调色偏亮，需用深色文字保证对比度） */
+  --schedule-accent: #667eea;
+  --schedule-accent-light: #eef0fd;
+  --schedule-accent-soft: #f0f2ff;
+  --schedule-active-text: #fff;
 }
 
-/* ===== 主题变量 ===== */
-.tpl-classic { --schedule-accent: #667eea; --schedule-accent-light: #eef0fd; --schedule-accent-soft: #f0f2ff; }
+/* ===== 主题覆盖 ===== */
 .tpl-dark {
   --schedule-accent: #5dcaa5;
   --schedule-accent-light: rgba(93, 202, 165, 0.15);
   --schedule-accent-soft: rgba(93, 202, 165, 0.06);
+  --schedule-active-text: #0d2b23;
   background: #0f0f1a;
   color: #e0e0e0;
 }
@@ -294,6 +249,7 @@ onMounted(loadData)
   --schedule-accent: #e74c3c;
   --schedule-accent-light: rgba(231, 76, 60, 0.1);
   --schedule-accent-soft: rgba(231, 76, 60, 0.05);
+  --schedule-active-text: #fff;
 }
 
 .page-loading {
@@ -302,173 +258,127 @@ onMounted(loadData)
   padding-top: 120px;
 }
 
-/* ========== 日历容器 ========== */
-.calendar-container {
-  padding: 0 12px;
+/* ========== 容器 ========== */
+.schedule-container {
+  padding: 12px 0 0;
 }
 
-/* ===== 月切换 ===== */
-.month-nav {
+/* ===== 日期按钮条 ===== */
+.date-strip {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 4px 12px;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 14px 12px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.date-strip::-webkit-scrollbar {
+  display: none;
 }
 
-.month-label {
-  font-size: 17px;
-  font-weight: 700;
-  color: #1a1a1a;
-  letter-spacing: 0.5px;
-}
-.tpl-dark .month-label { color: #e8e8e8; }
-
-.month-nav-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.date-btn {
+  flex-shrink: 0;
+  min-width: 72px;
+  padding: 9px 14px;
+  border-radius: 12px;
   background: #fff;
-  color: #666;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.month-nav-btn:active {
-  background: var(--schedule-accent);
-  color: #fff;
-}
-.tpl-dark .month-nav-btn {
-  background: #1a1a2e;
-  color: #aaa;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-}
-
-/* ===== 星期头 ===== */
-.weekday-row {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-  margin-bottom: 4px;
-}
-
-.weekday-cell {
-  text-align: center;
-  font-size: 12px;
-  color: #999;
-  font-weight: 500;
-  padding: 6px 0;
-}
-.weekday-cell.weekend { color: #e74c3c; }
-.tpl-dark .weekday-cell { color: #666; }
-.tpl-dark .weekday-cell.weekend { color: #f56c6c; }
-
-/* ===== 日期网格 ===== */
-.date-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-}
-
-.date-cell {
-  aspect-ratio: 1 / 1;
+  border: 1px solid #eee;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  border-radius: 12px;
+  gap: 3px;
   cursor: pointer;
-  position: relative;
-  transition: background 0.15s;
+  transition: all 0.2s;
   -webkit-tap-highlight-color: transparent;
 }
+.date-btn:active {
+  transform: scale(0.96);
+}
 
-.date-num {
-  font-size: 15px;
+.db-day {
+  font-size: 14px;
+  font-weight: 600;
   color: #333;
-  font-weight: 500;
-  line-height: 1;
-}
-.is-other-month .date-num {
-  color: #ccc;
-}
-.tpl-dark .date-num { color: #ddd; }
-.tpl-dark .is-other-month .date-num { color: #444; }
-
-.date-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--schedule-accent);
-  flex-shrink: 0;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
-/* 今天 */
-.is-today {
-  background: var(--schedule-accent-soft);
+.db-week {
+  font-size: 11px;
+  color: #999;
+  line-height: 1.2;
+  white-space: nowrap;
 }
-.is-today .date-num {
+
+/* 已过日期 */
+.is-past .db-day {
+  color: #b5b5b5;
+}
+.is-past .db-week {
+  color: #c4c4c4;
+}
+
+/* 今天（未选中） */
+.is-today:not(.is-active) {
+  border-color: var(--schedule-accent);
+}
+.is-today:not(.is-active) .db-day {
   color: var(--schedule-accent);
-  font-weight: 700;
 }
 
 /* 选中 */
-.is-selected {
-  background: var(--schedule-accent) !important;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.35);
+.date-btn.is-active {
+  background: var(--schedule-accent);
+  border-color: var(--schedule-accent);
+  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.28);
 }
-.is-selected .date-num {
-  color: #fff !important;
-  font-weight: 700;
-}
-.is-selected .date-dot {
-  background: #fff;
-}
-.tpl-festive .is-selected { box-shadow: 0 2px 8px rgba(231, 76, 60, 0.35); }
-.tpl-dark .is-selected { box-shadow: 0 2px 8px rgba(93, 202, 165, 0.35); }
+.tpl-festive .date-btn.is-active { box-shadow: 0 3px 10px rgba(231, 76, 60, 0.28); }
+.tpl-dark .date-btn.is-active { box-shadow: 0 3px 10px rgba(93, 202, 165, 0.28); }
 
-/* 有日程的普通日期 hover */
-.has-schedule:not(.is-selected):not(.is-other-month):active {
-  background: var(--schedule-accent-light);
+/* 暗色主题 */
+.tpl-dark .date-btn {
+  background: #1a1a2e;
+  border-color: #2a2a3e;
+}
+.tpl-dark .db-day { color: #e0e0e0; }
+.tpl-dark .db-week { color: #888; }
+.tpl-dark .is-past .db-day { color: #5a5a6e; }
+.tpl-dark .is-past .db-week { color: #4a4a5e; }
+
+/* ===== 选中态文字（放最后，覆盖上面各主题/过期态的颜色） ===== */
+.schedule-page .date-btn.is-active .db-day,
+.schedule-page .date-btn.is-active .db-week {
+  color: var(--schedule-active-text, #fff);
 }
 
-/* ===== 分隔线 ===== */
-.section-divider {
+/* ===== 选中日期标题 ===== */
+.section-title {
   display: flex;
-  align-items: center;
-  padding: 16px 4px 12px;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 4px 18px 10px;
 }
 
-.section-divider::before,
-.section-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: #e8e8e8;
+.section-title-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
 }
-.tpl-dark .section-divider::before,
-.tpl-dark .section-divider::after {
-  background: #2a2a3e;
-}
+.tpl-dark .section-title-text { color: #e8e8e8; }
 
-.divider-label {
-  padding: 0 14px;
-  font-size: 13px;
+.section-count {
+  font-size: 12px;
   color: #999;
-  font-weight: 500;
-  white-space: nowrap;
 }
-.tpl-dark .divider-label { color: #777; }
+.tpl-dark .section-count { color: #777; }
 
 /* ===== 卡片列表 ===== */
 .card-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 0 4px 12px;
+  padding: 0 14px 12px;
 }
 
 .schedule-card {
@@ -536,6 +446,13 @@ onMounted(loadData)
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 负责人标签跟随主题色（Vant 默认 primary 蓝，与 dark/festive 主题不一致） */
+.schedule-page .schedule-card .van-tag.van-tag--plain {
+  color: var(--schedule-accent);
+  border-color: var(--schedule-accent);
+  background: transparent;
 }
 
 .card-topic {

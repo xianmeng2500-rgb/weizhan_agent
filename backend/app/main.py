@@ -19,6 +19,7 @@ from app.routers import ai_generate
 from app.routers import templates
 from app.routers import distribution
 from app.services import billing_service
+from app.utils.migrate import ensure_schema
 from app.utils.rate_limit import RateLimitMiddleware
 
 # 配置日志
@@ -70,6 +71,9 @@ async def lifespan(app: FastAPI):
     try:
         # 创建所有表
         Base.metadata.create_all(bind=engine)
+
+        # 幂等补齐新增列/索引（create_all 不会给已存在的表补列）
+        ensure_schema(engine)
 
         # 初始化单例系统配置
         db = SessionLocal()
